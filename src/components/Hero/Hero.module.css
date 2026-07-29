@@ -1,0 +1,225 @@
+/*
+  Full-viewport landing hero.
+  Column flow: the two-column content block takes the free space and centers
+  itself, and the metadata ticker is pinned to the bottom of the same box.
+
+  `100svh` rather than `100vh` — on mobile, `vh` measures against the *largest*
+  viewport, so the browser's address bar would push the ticker off-screen.
+*/
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  inline-size: 100%;
+  min-block-size: 100svh;
+  padding-block-start: calc(var(--header-height) + var(--space-lg));
+  padding-block-end: var(--space-lg);
+  padding-inline: var(--container-padding);
+
+  background-color: var(--color-black);
+  overflow: hidden;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: var(--space-2xl);
+
+  flex: 1;
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding-block: var(--space-xl);
+}
+
+/* --- Left column: location, wordmark, CTA -------------------------------- */
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.location {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.title {
+  font-size: var(--text-5xl);
+  font-weight: var(--font-weight-heavy);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+/* --- Contact button ------------------------------------------------------ */
+
+/*
+  Transparent with a gold hairline; on hover a gold panel wipes across from the
+  inline start and the label flips to black. The wipe is a pseudo-element rather
+  than a background-color transition so the fill reads as a sweep, not a fade.
+*/
+.contact-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  margin-block-start: var(--space-sm);
+  padding: var(--space-xs) var(--space-lg);
+
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-full);
+
+  color: var(--color-gold);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+
+  transition: color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+.contact-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  background-color: var(--color-gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.contact-button:hover {
+  color: var(--color-black);
+  border-color: var(--color-gold-light);
+  box-shadow: var(--shadow-gold);
+}
+
+.contact-button:hover::before {
+  transform: scaleX(1);
+}
+
+/* --- Right column: logo and tagline -------------------------------------- */
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.logo {
+  inline-size: auto;
+  block-size: auto;
+  max-block-size: min(46svh, 26rem);
+  object-fit: contain;
+}
+
+/*
+  Tagline: solid gold, set small and widely tracked in lowercase. The restraint
+  is the point — it sits under the logo without competing with the wordmark.
+*/
+.tagline {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-widest);
+  text-transform: lowercase;
+  text-align: center;
+  color: var(--color-gold);
+}
+
+/* --- Bottom metadata ticker ---------------------------------------------- */
+
+.ticker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-md);
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--color-border-subtle);
+
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-wide);
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  color: var(--color-text-muted);
+}
+
+/* Gold dot separator between entries. */
+.ticker-item:not(:first-child)::before {
+  content: '';
+  flex-shrink: 0;
+  inline-size: 3px;
+  block-size: 3px;
+  margin-inline-end: var(--space-sm);
+  border-radius: var(--radius-full);
+  background-color: var(--color-gold);
+}
+
+.ticker-label {
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+}
+
+.ticker-dash {
+  color: var(--color-text-subtle);
+}
+
+.ticker-value {
+  color: var(--color-text-muted);
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (max-width: 63.9375rem) {
+  .content {
+    justify-items: center;
+    text-align: center;
+  }
+
+  /* Logo leads on a stacked layout — it is the strongest visual anchor. */
+  .brand {
+    order: -1;
+  }
+
+  .intro {
+    align-items: center;
+  }
+}
+
+@media (min-width: 64rem) {
+  .content {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tagline {
+    font-size: var(--text-lg);
+  }
+}

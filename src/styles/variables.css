@@ -1,0 +1,145 @@
+/*
+  Design tokens for AGB Media.
+  This file holds values only — no selectors beyond :root, no component rules.
+  Every color, font, and spacing step used anywhere in the app resolves here.
+*/
+
+:root {
+  /* --- Color: core palette --------------------------------------------- */
+
+  /* Pure black. The dominant surface of the entire site. */
+  --color-black: #000000;
+
+  /*
+    Signature accent, sampled from the midtone band of the logo
+    (/public/assets/images/agb-logo.png) — a dark gold leaning orange.
+  */
+  --color-gold: #c97014;
+  --color-gold-light: #e09a3c; /* hover / focus / raised state */
+  --color-gold-deep: #8f2804;  /* rust from the logo's lower band; gradients only */
+
+  /* Very dark navy. Secondary surfaces only — never a dominant background. */
+  --color-navy: #0a0e1a;
+
+  /* Warm off-white so body text never reads as clinical pure white. */
+  --color-text: #f5f5f0;
+  --color-text-muted: rgba(245, 245, 240, 0.65);
+  --color-text-subtle: rgba(245, 245, 240, 0.4);
+
+  /* --- Color: derived surfaces and lines -------------------------------- */
+
+  --color-surface: var(--color-navy);
+  --color-border: rgba(201, 112, 20, 0.35);   /* gold at low opacity */
+
+  /* Translucent black behind backdrop-filter surfaces (the header glass). */
+  --color-glass: rgba(0, 0, 0, 0.5);
+  --color-border-subtle: rgba(245, 245, 240, 0.08);
+  --color-overlay: rgba(0, 0, 0, 0.72);
+
+  /* --- Typography ------------------------------------------------------- */
+
+  /*
+    Clash Display is the sole typeface across the entire site — display, headings,
+    body, and UI all resolve to it. Loaded from Fontshare via @import in
+    global.css. The three tokens are kept distinct so a future pass can split a
+    role off without touching every call site; today they all point to Clash.
+  */
+  --font-display: 'Clash Display', sans-serif;
+  --font-heading: var(--font-display);
+  --font-body: 'Clash Display', sans-serif;
+
+  /*
+    Fontshare serves Clash Display as static instances at 200/300/400/500/600/700.
+    Only request these six — an intermediate value like 450 will be rounded by
+    the browser rather than interpolated.
+  */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+  --font-weight-heavy: 700;
+
+  /* Fluid type scale — clamps so headings shrink on mobile without media queries. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.25rem, 1.1rem + 0.7vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
+  --text-3xl: clamp(2rem, 1.5rem + 2.4vw, 3rem);
+  --text-4xl: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
+  /* Reserved for the hero wordmark — the largest type on the site. */
+  --text-5xl: clamp(3rem, 1.7rem + 6.5vw, 7rem);
+
+  --leading-tight: 1.15;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.85;
+
+  /* Clash Display is geometric and tightens well at large display sizes. */
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.06em;
+  --tracking-widest: 0.16em;
+
+  /* --- Spacing ---------------------------------------------------------- */
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 7rem;
+
+  /* --- Layout ----------------------------------------------------------- */
+
+  --container-max: 75rem;      /* 1200px */
+  --container-padding: var(--space-md);
+
+  /*
+    Header geometry. `--header-height` is the resting height and is what page
+    sections offset against — the docked height is purely visual and must not
+    feed layout, or content would shift as the header morphs.
+  */
+  --header-height: 5rem;         /* 80px */
+  --header-height-docked: 3.75rem; /* 60px */
+  --header-dock-inset: 1rem;     /* 16px from each side once floating */
+  --header-dock-top: 0.75rem;    /* 12px clear of the top edge */
+  --header-blur: 12px;
+
+  /* --- Radius and elevation --------------------------------------------- */
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-full: 999px;
+
+  --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.55);
+  --shadow-gold: 0 0 24px rgba(201, 112, 20, 0.25);
+
+  /* --- Motion ----------------------------------------------------------- */
+
+  --duration-fast: 180ms;
+  --duration-base: 300ms;
+  /*
+    Shared by every property in the header's dock morph. Long enough to read as
+    deliberate, short enough that scrubbing across the threshold isn't mushy.
+  */
+  --duration-morph: 450ms;
+  --duration-slow: 600ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- Layers ----------------------------------------------------------- */
+
+  --z-base: 1;
+  --z-header: 50;
+  --z-modal: 100;
+  --z-noise: 9999;
+
+  /* --- Texture ---------------------------------------------------------- */
+
+  /* Film-grain intensity. Kept low on purpose; above ~0.06 it reads as dirt. */
+  --noise-opacity: 0.04;
+}

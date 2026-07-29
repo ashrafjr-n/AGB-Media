@@ -1,0 +1,221 @@
+/*
+  Fixed site header — logo on the left, nav links on the right.
+  `justify-content: space-between` in an LTR flow puts the first child (logo)
+  at the inline start (left) and the nav at the inline end (right).
+
+  Two states, driven by `data-docked` on the root:
+
+    resting  full-bleed glass pinned to the top edge, square corners, 5rem tall
+    docked   floating pill inset from all three edges, 3.75rem tall, shadowed
+
+  Every property that changes between the two shares the `--morph` timing below,
+  declared once and reused, so the whole header reads as a single deliberate
+  movement rather than a pile of independent transitions. The global
+  prefers-reduced-motion rule in global.css collapses all of it to an instant
+  state change without any extra handling here.
+*/
+
+.header {
+  /* One timing for the entire morph. Change it here, not per property. */
+  --morph: var(--duration-morph) var(--ease-in-out);
+
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--z-header);
+
+  /*
+    The float is produced by padding on the fixed wrapper rather than by moving
+    the bar itself, so nothing in the document flow can be disturbed by it.
+  */
+  padding-block-start: 0;
+  padding-inline: 0;
+  transition: padding var(--morph);
+}
+
+.header[data-docked='true'] {
+  padding-block-start: var(--header-dock-top);
+  padding-inline: var(--header-dock-inset);
+}
+
+/* --- Glass bar ------------------------------------------------------------ */
+
+.bar {
+  /*
+    Required so the drawer is clipped by the bar's radius. Anything that needs
+    to paint outside the bar's box (the nav underline, notably) has to stay
+    inside it — see .nav-link-underline.
+  */
+  overflow: hidden;
+
+  /*
+    Translucent black rather than solid: the backdrop-filter has to have
+    something to show through. -webkit- prefix for Safari, which still requires
+    it for backdrop-filter.
+  */
+  background-color: var(--color-glass);
+  -webkit-backdrop-filter: blur(var(--header-blur));
+  backdrop-filter: blur(var(--header-blur));
+
+  border-radius: 0;
+  box-shadow: none;
+
+  transition: border-radius var(--morph), box-shadow var(--morph);
+}
+
+/*
+  Pill when docked and closed; the drawer softens it to a rounded rect.
+  The docked bar is capped at the container width and centred so it lines up
+  with the hero's content column — without the cap it would stretch the full
+  viewport on a wide monitor while its contents stayed boxed at 1200px, leaving
+  the pill's rounded ends empty.
+*/
+.header[data-docked='true'] .bar {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-soft);
+}
+
+.header[data-docked='true'][data-menu-open='true'] .bar {
+  border-radius: var(--radius-lg);
+}
+
+/* --- Inner row ------------------------------------------------------------ */
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  block-size: var(--header-height);
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+
+  transition: block-size var(--morph), padding-inline var(--morph);
+}
+
+.header[data-docked='true'] .inner {
+  block-size: var(--header-height-docked);
+  /* Tighter than --container-padding (1.5rem) so the pill reads as compact. */
+  padding-inline: var(--space-sm);
+}
+
+/* --- Logo ---------------------------------------------------------------- */
+
+.logo {
+  flex-shrink: 0;
+}
+
+.logo img {
+  block-size: 2.5rem;
+  inline-size: auto;
+  transition: block-size var(--morph);
+}
+
+.header[data-docked='true'] .logo img {
+  block-size: 2rem;
+}
+
+/* --- Navigation ---------------------------------------------------------- */
+
+.desktop-nav {
+  display: none;
+  align-items: center;
+  gap: var(--space-lg);
+  transition: gap var(--morph);
+}
+
+.header[data-docked='true'] .desktop-nav {
+  gap: var(--space-md);
+}
+
+.nav-link {
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  /* Nav links sit at 500 per the design system's weight ladder. */
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.nav-link:hover {
+  color: var(--color-gold-light);
+}
+
+/* Positioning context for the animated underline. */
+.nav-link-inner {
+  position: relative;
+  display: inline-block;
+  /* Roomy enough to hold the underline inside the box — see below. */
+  padding-block: var(--space-2xs);
+}
+
+/*
+  Sits at inset-block-end: 0, i.e. inside its parent's box rather than 2px
+  below it. `.bar` is overflow: hidden so the drawer clips to the pill radius,
+  and anything hanging outside this box would be cut off — most visibly once
+  the header docks and the row tightens to 3.75rem.
+*/
+.nav-link-underline {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 1px;
+  background-color: var(--color-gold);
+}
+
+/* --- Mobile toggle and drawer -------------------------------------------- */
+
+.menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.menu-toggle:hover {
+  color: var(--color-gold-light);
+}
+
+/*
+  The drawer sits inside .bar so it shares the glass and gets clipped by the
+  bar's radius. It stays transparent for that reason — the bar paints the glass.
+*/
+.mobile-nav {
+  overflow: hidden;
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--container-padding);
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (min-width: 40rem) {
+  .logo img {
+    block-size: 3rem;
+  }
+
+  /* The clearest signal that the header has docked: the logo steps down. */
+  .header[data-docked='true'] .logo img {
+    block-size: 2.25rem;
+  }
+
+  .desktop-nav {
+    display: flex;
+  }
+
+  .menu-toggle,
+  .mobile-nav {
+    display: none;
+  }
+}

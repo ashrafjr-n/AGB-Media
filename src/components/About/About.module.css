@@ -1,0 +1,119 @@
+/*
+  Text-only section. The visual interest comes from three things and nothing
+  more: a tracked gold eyebrow, an oversized pull-quote, and a single gold
+  hairline running down the inline start of the body copy.
+*/
+
+.about {
+  position: relative;
+  padding-block: var(--space-3xl);
+  padding-inline: var(--container-padding);
+  background-color: var(--color-black);
+}
+
+/*
+  A faint navy wash bleeding up from the section's start edge — enough to
+  separate About from the pure-black hero above it without reading as a band.
+*/
+.about::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 60%;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-navy) 0%,
+    transparent 100%
+  );
+  opacity: 0.55;
+}
+
+.inner {
+  position: relative; /* lifts content above the ::before wash */
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+}
+
+/* --- Eyebrow ------------------------------------------------------------- */
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+
+  margin-block-end: var(--space-lg);
+
+  color: var(--color-gold);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+}
+
+/* Short gold rule trailing the label. */
+.eyebrow::after {
+  content: '';
+  inline-size: 3rem;
+  block-size: 1px;
+  background-color: var(--color-border);
+}
+
+/* --- Pull-quote ---------------------------------------------------------- */
+
+.quote {
+  max-inline-size: 20ch;
+  margin-block-end: var(--space-2xl);
+
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-heavy);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+.quote-accent {
+  color: var(--color-gold);
+}
+
+/* --- Body ---------------------------------------------------------------- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  /* ~65ch keeps line length inside a comfortable reading measure. */
+  max-inline-size: 65ch;
+  padding-inline-start: var(--space-md);
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.body p {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* The opening paragraph carries slightly more weight and presence. */
+.body p:first-child {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text);
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (min-width: 64rem) {
+  .quote {
+    max-inline-size: 24ch;
+  }
+
+  .body {
+    padding-inline-start: var(--space-lg);
+  }
+}
