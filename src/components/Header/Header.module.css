@@ -3,37 +3,20 @@
   `justify-content: space-between` in an LTR flow puts the first child (logo)
   at the inline start (left) and the nav at the inline end (right).
 
-  Two states, driven by `data-docked` on the root:
-
-    resting  full-bleed glass pinned to the top edge, square corners, 5rem tall
-    docked   floating pill inset from all three edges, 3.75rem tall, shadowed
-
-  Every property that changes between the two shares the `--morph` timing below,
-  declared once and reused, so the whole header reads as a single deliberate
-  movement rather than a pile of independent transitions. The global
-  prefers-reduced-motion rule in global.css collapses all of it to an instant
-  state change without any extra handling here.
+  The header no longer morphs with scroll — it always renders as the floating
+  pill, inset from all three edges, shadowed. `data-docked` and
+  `data-menu-open` are still set on the root in Header.jsx (menu-open still
+  needs to soften the pill's corners into a rounded rect while the drawer is
+  open), but there is no longer a second, non-docked visual state to transition
+  from, so no morph timing is needed here.
 */
 
 .header {
-  /* One timing for the entire morph. Change it here, not per property. */
-  --morph: var(--duration-morph) var(--ease-in-out);
-
   position: fixed;
   inset-block-start: 0;
   inset-inline: 0;
   z-index: var(--z-header);
 
-  /*
-    The float is produced by padding on the fixed wrapper rather than by moving
-    the bar itself, so nothing in the document flow can be disturbed by it.
-  */
-  padding-block-start: 0;
-  padding-inline: 0;
-  transition: padding var(--morph);
-}
-
-.header[data-docked='true'] {
   padding-block-start: var(--header-dock-top);
   padding-inline: var(--header-dock-inset);
 }
@@ -57,27 +40,22 @@
   -webkit-backdrop-filter: blur(var(--header-blur));
   backdrop-filter: blur(var(--header-blur));
 
-  border-radius: 0;
-  box-shadow: none;
-
-  transition: border-radius var(--morph), box-shadow var(--morph);
-}
-
-/*
-  Pill when docked and closed; the drawer softens it to a rounded rect.
-  The docked bar is capped at the container width and centred so it lines up
-  with the hero's content column — without the cap it would stretch the full
-  viewport on a wide monitor while its contents stayed boxed at 1200px, leaving
-  the pill's rounded ends empty.
-*/
-.header[data-docked='true'] .bar {
-  max-inline-size: var(--container-max);
+  /*
+    Capped at the container width and centred so it lines up with the hero's
+    content column — without the cap it would stretch the full viewport on a
+    wide monitor while its contents stayed boxed at 1200px, leaving the pill's
+    rounded ends empty.
+  */
+  /* Wider than the content container so the pill reads as more expansive. */
+  max-inline-size: calc(var(--container-max) + 6rem);
   margin-inline: auto;
   border-radius: var(--radius-full);
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
+
+  transition: border-radius var(--duration-base) var(--ease-in-out);
 }
 
-.header[data-docked='true'][data-menu-open='true'] .bar {
+.header[data-menu-open='true'] .bar {
   border-radius: var(--radius-lg);
 }
 
@@ -88,18 +66,11 @@
   align-items: center;
   justify-content: space-between;
 
-  block-size: var(--header-height);
+  block-size: 3.75rem;
   max-inline-size: var(--container-max);
   margin-inline: auto;
-  padding-inline: var(--container-padding);
-
-  transition: block-size var(--morph), padding-inline var(--morph);
-}
-
-.header[data-docked='true'] .inner {
-  block-size: var(--header-height-docked);
-  /* Tighter than --container-padding (1.5rem) so the pill reads as compact. */
-  padding-inline: var(--space-sm);
+  /* More breathing room around the logo and nav than the old compact pill. */
+  padding-inline: var(--space-lg);
 }
 
 /* --- Logo ---------------------------------------------------------------- */
@@ -109,13 +80,8 @@
 }
 
 .logo img {
-  block-size: 2.5rem;
+  block-size: 2.125rem;
   inline-size: auto;
-  transition: block-size var(--morph);
-}
-
-.header[data-docked='true'] .logo img {
-  block-size: 2rem;
 }
 
 /* --- Navigation ---------------------------------------------------------- */
@@ -123,18 +89,13 @@
 .desktop-nav {
   display: none;
   align-items: center;
-  gap: var(--space-lg);
-  transition: gap var(--morph);
-}
-
-.header[data-docked='true'] .desktop-nav {
-  gap: var(--space-md);
+  gap: var(--space-xl);
 }
 
 .nav-link {
   color: var(--color-text-muted);
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   /* Nav links sit at 500 per the design system's weight ladder. */
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
@@ -156,8 +117,7 @@
 /*
   Sits at inset-block-end: 0, i.e. inside its parent's box rather than 2px
   below it. `.bar` is overflow: hidden so the drawer clips to the pill radius,
-  and anything hanging outside this box would be cut off — most visibly once
-  the header docks and the row tightens to 3.75rem.
+  and anything hanging outside this box would be cut off.
 */
 .nav-link-underline {
   position: absolute;
@@ -194,20 +154,19 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--container-padding);
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-lg);
 }
 
 /* --- Breakpoints ---------------------------------------------------------- */
 
 @media (min-width: 40rem) {
-  .logo img {
-    block-size: 3rem;
+  .inner {
+    block-size: 4.25rem;
   }
 
-  /* The clearest signal that the header has docked: the logo steps down. */
-  .header[data-docked='true'] .logo img {
-    block-size: 2.25rem;
+  .logo img {
+    block-size: 2.375rem;
   }
 
   .desktop-nav {
