@@ -112,13 +112,17 @@
   color: var(--color-text-muted);
 }
 
+/*
+  Rich black rather than flat --color-black: over bright footage pure #000
+  loses its weight, and the rust undertone gives it depth without reading brown.
+*/
 .title {
-  font-size: var(--text-6xl, 4rem);
+  font-size: var(--text-6xl);
   font-weight: var(--font-weight-light);
   line-height: 0.95;
   letter-spacing: var(--tracking-tight);
   text-transform: uppercase;
-  color: var(--color-black);
+  color: var(--color-black-rich);
 }
 
 /* --- Contact button ------------------------------------------------------ */
@@ -214,9 +218,12 @@
   align-items: center;
   gap: var(--space-2xs) var(--space-md);
 
+  /*
+    Deliberately *not* capped at --container-max like .content: the ticker spans
+    the hero's full inline width so its top hairline reads as a full-width rule
+    across the section, bounded only by .hero's own edge padding.
+  */
   inline-size: 100%;
-  max-inline-size: var(--container-max);
-  margin-inline: auto;
   padding-block-start: var(--space-md);
   border-block-start: 1px solid var(--color-border-subtle);
 
@@ -277,6 +284,23 @@
 @media (min-width: 64rem) {
   .content {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /*
+    Both columns are nudged apart and up so more of the footage reads between
+    and below them. `transform` rather than margin so nothing reflows and the
+    grid tracks stay even.
+
+    These offsets live on the columns, never on their children: the children
+    carry Framer Motion entrance transforms (see Hero.jsx), and an inline
+    transform from JS would overwrite a CSS one on the same element.
+  */
+  .intro {
+    transform: translate(-1.5rem, -2rem);
+  }
+
+  .brand {
+    transform: translate(1.5rem, -2rem);
   }
 
   .tagline {

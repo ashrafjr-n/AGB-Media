@@ -9,6 +9,10 @@
   needs to soften the pill's corners into a rounded rect while the drawer is
   open), but there is no longer a second, non-docked visual state to transition
   from, so no morph timing is needed here.
+
+  What is left to time is the menu open/close: the bar's corner radius here, and
+  the drawer height and hover underline driven from Header.jsx. All three run at
+  the fast end of the ramp with --ease-out so they read as a single movement.
 */
 
 .header {
@@ -41,18 +45,21 @@
   backdrop-filter: blur(var(--header-blur));
 
   /*
-    Capped at the container width and centred so it lines up with the hero's
-    content column — without the cap it would stretch the full viewport on a
-    wide monitor while its contents stayed boxed at 1200px, leaving the pill's
-    rounded ends empty.
+    Substantially wider than the content container. The cap only exists to stop
+    the pill becoming a band on an ultrawide display — .inner fills this box
+    edge to edge (see below), so the logo and nav sit just inside the pill's ends
+    rather than boxed at 1200px with dead space either side of them.
   */
-  /* Wider than the content container so the pill reads as more expansive. */
-  max-inline-size: calc(var(--container-max) + 6rem);
+  max-inline-size: calc(var(--container-max) + 12rem);
   margin-inline: auto;
   border-radius: var(--radius-full);
   box-shadow: none;
 
-  transition: border-radius var(--duration-base) var(--ease-in-out);
+  /*
+    Fast and eased-out, matching the drawer it accompanies: the corners soften as
+    the drawer starts opening, so a slower curve here lags visibly behind it.
+  */
+  transition: border-radius var(--duration-fast) var(--ease-out);
 }
 
 .header[data-menu-open='true'] .bar {
@@ -61,15 +68,21 @@
 
 /* --- Inner row ------------------------------------------------------------ */
 
+/*
+  Fills .bar rather than re-boxing itself at --container-max: the pill's edges
+  should sit close to the logo and the last nav link, and an inner cap narrower
+  than the bar is what would otherwise push both toward the centre.
+
+  The padding has to clear the pill's rounded ends — at --radius-full the corner
+  arc is half the bar's height — which is why it is looser than a square bar
+  would need.
+*/
 .inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  block-size: 3.75rem;
-  max-inline-size: var(--container-max);
-  margin-inline: auto;
-  /* More breathing room around the logo and nav than the old compact pill. */
+  block-size: 4.25rem;
   padding-inline: var(--space-lg);
 }
 
@@ -80,7 +93,7 @@
 }
 
 .logo img {
-  block-size: 2.125rem;
+  block-size: 2.25rem;
   inline-size: auto;
 }
 
@@ -99,7 +112,7 @@
   /* Nav links sit at 500 per the design system's weight ladder. */
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
-  transition: color var(--duration-base) var(--ease-out);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .nav-link:hover {
@@ -134,7 +147,7 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
-  transition: color var(--duration-base) var(--ease-out);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .menu-toggle:hover {
@@ -161,12 +174,17 @@
 /* --- Breakpoints ---------------------------------------------------------- */
 
 @media (min-width: 40rem) {
+  /*
+    The pill grows, its contents do not — nav text and the logo keep their size
+    and simply gain room around them.
+  */
   .inner {
-    block-size: 4.25rem;
+    block-size: var(--header-height-docked);
+    padding-inline: var(--space-xl);
   }
 
   .logo img {
-    block-size: 2.375rem;
+    block-size: 2.625rem;
   }
 
   .desktop-nav {

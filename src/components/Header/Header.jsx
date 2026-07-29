@@ -14,6 +14,13 @@ const navLinks = [
   { label: 'Contact', to: '/contact' },
 ]
 
+/*
+  Mirrors --ease-out in variables.css. Framer Motion cannot read a CSS custom
+  property, so the curve is duplicated here — change both together or the JS and
+  CSS halves of the same movement drift apart.
+*/
+const EASE_OUT = [0.22, 1, 0.36, 1]
+
 /* The underline sweeps out from the center on hover. */
 const underlineVariants = {
   rest: { scaleX: 0 },
@@ -32,7 +39,7 @@ function NavLink({ to, label, onClick, duration }) {
         {label}
         <motion.span
           variants={underlineVariants}
-          transition={{ duration, ease: 'easeOut' }}
+          transition={{ duration, ease: EASE_OUT }}
           style={{ originX: 0.5 }}
           className={styles['nav-link-underline']}
         />
@@ -51,7 +58,12 @@ function Header() {
     so the menu-open styling in Header.module.css (which targets
     [data-docked='true'][data-menu-open='true']) still applies.
   */
-  const motionDuration = shouldReduceMotion ? 0 : 0.3
+  /*
+    0.18s is --duration-fast, the timing the bar's corner radius now runs at —
+    the drawer, the corners, and the hover underline are one gesture, and any
+    slower here makes the drawer trail the pill it opens out of.
+  */
+  const motionDuration = shouldReduceMotion ? 0 : 0.18
   const closeMenu = () => setIsMenuOpen(false)
 
   return (
@@ -89,7 +101,7 @@ function Header() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: motionDuration, ease: 'easeInOut' }}
+              transition={{ duration: motionDuration, ease: EASE_OUT }}
               className={styles['mobile-nav']}
             >
               <div className={styles['mobile-nav-list']}>

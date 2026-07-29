@@ -23,6 +23,7 @@ All colors live as CSS custom properties in `src/styles/variables.css`. **Never 
 | Token | Value | Role |
 | --- | --- | --- |
 | `--color-black` | `#000000` | Pure black. The dominant background. |
+| `--color-black-rich` | `#150802` | Rich black — pure black with a trace of the logo's rust. **Type only, never a surface**; use where flat `#000` reads washed out over footage (the hero wordmark). |
 | `--color-gold` | `#C97014` | **Signature accent**, sampled from the logo's midtone. Headings, highlights, borders, interactive states. |
 | `--color-gold-light` | `#E09A3C` | Hover / focus / raised state of the accent. |
 | `--color-gold-deep` | `#8F2804` | Rust from the logo's lower band. Gradient endpoint only. |

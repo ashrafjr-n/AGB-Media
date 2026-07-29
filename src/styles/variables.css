@@ -21,6 +21,13 @@
   /* Very dark navy. Secondary surfaces only — never a dominant background. */
   --color-navy: #0a0e1a;
 
+  /*
+    Rich black — pure black carrying a trace of the logo's rust. Pure #000 over
+    bright footage reads flat and washed; this keeps the wordmark reading as
+    black while giving it a warm depth. Type only, never a surface.
+  */
+  --color-black-rich: #150802;
+
   /* Warm off-white so body text never reads as clinical pure white. */
   --color-text: #f5f5f0;
   --color-text-muted: rgba(245, 245, 240, 0.65);
@@ -68,8 +75,14 @@
   --text-2xl: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
   --text-3xl: clamp(2rem, 1.5rem + 2.4vw, 3rem);
   --text-4xl: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
-  /* Reserved for the hero wordmark — the largest type on the site. */
+  /* Unused so far — held for a full-bleed display line larger than the hero. */
   --text-5xl: clamp(3rem, 1.7rem + 6.5vw, 7rem);
+  /*
+    The hero wordmark. It deliberately tops out *below* --text-5xl: the wordmark
+    shares its row with the logo, so it is sized against that column rather than
+    against the ladder. Not a mistake — 6xl is the smaller of the two.
+  */
+  --text-6xl: clamp(4rem, 3.4rem + 2vw, 4.5rem);
 
   --leading-tight: 1.15;
   --leading-normal: 1.6;
@@ -103,7 +116,13 @@
     feed layout, or content would shift as the header morphs.
   */
   --header-height: 5rem;         /* 80px */
-  --header-height-docked: 3.75rem; /* 60px */
+  /*
+    The floating pill's own height on desktop. Taller than the row it contains
+    needs to be — the extra is breathing room around the logo and nav, not scale.
+    Purely visual: with --header-dock-top it must stay under --header-height plus
+    the hero's own top padding, or the pill starts crowding hero content.
+  */
+  --header-height-docked: 5rem;  /* 80px */
   --header-dock-inset: 1rem;     /* 16px from each side once floating */
   --header-dock-top: 0.75rem;    /* 12px clear of the top edge */
   --header-blur: 12px;
@@ -123,10 +142,11 @@
   --duration-fast: 180ms;
   --duration-base: 300ms;
   /*
-    Shared by every property in the header's dock morph. Long enough to read as
-    deliberate, short enough that scrubbing across the threshold isn't mushy.
+    Reserved for the header's dock morph. Currently referenced by nothing — the
+    header no longer has a second, non-docked state to transition from. Held at
+    a snappier 320ms than the original 450ms, which read sluggish.
   */
-  --duration-morph: 450ms;
+  --duration-morph: 320ms;
   --duration-slow: 600ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
