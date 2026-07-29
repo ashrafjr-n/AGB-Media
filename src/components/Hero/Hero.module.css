@@ -19,16 +19,16 @@
   padding-inline: var(--container-padding);
 
   /*
-    No background of its own. The animated backdrop below is a *child* of this
+    No background of its own. The video backdrop below is a *child* of this
     section, and a child always paints over its parent's background — an opaque
-    black here would leave the shader permanently hidden. `body` in global.css is
+    black here would leave the video permanently hidden. `body` in global.css is
     already black, which is what shows once the backdrop has faded out.
   */
   background-color: transparent;
   overflow: hidden;
 }
 
-/* --- Animated backdrop ---------------------------------------------------- */
+/* --- Video backdrop -------------------------------------------------------- */
 
 /*
   Fixed, not absolute, so it stays put while the rest of the page scrolls over
@@ -49,13 +49,32 @@
   position: fixed;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
   pointer-events: none;
+}
+
+.backdrop-video {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+  Very light black layer above the video — just enough to keep the foreground
+  text legible without hiding the footage.
+*/
+.backdrop-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.25);
 }
 
 /*
   The two content blocks are lifted above the backdrop explicitly. Static
   elements paint *below* positioned ones regardless of source order, so without a
-  z-index of their own they would sit behind the shader.
+  z-index of their own they would sit behind the video.
 */
 .content,
 .ticker {
@@ -94,12 +113,12 @@
 }
 
 .title {
-  font-size: var(--text-5xl);
-  font-weight: var(--font-weight-heavy);
+  font-size: var(--text-6xl, 4rem);
+  font-weight: var(--font-weight-light);
   line-height: 0.95;
   letter-spacing: var(--tracking-tight);
   text-transform: uppercase;
-  color: var(--color-text);
+  color: var(--color-black);
 }
 
 /* --- Contact button ------------------------------------------------------ */
