@@ -21,8 +21,8 @@
   /*
     No background of its own. The video backdrop below is a *child* of this
     section, and a child always paints over its parent's background — an opaque
-    black here would leave the video permanently hidden. `body` in global.css is
-    already black, which is what shows once the backdrop has faded out.
+    fill here would leave the video permanently hidden. `body` in global.css
+    already carries --color-black, which is what shows behind the footage.
   */
   background-color: transparent;
   overflow: hidden;
@@ -38,9 +38,9 @@
   fixed containing block (transform, filter, contain) would crop it.
 
   z-index 0 rather than a negative value keeps it inside the normal positioned
-  layer, where later positioned siblings — About, with its opaque black — paint
-  on top of it in tree order. A negative index would work today but would be
-  trapped the moment any ancestor became a stacking context.
+  layer, where later positioned siblings — About, with its opaque ground fill —
+  paint on top of it in tree order. A negative index would work today but would
+  be trapped the moment any ancestor became a stacking context.
 
   pointer-events: none is mandatory: full-viewport and fixed, it would otherwise
   intercept every click and hover on the page.
@@ -62,13 +62,18 @@
 }
 
 /*
-  Very light black layer above the video — just enough to keep the foreground
-  text legible without hiding the footage.
+  Light scrim above the video — just enough to keep the foreground text legible
+  without hiding the footage.
+
+  --color-scrim, not raw black. It is --color-black at 0.25, so the hero darkens
+  toward exactly the tone the body and the Story section are painted in; a pure
+  black tint here read cooler-and-deeper than the rest of the site and left a
+  visible step at the hero's bottom edge.
 */
 .backdrop-overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: var(--color-scrim);
 }
 
 /*
@@ -95,13 +100,44 @@
   padding-block: var(--space-xl);
 }
 
-/* --- Left column: location, wordmark, CTA -------------------------------- */
+/*
+  --- Left column: location label, then the logo ---------------------------
 
-.intro {
+  `.identity` and `.pitch` replace the former `.intro` / `.brand` pair: the
+  columns swapped contents, and the old names described the old contents.
+*/
+
+.identity {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-md);
+}
+
+/*
+  The logo is the page's h1 — it carries the brand name (via its alt text) now
+  that the "AGB Media" wordmark is gone, so the document keeps a top-level
+  heading.
+
+  A *column* flex container, and that is not arbitrary: the logo is portrait
+  (360x672) and sized by max-block-size, so its width has to be derived from that
+  capped height. Only along a flex container's main axis does the cap constrain
+  the size that the inline axis then resolves against — in a row flex container
+  the image would be laid out at its natural 360px width and `object-fit:
+  contain` would letterbox it, leaving the visible mark floating off to one side.
+  This is the same geometry the image had as a direct child of the old `.brand`.
+*/
+.logo-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logo {
+  inline-size: auto;
+  block-size: auto;
+  max-block-size: min(46svh, 26rem);
+  object-fit: contain;
 }
 
 .location {
@@ -112,100 +148,45 @@
   color: var(--color-text-muted);
 }
 
-/*
-  Rich black rather than flat --color-black: over bright footage pure #000
-  loses its weight, and the rust undertone gives it depth without reading brown.
-*/
-.title {
-  font-size: var(--text-6xl);
-  font-weight: var(--font-weight-light);
-  line-height: 0.95;
-  letter-spacing: var(--tracking-tight);
-  text-transform: uppercase;
-  color: var(--color-black-rich);
-}
-
 /* --- Contact button ------------------------------------------------------ */
 
 /*
-  Transparent with a gold hairline; on hover a gold panel wipes across from the
-  inline start and the label flips to black. The wipe is a pseudo-element rather
-  than a background-color transition so the fill reads as a sweep, not a fade.
+  Spacing only. Every visual property of this button — fill, hairline, type, the
+  hover — lives in components/shared/Button.module.css and is applied alongside
+  this class. Nothing about its appearance belongs here.
 */
 .contact-button {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
-
   margin-block-start: var(--space-sm);
-  padding: var(--space-xs) var(--space-lg);
-
-  border: 1px solid var(--color-gold);
-  border-radius: var(--radius-full);
-
-  color: var(--color-gold);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-
-  transition: color var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out),
-    box-shadow var(--duration-base) var(--ease-out);
 }
 
-.contact-button::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
+/* --- Right column: tagline, then the contact button ---------------------- */
 
-  background-color: var(--color-gold);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform var(--duration-base) var(--ease-out);
-}
-
-.contact-button:hover {
-  color: var(--color-black);
-  border-color: var(--color-gold-light);
-  box-shadow: var(--shadow-gold);
-}
-
-.contact-button:hover::before {
-  transform: scaleX(1);
-}
-
-/* --- Right column: logo and tagline -------------------------------------- */
-
-.brand {
+/*
+  End-aligned, unlike .identity: the tagline and CTA are pushed to the far edge of
+  the right grid track so the hero reads as content pinned to its two outer
+  corners, with the footage open through the middle. The stacked layout overrides
+  this back to centre in the breakpoint below.
+*/
+.pitch {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-lg);
-}
-
-.logo {
-  inline-size: auto;
-  block-size: auto;
-  max-block-size: min(46svh, 26rem);
-  object-fit: contain;
+  align-items: flex-end;
+  gap: var(--space-2xs);
 }
 
 /*
   Tagline: solid gold, set small and widely tracked in lowercase. The restraint
-  is the point — it sits under the logo without competing with the wordmark.
+  is the point — it names what the company does without competing with the logo
+  in the opposite column.
+
+  No text-align of its own: it follows .pitch, which is end-aligned on desktop and
+  centred by .content's text-align on the stacked layout.
 */
 .tagline {
   font-size: var(--text-base);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-widest);
   text-transform: lowercase;
-  text-align: center;
   color: var(--color-gold);
 }
 
@@ -216,14 +197,19 @@
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: var(--space-2xs) var(--space-md);
+  /* Column gap doubled from --space-md: the entries need air to read as a strip. */
+  gap: var(--space-2xs) var(--space-xl);
 
   /*
-    Deliberately *not* capped at --container-max like .content: the ticker spans
-    the hero's full inline width so its top hairline reads as a full-width rule
-    across the section, bounded only by .hero's own edge padding.
+    True full bleed — the only element in the hero that ignores the section's own
+    edge padding. Cancelling --container-padding with a negative inline margin
+    (rather than a viewport-width trick) keeps it correct whatever that token
+    becomes. `inline-size: auto` is required: at 100% the box would still measure
+    the padded content width and the negative margins would overshoot the
+    viewport. .hero is overflow: hidden, so nothing here can produce a scrollbar.
   */
-  inline-size: 100%;
+  inline-size: auto;
+  margin-inline: calc(var(--container-padding) * -1);
   padding-block-start: var(--space-md);
   border-block-start: 1px solid var(--color-border-subtle);
 
@@ -271,12 +257,18 @@
     text-align: center;
   }
 
-  /* Logo leads on a stacked layout — it is the strongest visual anchor. */
-  .brand {
-    order: -1;
-  }
+  /*
+    Both columns centre themselves. No `order` override any more: the logo is the
+    strongest visual anchor and should lead the stack, and it now lives in
+    .identity, which is already first in the markup.
 
-  .intro {
+    .logo-heading is in the list because its own box can end up wider than the
+    mark it holds (see its comment) — centring the box alone would leave the logo
+    visibly off-centre, so the image is centred inside it too.
+  */
+  .identity,
+  .pitch,
+  .logo-heading {
     align-items: center;
   }
 }
@@ -295,12 +287,34 @@
     carry Framer Motion entrance transforms (see Hero.jsx), and an inline
     transform from JS would overwrite a CSS one on the same element.
   */
-  .intro {
+  .identity {
     transform: translate(-1.5rem, -2rem);
   }
 
-  .brand {
-    transform: translate(1.5rem, -2rem);
+  /*
+    No inline offset — the column's own end-alignment already puts this pair at
+    the right edge. Only the block axis is nudged, and further up than the left
+    column so the pair reads as pinned to the top of its column rather than
+    floating in the middle of it.
+
+    text-align follows the box: the tagline is one line at every desktop width
+    today, but if it ever wraps, ragged-left copy against a right edge would give
+    the alignment away. Set here rather than on the base rule so it cannot
+    override the centred stacked layout above.
+  */
+  .pitch {
+    transform: translateY(-3.5rem);
+    text-align: end;
+  }
+
+  /*
+    Set in from the logo's left edge, deliberately far enough that it reads as an
+    indent rather than a misalignment. A margin rather than a transform — this
+    element carries a Framer Motion entrance transform (see Hero.jsx), and an inline
+    transform from JS overwrites a CSS one on the same element.
+  */
+  .location {
+    margin-inline-start: var(--space-lg);
   }
 
   .tagline {

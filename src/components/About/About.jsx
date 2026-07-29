@@ -1,15 +1,24 @@
+import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
+/* Outline set, matching the hero CTA's HiOutlineMail. */
+import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 
+import buttonStyles from '../shared/Button.module.css'
 import styles from './About.module.css'
 
+/* Lets the CTA animate without wrapping the Link in an extra layout box. */
+const MotionLink = motion.create(Link)
+
 /*
-  Body copy lives here as data so the paragraphs can move to /src/data or a CMS
-  later without touching the layout.
+  The short home-page blurb. The long-form version lives on /about — keep this
+  to two paragraphs so the section holds its single-screen height.
+
+  Copy lives here as data so it can move to /src/data or a CMS later without
+  touching the layout.
 */
 const paragraphs = [
-  'AGB Media is an arts and media production house based in Doha, guided by a long and distinguished track record of experience in theatre, drama, television, and visual production. We take every idea from concept to screen or stage through teams carefully assembled for each individual project, ensuring the highest standards of quality and flexibility.',
-  'Our true capital lies in the artistic career of our founder, the veteran Qatari artist Abdullah Ghayfan, the expertise of our CEO, writer and director Nael Al-Jarabaa, and the extensive professional network both have cultivated across Qatar, the Gulf region, and the wider Arab world.',
-  'We provide a comprehensive spectrum of visual services — from cinema, television drama, and theatre to animation, visual effects, and motion graphics, as well as full production, execution, post-production, and professional training programmes. The departments listed in this profile represent only a selection of our capabilities and are not an exhaustive description of the company’s structure. We deliver every aspect of visual content according to the specific requirements of each project.',
+  'AGB Media is a Doha-based arts and media production house specialising in theatre, television, film, and visual content. Built on decades of creative experience, we bring together carefully selected teams to transform ideas into high-quality productions from concept to final delivery.',
+  'Led by veteran Qatari artist Abdullah Ghayfan and writer-director Nael Al-Jarabah, AGB Media combines artistic leadership with a strong regional network to deliver productions that meet international standards while staying true to Gulf culture.',
 ]
 
 function About() {
@@ -29,32 +38,46 @@ function About() {
         transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
       }
 
+  /* Stagger by delaying each block against the same base transition. */
+  const revealAt = (delay) =>
+    shouldReduceMotion
+      ? {}
+      : { ...reveal, transition: { ...reveal.transition, delay } }
+
   return (
     <section className={styles.about} id="about">
       <div className={styles.inner}>
+        {/*
+          Two-part opening: a tracked gold label, then the section title. The
+          title replaces the pull-quote that used to anchor this section, and it
+          is the section's h2 — previously the block had no heading at all.
+        */}
         <motion.p className={styles.eyebrow} {...reveal}>
-          The Story
+          Who We Are
         </motion.p>
 
-        {/* The sharpest line in the copy, pulled out as the visual anchor. */}
-        <motion.blockquote
-          className={styles.quote}
-          {...reveal}
-          transition={{ ...reveal.transition, delay: shouldReduceMotion ? 0 : 0.1 }}
-        >
-          The company is new.
-          <span className={styles['quote-accent']}> The hands behind it are not.</span>
-        </motion.blockquote>
+        <motion.h2 className={styles.title} {...revealAt(0.08)}>
+          Our <span className={styles['title-accent']}>Story</span>
+        </motion.h2>
 
-        <motion.div
-          className={styles.body}
-          {...reveal}
-          transition={{ ...reveal.transition, delay: shouldReduceMotion ? 0 : 0.2 }}
-        >
+        <motion.div className={styles.body} {...revealAt(0.16)}>
           {paragraphs.map((text) => (
             <p key={text.slice(0, 32)}>{text}</p>
           ))}
         </motion.div>
+
+        {/*
+          /about is not routed yet — the link is wired ahead of the page.
+          Shared button visuals + a local class carrying only its spacing.
+        */}
+        <MotionLink
+          to="/about"
+          className={`${buttonStyles.button} ${buttonStyles['button-reveal']} ${styles.cta}`}
+          {...revealAt(0.24)}
+        >
+          <span>Discover Our Story</span>
+          <HiOutlineArrowNarrowRight size={20} aria-hidden="true" />
+        </MotionLink>
       </div>
     </section>
   )

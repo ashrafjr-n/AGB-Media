@@ -36,9 +36,9 @@
   overflow: hidden;
 
   /*
-    Translucent black rather than solid: the backdrop-filter has to have
-    something to show through. -webkit- prefix for Safari, which still requires
-    it for backdrop-filter.
+    Translucent (--color-black at 0.5) rather than solid: the backdrop-filter has
+    to have something to show through. -webkit- prefix for Safari, which still
+    requires it for backdrop-filter.
   */
   background-color: var(--color-glass);
   -webkit-backdrop-filter: blur(var(--header-blur));
@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: space-between;
 
-  block-size: 4.25rem;
+  block-size: 3.75rem;
   padding-inline: var(--space-lg);
 }
 

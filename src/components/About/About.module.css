@@ -1,22 +1,43 @@
 /*
-  Text-only section. The visual interest comes from three things and nothing
-  more: a tracked gold eyebrow, an oversized pull-quote, and a single gold
-  hairline running down the inline start of the body copy.
+  Text-only section, one screen tall. The visual interest comes from three things
+  and nothing more: a tracked gold eyebrow over a gold-accented title, a single
+  gold hairline running down the inline start of the body copy, and the CTA.
 */
 
 /*
-  Solid black, matching the hero. Opaque rather than transparent on purpose: the
-  hero's animated backdrop is a fixed layer that the page scrolls over, and this
-  is the surface that covers it.
+  Fully opaque --color-black, and the opacity is load-bearing rather than cosmetic:
+  the hero's video backdrop is `position: fixed`, so it stays put while the document
+  scrolls over it. This background is the surface that covers it — and what tells
+  the hero to pause the video, since Hero.jsx treats "one viewport scrolled" as
+  "fully covered". Any transparency here — a gradient that fades out, an rgba()
+  alpha — would leave the footage showing through a paused frame. Do not soften it.
 
-  This section used to carry a navy gradient wash to separate itself from the
-  hero. That separation now comes from the backdrop fading out across the hero,
-  so the wash was removed — there is no second shade here.
+  The boundary with the hero is deliberately untreated: this section's top edge
+  meets the footage directly, flat colour against video, with no gradient band or
+  shadow easing the join. A previous pass faded it and it was removed on purpose —
+  do not reintroduce one.
+
+  It paints over the backdrop without needing a z-index: `.backdrop` sits at
+  z-index 0 in the root stacking context, this section is positioned with
+  z-index auto, and same-layer positioned boxes paint in tree order — About
+  comes after Hero in the markup, so it wins.
+
+  Height: one full screen, with the top padding clearing the fixed header the
+  same way .hero does. `min-block-size` rather than `block-size` — it resolves to
+  exactly 100vh wherever the copy fits, but on a short phone in landscape the
+  block would otherwise overflow its own box and bleed past the section.
 */
 .about {
   position: relative;
-  padding-block: var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  min-block-size: 100vh;
+  padding-block-start: calc(var(--header-height) + var(--space-lg));
+  padding-block-end: var(--space-lg);
   padding-inline: var(--container-padding);
+
   background-color: var(--color-black);
 }
 
@@ -26,14 +47,14 @@
   margin-inline: auto;
 }
 
-/* --- Eyebrow ------------------------------------------------------------- */
+/* --- Opening ------------------------------------------------------------- */
 
 .eyebrow {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
 
-  margin-block-end: var(--space-lg);
+  margin-block-end: var(--space-sm);
 
   color: var(--color-gold);
   font-size: var(--text-xs);
@@ -50,21 +71,21 @@
   background-color: var(--color-border);
 }
 
-/* --- Pull-quote ---------------------------------------------------------- */
+/*
+  Sized a step under the hero wordmark on purpose — it anchors this section
+  without competing with the first screen.
+*/
+.title {
+  margin-block-end: var(--space-xl);
 
-.quote {
-  max-inline-size: 20ch;
-  margin-block-end: var(--space-2xl);
-
-  font-size: var(--text-4xl);
-  font-weight: var(--font-weight-heavy);
+  font-size: var(--text-2xl);
   line-height: 1.05;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
-  text-wrap: balance;
 }
 
-.quote-accent {
+/* Carries the gold the removed pull-quote used to bring to this section. */
+.title-accent {
   color: var(--color-gold);
 }
 
@@ -95,14 +116,32 @@
   color: var(--color-text);
 }
 
+/* --- CTA ----------------------------------------------------------------- */
+
+/*
+  Spacing only. This used to be a hand-copy of the hero button's visuals, which is
+  exactly the duplication components/shared/Button.module.css now owns — that file
+  is the single definition and is applied alongside this class. The trailing arrow's
+  hover nudge comes from there too.
+*/
+.cta {
+  margin-block-start: var(--space-xl);
+  /* Matches .body's hairline indent so the button lines up under the copy. */
+  margin-inline-start: var(--space-md);
+}
+
 /* --- Breakpoints ---------------------------------------------------------- */
 
 @media (min-width: 64rem) {
-  .quote {
-    max-inline-size: 24ch;
+  .title {
+    font-size: var(--text-3xl);
   }
 
   .body {
     padding-inline-start: var(--space-lg);
+  }
+
+  .cta {
+    margin-inline-start: var(--space-lg);
   }
 }

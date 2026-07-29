@@ -7,8 +7,30 @@
 :root {
   /* --- Color: core palette --------------------------------------------- */
 
-  /* Pure black. The dominant surface of the entire site. */
-  --color-black: #000000;
+  /*
+    The dominant surface of the entire site, and the only background colour on it.
+    A flat near-black: exactly neutral now, all three channels equal — no steel,
+    slate, or blue lean whatsoever.
+
+    The lineage runs #0c0f14 -> #1b1d20 -> #131315 -> #070708 -> #0b0b0c -> here:
+    the early values were set while the grain overlay was still adding luminance on
+    top of them, so the page always rendered lighter than its own token. The grain
+    has blended in soft-light since #131315 and no longer lifts the base, so this
+    value is what actually reaches the screen. This is the final ground tone — the
+    token is settled and takes no further adjustment.
+  */
+  --color-black: #050505;
+
+  /*
+    The ground lifted just enough to separate a surface from the page — an 8-point
+    step, same neutral hue, luminance only. Retuned alongside the ground each time
+    it moves: the point is a lift that stays deliberate and never drifts far enough
+    to read as grey. For cards or controls that must sit *on* the page.
+
+    Currently unreferenced: the reveal button paints its panels in --color-black on
+    purpose, so that at rest they merge into the page (see Button.module.css).
+  */
+  --color-raised: #0d0d0d;
 
   /*
     Signature accent, sampled from the midtone band of the logo
@@ -18,15 +40,14 @@
   --color-gold-light: #e09a3c; /* hover / focus / raised state */
   --color-gold-deep: #8f2804;  /* rust from the logo's lower band; gradients only */
 
-  /* Very dark navy. Secondary surfaces only — never a dominant background. */
-  --color-navy: #0a0e1a;
-
   /*
-    Rich black — pure black carrying a trace of the logo's rust. Pure #000 over
-    bright footage reads flat and washed; this keeps the wordmark reading as
-    black while giving it a warm depth. Type only, never a surface.
+    Very dark navy. Secondary surfaces only — never a dominant background.
+    Nothing uses it, and it has drifted out of step with the palette: now that the
+    ground is #050505 this is clearly *lighter* than it, and distinctly bluer,
+    where the rest of the palette has settled on neutral. Retune or delete it before
+    using it for anything; --color-raised is the neutral lift to reach for instead.
   */
-  --color-black-rich: #150802;
+  --color-navy: #0a0e1a;
 
   /* Warm off-white so body text never reads as clinical pure white. */
   --color-text: #f5f5f0;
@@ -38,10 +59,25 @@
   --color-surface: var(--color-navy);
   --color-border: rgba(201, 112, 20, 0.35);   /* gold at low opacity */
 
-  /* Translucent black behind backdrop-filter surfaces (the header glass). */
-  --color-glass: rgba(0, 0, 0, 0.5);
+  /*
+    Translucent surfaces: the header glass, a heavy modal-weight cover, and the
+    light scrim over the hero footage. All three are --color-black at an alpha,
+    written out literally rather than derived — which means they have to be updated
+    by hand whenever that token moves. Nothing anywhere may darken a surface with
+    raw black instead; that is what puts a visible seam between two sections, since
+    pure black is neither as light nor as cool as the ground everything else uses.
+  */
+  --color-glass: rgba(5, 5, 5, 0.5);
   --color-border-subtle: rgba(245, 245, 240, 0.08);
-  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-overlay: rgba(5, 5, 5, 0.72);
+  --color-scrim: rgba(5, 5, 5, 0.25);
+
+  /*
+    Gold at very low alpha — a tint that warms a surface without colouring it.
+    The quiet button's hover fill; deliberately weak enough that it reads as the
+    panel catching light rather than as a filled state.
+  */
+  --color-gold-veil: rgba(201, 112, 20, 0.1);
 
   /* --- Typography ------------------------------------------------------- */
 
@@ -75,14 +111,11 @@
   --text-2xl: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
   --text-3xl: clamp(2rem, 1.5rem + 2.4vw, 3rem);
   --text-4xl: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
-  /* Unused so far — held for a full-bleed display line larger than the hero. */
-  --text-5xl: clamp(3rem, 1.7rem + 6.5vw, 7rem);
   /*
-    The hero wordmark. It deliberately tops out *below* --text-5xl: the wordmark
-    shares its row with the logo, so it is sized against that column rather than
-    against the ladder. Not a mistake — 6xl is the smaller of the two.
+    Top of the scale, currently unused — the hero sets its brand with the logo
+    rather than a wordmark, so nothing needs type this large yet.
   */
-  --text-6xl: clamp(4rem, 3.4rem + 2vw, 4.5rem);
+  --text-5xl: clamp(3rem, 1.7rem + 6.5vw, 7rem);
 
   --leading-tight: 1.15;
   --leading-normal: 1.6;
@@ -111,18 +144,20 @@
   --container-padding: var(--space-md);
 
   /*
-    Header geometry. `--header-height` is the resting height and is what page
-    sections offset against — the docked height is purely visual and must not
-    feed layout, or content would shift as the header morphs.
+    Header geometry. `--header-height` is what page sections offset their top
+    padding against; the docked height below is the pill's actual painted height
+    and must never feed layout.
   */
-  --header-height: 5rem;         /* 80px */
+  --header-height: 4.25rem;      /* 68px */
   /*
-    The floating pill's own height on desktop. Taller than the row it contains
-    needs to be — the extra is breathing room around the logo and nav, not scale.
-    Purely visual: with --header-dock-top it must stay under --header-height plus
-    the hero's own top padding, or the pill starts crowding hero content.
+    The floating pill's own height on desktop. Still taller than the row it
+    contains strictly needs — the surplus is breathing room around the logo and
+    nav, which keep their own sizes — but tightened so the bar reads as a slim
+    strip rather than a slab. Purely visual: with --header-dock-top it must stay
+    under --header-height plus the hero's top padding, or the pill starts
+    crowding hero content.
   */
-  --header-height-docked: 5rem;  /* 80px */
+  --header-height-docked: 4.25rem; /* 68px */
   --header-dock-inset: 1rem;     /* 16px from each side once floating */
   --header-dock-top: 0.75rem;    /* 12px clear of the top edge */
   --header-blur: 12px;
@@ -160,6 +195,12 @@
 
   /* --- Texture ---------------------------------------------------------- */
 
-  /* Film-grain intensity. Kept low on purpose; above ~0.06 it reads as dirt. */
-  --noise-opacity: 0.04;
+  /*
+    Film-grain intensity. Read alongside the soft-light blend in global.css: that
+    blend pivots around mid-grey, and on a ground this dark it compresses the
+    texture hard, so the grain is very subtle at this value. Raise it if more
+    tooth is wanted — it can go considerably higher than the 0.06 ceiling that
+    applied under the old additive blend, because it can no longer lift the base.
+  */
+  --noise-opacity: 0.03;
 }

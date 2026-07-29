@@ -163,6 +163,21 @@ body::after {
   z-index: var(--z-noise);
   pointer-events: none;
   opacity: var(--noise-opacity);
+
+  /*
+    soft-light, not the default normal blend, and this is the reason the ground
+    colour can be trusted. feTurbulence emits light, semi-transparent noise; laid
+    straight over a near-black page it only ever *added* luminance, so the rendered
+    background measured ~3 points above --color-black and the whole site read
+    lighter than its own token. soft-light pivots around mid-grey instead — noise
+    above 50% lifts, below 50% darkens — so the texture arrives at roughly net-zero
+    luminance and --color-black is what actually reaches the screen.
+
+    Cost: a viewport-sized blended layer makes the browser composite the page
+    through it. Cheap next to the video decode, but it is not free.
+  */
+  mix-blend-mode: soft-light;
+
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 140px 140px;
@@ -184,6 +199,8 @@ body::after {
   z-index: var(--z-base);
   pointer-events: none;
   opacity: var(--noise-opacity);
+  /* Same reasoning as body::after above — must not lift the surface it textures. */
+  mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 140px 140px;

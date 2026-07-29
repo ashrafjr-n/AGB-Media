@@ -8,9 +8,14 @@ import styles from './Header.module.css'
 /*
   Navigation model. Extend this array to add routes — both the desktop bar and
   the mobile drawer render from it.
+
+  /about and /services have no <Route> in App.jsx yet; the links are wired ahead
+  of the pages, the same way About's CTA already points at /about.
 */
 const navLinks = [
   { label: 'Home', to: '/' },
+  { label: 'About', to: '/about' },
+  { label: 'Services', to: '/services' },
   { label: 'Contact', to: '/contact' },
 ]
 
