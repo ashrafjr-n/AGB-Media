@@ -4,6 +4,15 @@
   hairline running down the inline start of the body copy.
 */
 
+/*
+  Solid black, matching the hero. Opaque rather than transparent on purpose: the
+  hero's animated backdrop is a fixed layer that the page scrolls over, and this
+  is the surface that covers it.
+
+  This section used to carry a navy gradient wash to separate itself from the
+  hero. That separation now comes from the backdrop fading out across the hero,
+  so the wash was removed — there is no second shade here.
+*/
 .about {
   position: relative;
   padding-block: var(--space-3xl);
@@ -11,27 +20,7 @@
   background-color: var(--color-black);
 }
 
-/*
-  A faint navy wash bleeding up from the section's start edge — enough to
-  separate About from the pure-black hero above it without reading as a band.
-*/
-.about::before {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
-  block-size: 60%;
-  pointer-events: none;
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-navy) 0%,
-    transparent 100%
-  );
-  opacity: 0.55;
-}
-
 .inner {
-  position: relative; /* lifts content above the ::before wash */
   inline-size: 100%;
   max-inline-size: var(--container-max);
   margin-inline: auto;

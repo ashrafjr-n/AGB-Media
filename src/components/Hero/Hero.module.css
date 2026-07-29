@@ -18,8 +18,49 @@
   padding-block-end: var(--space-lg);
   padding-inline: var(--container-padding);
 
-  background-color: var(--color-black);
+  /*
+    No background of its own. The animated backdrop below is a *child* of this
+    section, and a child always paints over its parent's background — an opaque
+    black here would leave the shader permanently hidden. `body` in global.css is
+    already black, which is what shows once the backdrop has faded out.
+  */
+  background-color: transparent;
   overflow: hidden;
+}
+
+/* --- Animated backdrop ---------------------------------------------------- */
+
+/*
+  Fixed, not absolute, so it stays put while the rest of the page scrolls over
+  it — it reads as a backdrop the document slides across rather than as part of
+  the hero's own box. `overflow: hidden` on .hero does not clip it: a fixed
+  element is laid out against the viewport, and only an ancestor that is itself a
+  fixed containing block (transform, filter, contain) would crop it.
+
+  z-index 0 rather than a negative value keeps it inside the normal positioned
+  layer, where later positioned siblings — About, with its opaque black — paint
+  on top of it in tree order. A negative index would work today but would be
+  trapped the moment any ancestor became a stacking context.
+
+  pointer-events: none is mandatory: full-viewport and fixed, it would otherwise
+  intercept every click and hover on the page.
+*/
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/*
+  The two content blocks are lifted above the backdrop explicitly. Static
+  elements paint *below* positioned ones regardless of source order, so without a
+  z-index of their own they would sit behind the shader.
+*/
+.content,
+.ticker {
+  position: relative;
+  z-index: var(--z-base);
 }
 
 .content {

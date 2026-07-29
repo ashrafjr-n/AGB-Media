@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
+import { useReducedMotion } from 'framer-motion'
 import { HiOutlineMail } from 'react-icons/hi'
 
+import Grainient from '../shared/Grainient'
+import useScrollPosition from '../../hooks/useScrollPosition'
 import styles from './Hero.module.css'
 
 /*
@@ -18,8 +21,40 @@ const tickerItems = [
 ]
 
 function Hero() {
+  const { viewportProgress } = useScrollPosition()
+  const shouldReduceMotion = useReducedMotion()
+
+  /*
+    The backdrop is a fixed layer, so it does not scroll away with the hero — it
+    has to be faded out instead. Tied straight to scroll rather than to a
+    threshold: full strength at the top of the hero, gone by the time a whole
+    viewport has passed, which is exactly when About takes over the screen.
+
+    Inline because the value is continuous and computed per frame — the one case
+    CLAUDE.md allows an inline style for.
+  */
+  const backdropOpacity = 1 - viewportProgress
+
   return (
     <section className={styles.hero}>
+      {/*
+        Decorative. Reduced motion is honoured by stopping the shader's clock
+        rather than by dropping the layer: at timeSpeed 0 the gradient renders as
+        a still image, so the composition survives and only the drift goes away.
+      */}
+      <div
+        className={styles.backdrop}
+        style={{ opacity: backdropOpacity }}
+        aria-hidden="true"
+      >
+        <Grainient
+          color1="#000000"
+          color2="#7A4A18"
+          color3="#050810"
+          timeSpeed={shouldReduceMotion ? 0 : 0.25}
+        />
+      </div>
+
       <div className={styles.content}>
         {/* Left column — location, wordmark, call to action. */}
         <div className={styles.intro}>

@@ -150,6 +150,8 @@ Comment the *why*, not the *what*. This project grows incrementally across many 
 
 Already installed — do not reinstall:
 
-`react` · `react-dom` · `react-router-dom` · `framer-motion` · `react-icons`
+`react` · `react-dom` · `react-router-dom` · `framer-motion` · `react-icons` · `ogl`
+
+`ogl` is the WebGL layer behind `components/shared/Grainient.jsx` (the hero's animated gradient backdrop) and is used for nothing else. Framer Motion remains the only animation library for anything in the DOM — see §4 Motion.
 
 `tailwindcss` and `@tailwindcss/vite` remain in `package.json` but are **disconnected from the build**. They can be uninstalled by the user at any time.

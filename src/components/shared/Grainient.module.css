@@ -1,0 +1,14 @@
+/*
+  Sizing shell for the WebGL canvas. Grainient measures this element with a
+  ResizeObserver and sizes its drawing buffer to match, so the class has to
+  resolve to a real box — it fills whatever the parent gives it and never more.
+
+  `overflow: hidden` guards against the canvas's sub-pixel rounding (the
+  drawing buffer is floored to whole pixels) spilling a hairline past the box.
+*/
+.grainient {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: hidden;
+}

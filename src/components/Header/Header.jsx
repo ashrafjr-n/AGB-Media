@@ -48,13 +48,24 @@ function Header() {
   const shouldReduceMotion = useReducedMotion()
 
   /*
-    The header docks once the hero (100svh) has scrolled past. The morph itself
-    is pure CSS on these data attributes — see Header.module.css. Doing it in CSS
-    rather than JS means every property shares one transition declaration, so
-    they cannot drift out of sync, and the global prefers-reduced-motion rule in
-    global.css already collapses it to an instant state change.
+    The header docks halfway down the hero (100svh), not at its far edge — the
+    morph then lands while the hero is still on screen, which is where it reads
+    as intentional.
+
+    One plain threshold, no hysteresis, and that is safe here: docking only
+    changes the fixed wrapper's own padding and the bar's height, and the hero's
+    padding-block-start is a constant token, so nothing about the docked state
+    alters document height or scroll offset. There is no feedback loop that
+    could make the state oscillate, and crossing back up simply flips the
+    boolean, running the same transition in reverse.
+
+    The morph itself is pure CSS on these data attributes — see
+    Header.module.css. Doing it in CSS rather than JS means every property
+    shares one transition declaration, so they cannot drift out of sync in
+    either direction, and the global prefers-reduced-motion rule in global.css
+    already collapses it to an instant state change.
   */
-  const isDocked = viewportHeight > 0 && scrollY > viewportHeight
+  const isDocked = viewportHeight > 0 && scrollY > viewportHeight * 0.5
 
   /*
     These two animations are Framer Motion driven, so the CSS reduced-motion
