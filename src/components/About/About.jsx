@@ -7,9 +7,9 @@ import styles from './About.module.css'
   later without touching the layout.
 */
 const paragraphs = [
-  'AGB Media is an arts and media production house based in Doha, founded in 2025 by creators with decades of work behind them across theater, drama, and television.',
-  "Its real currency is inheritance and direction: the artistic legacy of founder Abdullah Ghifan, a veteran Qatari artist, the creative command of CEO Nael Al-Jarabaa, a writer and director, and the network the two have built across Qatar, the Gulf, and the wider Arab world.",
-  'AGB makes work that speaks to local audiences in their own voice while holding to international production standards — television drama, film, theater, animation, AI-enhanced production, post-production, and screenwriting training.',
+  'AGB Media is an arts and media production house based in Doha, guided by a long and distinguished track record of experience in theatre, drama, television, and visual production. We take every idea from concept to screen or stage through teams carefully assembled for each individual project, ensuring the highest standards of quality and flexibility.',
+  'Our true capital lies in the artistic career of our founder, the veteran Qatari artist Abdullah Ghayfan, the expertise of our CEO, writer and director Nael Al-Jarabaa, and the extensive professional network both have cultivated across Qatar, the Gulf region, and the wider Arab world.',
+  'We provide a comprehensive spectrum of visual services — from cinema, television drama, and theatre to animation, visual effects, and motion graphics, as well as full production, execution, post-production, and professional training programmes. The departments listed in this profile represent only a selection of our capabilities and are not an exhaustive description of the company’s structure. We deliver every aspect of visual content according to the specific requirements of each project.',
 ]
 
 function About() {
