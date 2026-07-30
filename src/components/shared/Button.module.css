@@ -370,6 +370,26 @@
 }
 
 /*
+  Frozen for the same reason when the hero has left the screen — see the note on
+  `data-offscreen` in Hero.jsx. HeroHeader is this variant's only call site, so the
+  attribute reaches it via .hero.
+
+  Worth pausing even though the button is small: nothing here is compositable. The
+  animation drives a registered custom property that feeds a conic-gradient, which is
+  then cut to a ring by two masks composited with xor — so every frame is a full
+  re-raster of the element, not a transform the compositor can hoist. The comment on
+  the animation above already says as much and calls it cheap on a box this size;
+  cheap is not free, and this ran sixty times a second for the whole life of the page
+  including the entire scroll past the hero.
+
+  An attribute selector rather than a class, because CSS Modules hashes class names
+  per file and the attribute is set in a different component.
+*/
+[data-offscreen='true'] .button-featured::after {
+  animation-play-state: paused;
+}
+
+/*
   prefers-reduced-motion is already handled: the block in global.css governs CSS
   animations site-wide, and this is a CSS animation rather than one Framer Motion drives
   inline — so unlike every motion.* element in the project, it needs no JS gate. Reduced,

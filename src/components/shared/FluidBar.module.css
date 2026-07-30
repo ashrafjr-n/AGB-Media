@@ -141,6 +141,32 @@
 }
 
 /*
+  Stopped once the hero has left the screen — see the note on `data-offscreen` in
+  Hero.jsx, which is the element carrying the attribute.
+
+  This is the single most valuable pause on the site, and the reason is the comment
+  above about compositor transforms being free: it is not true here. These layers sit
+  inside .surface, which carries `filter: url(#fluid-bar-turbulence)`, and a transform
+  under a filtered ancestor cannot ride the compositor — moving the layers changes the
+  filter's input, so feDisplacementMap has to re-run across the whole strip on every
+  frame. That was happening sixty times a second for the entire life of the page,
+  including the several viewports of it where the hero is nowhere near the screen.
+
+  `will-change: transform` is dropped with the animation for the same reason it is set
+  at all: it is a promise about imminent motion, and a hint left on a still element
+  only costs a compositor layer.
+
+  Paused rather than cancelled, so the three layers keep their offsets against each
+  other and the water does not resync when the hero comes back.
+*/
+[data-offscreen='true'] .layer-light,
+[data-offscreen='true'] .layer-shade,
+[data-offscreen='true'] .layer-glint {
+  animation-play-state: paused;
+  will-change: auto;
+}
+
+/*
   Exactly one tile of travel. translate3d, not translateX, so it is unambiguously a
   compositor transform.
 */

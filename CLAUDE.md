@@ -40,14 +40,16 @@ Single source of truth for every task in this repository. Read this before writi
 | `App.jsx` | Router shell. One route. |
 | `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`). |
 | `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden for the whole hero via `data-hidden` + `inert`. See §4 "The two headers". |
-| `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`. |
+| `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`, and carries `data-offscreen` at the same threshold to stop the animations inside it — see §7. |
 | `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
 | `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. The reference implementation for `whileInView` reveals. |
 | `components/shared/Button.module.css` | **The** button definition — base + **two** glass variants. A module with no `.jsx` sibling, on purpose. |
 | `components/shared/FluidBar.jsx` | The hero ticker's water — three drifting gradient masses under an SVG turbulence displacement. **Pure markup + CSS: no canvas, no WebGL, no JS.** The only genuinely moving surface on the site. |
-| `components/shared/FluidLens.jsx` | The Story circle's glass lens — R3F `<Canvas>` with the story video as a `VideoTexture` on a frustum-filling plane and a `MeshTransmissionMaterial` lens in front of it. The video is **inside the scene** because transmission can only refract what is in the WebGL buffer. Takes a `pointer` ref (not props) so mousemove does not re-render the canvas. |
+| `components/shared/FluidLens.jsx` | The Story circle's glass lens — R3F `<Canvas>` with the story video as a `VideoTexture` on a frustum-filling plane and a `MeshTransmissionMaterial` lens in front of it. The video is **inside the scene** because transmission can only refract what is in the WebGL buffer. Takes a `pointer` ref (not props) so mousemove does not re-render the canvas. Renders **on demand**, not every frame — see §7. |
+| `components/Founder/Founder.jsx` | The founder's page-within-a-section, pinned across About's stage and faded in over the finished zoom. Paints no ground of its own — the blurred frozen frame *is* its background. Passes `paused` to `LogoLoop` while its own opacity is 0. |
+| `components/shared/LogoLoop.jsx` | The continuously scrolling strip of production stills. CSS animation, JS only measures. Stops via `data-paused` when the caller says it is invisible **or** its own `IntersectionObserver` says it is off screen — see §7. |
 | `hooks/useMediaQuery.js` | Subscribes to a media query from JS, for the case a CSS breakpoint cannot reach: deciding whether to **mount** at all. Exists for the lens — `display: none` would still build the WebGL context, fetch the model and decode a video texture. |
-| `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. `viewportProgress` is 0→1 over the first viewport, which is what both the header handoff and the video gate compare against. |
+| `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. **One module-scoped listener and one `scrollY` read per frame** shared by every consumer, so a fourth costs nothing. Takes an **optional selector**, which narrows what is stored in state so a consumer that only wants a threshold does not re-render on every scroll frame; all three current consumers pass the file's own `isPastFirstViewport` export, which *is* the header and video-gate threshold rather than a matching copy of it. |
 | `data/navLinks.js` | The nav model, shared by both headers. `Contact` carries `featured: true`. |
 | `styles/variables.css` | Design tokens **only** — no selectors beyond `:root`. |
 | `styles/global.css` | The `@import`s, reset, base element styles, film-grain overlay, `.noise-overlay` and `.sr-only`. Imported once, by `main.jsx`. |
@@ -57,15 +59,17 @@ Single source of truth for every task in this repository. Read this before writi
 | Path | What | Status |
 | --- | --- | --- |
 | `public/assets/images/agb-logo.png` | 360×672 **portrait** mark, 256 KB. Referenced as `/assets/images/agb-logo.png` from `Header`, `HeroHeader` and `About`. | in use |
-| `src/assets/videos/hero.webm` | 3840×2160, 20 s, **23 MB**. Vite-imported, so it is bundled and hashed rather than served from `public/`. | in use (Hero backdrop) |
-| `src/assets/videos/story.webm` | **75 MB.** Also Vite-imported and bundled. | in use (Story circle, via `FluidLens` or the plain `<video>` fallback) |
+| `src/assets/abdullah/*.jpg` | 1280×720 originals. Only `abdullah.jpg` is imported (the portrait, drawn at ~440×350). The six numbered stills are **not** — nothing imports them, so Vite does not bundle them. | source only |
+| `src/assets/abdullah/strip/*.jpg` | 640×360 cuts of the same six, 368 KB the set against 1.8 MB. What `Founder` actually imports. LogoLoop draws them at most 152px tall, so these are 2× and nothing is softer; the originals stay put to re-cut from. | in use (the work strip) |
+| `src/assets/videos/hero.webm` | **3.7 MB.** Vite-imported, so it is bundled and hashed rather than served from `public/`. | in use (Hero backdrop) |
+| `src/assets/videos/story.webm` | **4.7 MB.** Also Vite-imported and bundled. | in use (Story circle, via `FluidLens` or the plain `<video>` fallback) |
 | `public/assets/3d/lens.glb` | The lens mesh, fetched at runtime from `public/` rather than bundled. `FluidLens` reads node `Cylinder` and **guards for its absence** — a re-export under a different node name renders no lens rather than throwing. | in use |
 
 Because the logo is portrait, **anything sizing it must drive `block-size` and leave `inline-size: auto`** — width has to derive from the capped height, not the reverse. There are no icon sprites; the one 3D model is `lens.glb`.
 
-**Video is the site's entire weight budget, and it is now ~100 MB.** `hero.webm` is 23 MB of 4K decoded on the first screen; `story.webm` is **75 MB** on top of it, and both are Vite-imported, so both land in the bundle rather than being streamed from `public/`. A production build emits them as two hashed assets totalling ~100 MB. That is far past what a portfolio site should ship, and compressing `story.webm` is the single highest-value optimisation available — it is a small circular window that never displays more than ~600 px of the frame. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, has to account for this.
+**Both videos have since been compressed** — the pair is ~8.4 MB where it was ~100 MB, and the "compress `story.webm`" note that used to live here is done. They are still Vite-imported, so both land in the bundle rather than being streamed from `public/`; a production build emits them as two hashed assets. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, still has to account for two simultaneous decodes on the home page.
 
-The JS bundle is ~1.86 MB (540 KB gzipped), essentially all of it `three` + `@react-three/*` for the lens. `About.jsx` already gates the lens behind `useMediaQuery` so phones never mount it, but the library is still in the main chunk — a `React.lazy` split is the obvious next step if that matters.
+The lens chunk is ~1.49 MB (421 KB gzipped), essentially all of it `three` + `@react-three/*`, and `About.jsx` **already `React.lazy`-splits it** — the main chunk is ~388 KB (125 KB gzipped). `useMediaQuery` additionally keeps phones from mounting the lens at all.
 
 ---
 
@@ -262,7 +266,7 @@ Framer Motion is the only animation library. Section reveals use `whileInView` w
 
 **The hero's entrance is different, and deliberately so:** it is mount-triggered (`initial`/`animate`, never `whileInView`) because it should fire on page load rather than on scroll-in, and it must play **once per session**. `HeroHeader.jsx` guards it with a module-scoped `entrancePlayed` flag; when set, `rise()` returns no animation props at all, so elements render in their natural resting state with no `initial` to animate back from. (It lives in `HeroHeader.jsx` rather than `Hero.jsx` because the hero body is empty — the header is the only animated content in the hero.)
 
-Two things about that flag are load-bearing. It lives at **module scope**, not in state — and note `HeroHeader` is re-rendered on every frame of a scroll, because its parent `Hero` watches `viewportProgress` to gate video playback, which is why the flag is read once into a `useRef` rather than read inline — a mount-triggered animation cannot be retriggered by scrolling, but any remount replays it from the top (routing away and back is the obvious case), and a flag inside the component would be reset by exactly that. And it latches on **animation completion, not on mount** — StrictMode deliberately mounts, unmounts and remounts every component in development, so a mount-latched flag would be set by that throwaway first mount and would suppress the entrance before anyone saw it.
+Two things about that flag are load-bearing. It lives at **module scope**, not in state: any remount replays the entrance from the top (routing away and back is the obvious case), and a flag inside the component would be reset by exactly that. (`Hero` no longer re-renders on every scroll frame — it subscribes to a boolean through `useScrollPosition`'s selector — so `HeroHeader` is no longer re-rendered per frame either. The flag is still read into a `useRef` rather than inline, which costs nothing and keeps the read independent of render count.) And it latches on **animation completion, not on mount** — StrictMode deliberately mounts, unmounts and remounts every component in development, so a mount-latched flag would be set by that throwaway first mount and would suppress the entrance before anyone saw it.
 
 **Every Framer Motion animation must gate on `useReducedMotion()`.** The `@media (prefers-reduced-motion: reduce)` block in `global.css` governs **CSS** animations and transitions only — it has no effect on animations Framer Motion drives inline through JS. When the hook returns `true`, render the element in its final state with no transform. See `About.jsx` for the established pattern.
 
@@ -280,7 +284,7 @@ There are **two** headers, and they are never on screen at the same time.
 | Logo | `2.25rem` / `2.625rem` | far larger: `5.5rem` / `6.5rem`, inset from the bled edge by `--space-sm` / `--space-md` |
 | Nav underline | Framer Motion variants | CSS `scaleX` on `::after` |
 
-**The handoff is a single threshold: `viewportProgress >= 1` from `useScrollPosition`.** The hero is exactly `100svh`, so one scrolled viewport *is* the end of the hero. That same comparison already gated the hero's video playback in `Hero.jsx`, and `Header.jsx` now reuses it verbatim to decide whether it is hidden — **keep them identical**, or the site header will arrive a frame out of step with the video pausing.
+**The handoff is a single threshold: `isPastFirstViewport`, exported from `useScrollPosition.js`.** The hero is exactly `100svh`, so one scrolled viewport *is* the end of the hero. `Hero.jsx` gates its video playback on it, `Header.jsx` gates its own visibility on it, and `About.jsx` gates the story video on it — all three pass it to the hook as a **selector**, so they share one function rather than three copies of `viewportProgress >= 1`, and none of them re-renders on the frames in between. A fourth consumer should pass the same selector, not write the comparison out again.
 
 - The site header hides via `data-hidden` on its root, a **CSS transition** (`opacity` + `translateY(-100%)` + `pointer-events: none`) rather than a Framer animation: it is a two-state toggle, not choreography, and CSS transitions are already covered by the `prefers-reduced-motion` block in `global.css`. This matches how `data-menu-open` already drives the pill's corners.
 - It also carries **`inert`** while hidden. `pointer-events: none` alone still leaves the links in the tab order, so an invisible nav would be focusable over the hero.
@@ -347,6 +351,47 @@ Two things that look like duplication and are deliberately not:
 
 - **Three SVG turbulence filters** — `FluidBar.jsx`, `HeroHeader.jsx` (`#hero-cta-turbulence`) and `Header.jsx` (`#site-header-turbulence`). Structurally near-identical, every number different. `feTurbulence`'s `baseFrequency` is in **user-space units, not units of the element**, so a field tuned for one box size produces a visibly different texture on another — what reads as water across a 1500px strip is sandpaper on a 140px button. Sharing also saves nothing at render time, since a filter is evaluated per element it is applied to. Each carries a comment saying so; keep them separate.
 - **Two `@keyframes` per animated module** — `fluid-drift` / `fluid-drift-bob` in `FluidBar.module.css`, `sheen-flow` / `edge-travel` in `Button.module.css`. All four names and bodies are distinct, and CSS Modules scopes `@keyframes` per file anyway. Nothing to hoist into `global.css`.
+
+### Only one video decodes at a time
+
+`hero.webm` and `story.webm` are **mutually exclusive**, and both ends of the switch are the same `isPastFirstViewport` selector. `Hero.jsx` pauses its backdrop when it becomes true; `About.jsx` refuses to start the story video until it does, through `syncPlayback`. `FluidLens` passes `start: false` to `useVideoTexture` and the fallback `<video>` carries no `autoPlay`, so **nothing starts the story video except `syncPlayback`** — adding either back reintroduces two simultaneous decodes across the whole first screen.
+
+The story video's second gate is the transition's own `VIDEO_PAUSE_AT`; both live in one expression on purpose.
+
+**The one visible consequence, so nobody re-derives it as a bug:** About's circle reaches the screen about a third of the way down the hero, and the hero's video does not stop until a full viewport has been scrolled — so in between, the circle shows a still frame. That window cannot be closed without either two decodes or freezing the hero, and the hero is full-bleed and is what the visitor is looking at.
+
+There is still one overlap, deliberately: during the priming window (progress `0` → `LENS_DROP_AT`) the lens's texture video and the DOM fallback both play. Both are *story* video, the hero is already paused, and the overlap is what stops the canvas→DOM handoff cutting to an unrelated frame. Priming the fallback paused would need a seek at the swap, which is exactly the visible jump priming exists to prevent.
+
+### Always-on animation is paused when nothing can see it
+
+Four CSS animations are infinite, and every one of them used to run from first paint until the tab closed regardless of where the page was scrolled. Three are now gated; the mechanism is an **attribute on an ancestor**, because CSS Modules hashes class names per file and the pausing component is never the one that owns the stylesheet.
+
+| Animation | Gated by | Why it was worth it |
+| --- | --- | --- |
+| `FluidBar`'s three drifting layers | `data-offscreen` on `.hero` | They sit under `filter: url(#fluid-bar-turbulence)`, and **a transform beneath a filtered ancestor cannot be composited** — every frame re-ran `feDisplacementMap` across the whole strip. The most expensive idle on the site. |
+| `.button-featured::after`'s rim light | `data-offscreen` on `.hero` | Animates a registered custom property into a conic-gradient behind two masks composited with `xor`: every frame is a full re-raster, not a compositor transform. |
+| `LogoLoop`'s track | `data-paused` — `paused` prop **or** its own `IntersectionObserver` | A `will-change` layer holding a dozen photographs. Both signals are needed: on the pinned path the strip is geometrically on screen the whole time at `opacity: 0`, so only `Founder`'s prop catches it; in flow on a phone only the observer does. |
+| `.button-glass`'s two sheens | **nothing — left running** | Two small pseudo-elements animating `transform` with no filtered ancestor, so they genuinely are compositor work. Gating them would mean freezing a sheen that is partly on screen. |
+
+Every pause is `animation-play-state: paused`, never `animation: none` — the layers keep their offsets against each other and resume where they stopped, so nothing resyncs into a visible jump. Each also drops its `will-change` in the same rule: the hint is a promise about imminent motion, and on a stopped element it is a compositor layer held for nothing.
+
+### The lens's render budget — held on purpose
+
+`FluidLens.jsx` carries four constraints that exist only to keep the WebGL cost down. None of them changes how the lens looks; all four are easy to undo by accident.
+
+- **`frameloop="demand"`.** The canvas renders when something asks. Three things ask: a decoded video frame, a lens still travelling toward the pointer, and R3F itself on any store change (which covers the canvas resizing under About's zoom). Between them it runs at the display's rate while something moves and at the video's rate while nothing does. **Firefox has no `requestVideoFrameCallback`**, so there is no signal to drive the loop and it falls back to `"always"` — that branch is not optional, and removing it freezes the canvas on Firefox.
+- **The `IntersectionObserver` gate.** About is on the home page, so the lens is alive from first paint while the visitor is still a screen above it on the hero. The gate stops the *rendering*, not the video — the footage stays warm and in sync so arriving at the section shows motion rather than a first frame.
+- **The pointer wakes the loop from outside.** With the story video paused for most of the time the section is approaching, there are no video frames to drive the canvas — so `About`'s mousemove has to ask for a frame itself, through the `invalidateRef` handle `InvalidateHandle` fills in. The `IntersectionObserver` invalidates on re-entry for the same reason.
+- **`resolution={512}` and `samples={4}` on the material, applied *after* the `{...materialProps}` spread** so a call site cannot restore drei's defaults through `lensProps`. Omitted, `resolution` makes drei allocate two **full-canvas half-float** buffers and re-size them from a layout effect on every canvas resize; `samples` defaults to 10, which is thirty dependent texture fetches per pixel of glass. `samples={4}` is only lossless while `roughness` is 0 — the argument is at the constant, and raising roughness at a call site invalidates it.
+
+The biggest remaining cost is not in this file: About's zoom animates `width`/`height`, which are **layout** properties, so the frame relayouts and the R3F canvas re-sizes once a frame for the first ~39% of the runway. That is a deliberate design decision (the frame *uncrops* rather than scaling — see the note on `zoomWidth` in `About.jsx`), not an oversight, and the lens teardown at `LENS_DROP_AT` is what bounds it.
+
+### Two more things that are load-bearing and expensive
+
+- **`.about`'s viewport-wide `backdrop-filter`** is still the single most expensive declaration in the project, and it stays — it *is* the section's surface (§2). `--section-glass-blur` is the dial, not the fill. Note it cannot be switched off once the zoom frame covers the viewport either: the frame keeps its 20px corners, and those four wedges are exactly where the section's glass shows through.
+- **`body::after`'s `mix-blend-mode: soft-light`** forces the whole page into one blended group. It is what keeps the grain from lifting `--color-black` (§2) and it is not animated, so there is nothing to gate — a `will-change` hint would not make the blend cheaper.
+
+**No layout reads on the scroll or pointer path.** `About`'s pointer handler caches `.circle`'s rect and marks it stale from a passive `scroll` listener rather than calling `getBoundingClientRect()` per event — a high-polling mouse fires above the display's refresh rate, and Framer writes `width`/`height` inline on `.zoom-layer` from its own frame loop, so every one of those reads was flushing layout for the whole document. Anything added here should keep that property: `.circle` is the untransformed parent precisely so its box only moves on scroll and resize.
 
 **Naming:** "About" and "the Story section" mean the same component throughout the codebase — the directory is `components/About/`, the `id` is `about`, and the visible title is "Our **Story**". Both names appear in comments; neither is wrong.
 

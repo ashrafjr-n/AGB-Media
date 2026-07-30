@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi'
 
-import useScrollPosition from '../../hooks/useScrollPosition'
+import useScrollPosition, {
+  isPastFirstViewport,
+} from '../../hooks/useScrollPosition'
 import navLinks from '../../data/navLinks'
 import styles from './Header.module.css'
 
@@ -51,13 +53,18 @@ function Header() {
     never be on screen together. It slides in only once the hero is fully behind
     the viewport.
 
-    `viewportProgress >= 1` is the same threshold Hero.jsx uses to decide the hero
+    `isPastFirstViewport` is the same threshold Hero.jsx uses to decide the hero
     is covered and pause the video — the hero is exactly 100svh, so one scrolled
-    viewport *is* the end of the hero. Reusing the identical comparison keeps the
-    reveal and the video pause from ever disagreeing by a frame.
+    viewport *is* the end of the hero. It is now literally the same function
+    rather than a matching comparison, so the reveal and the video pause cannot
+    disagree by a frame.
+
+    Passing it as a selector is also what keeps this header off the scroll path:
+    the hook stores the projected boolean, so React bails out of every frame in
+    between and the two navs, the drawer and the turbulence filter are reconciled
+    twice a pass instead of sixty times a second.
   */
-  const { viewportProgress } = useScrollPosition()
-  const isPastHero = viewportProgress >= 1
+  const isPastHero = useScrollPosition(isPastFirstViewport)
 
   /*
     A drawer left open while the header is hidden would reopen mid-air on the way

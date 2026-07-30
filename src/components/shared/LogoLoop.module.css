@@ -53,6 +53,25 @@
 }
 
 /*
+  Stopped while nothing can see it — either the caller says so or the strip is off
+  screen. See the note on `data-paused` in LogoLoop.jsx for what sets it.
+
+  `will-change` goes with the animation, and that is the larger half of the saving. The
+  track is a layer holding every copy of every image, and promoting it is only worth the
+  memory while it is genuinely about to move; a hint on a stopped element is a
+  compositor layer the size of the whole strip, held for nothing. On the Founder's call
+  site that layer exists for several viewports of scrolling before the section is ever
+  visible.
+
+  Paused rather than none: `animation: none` would snap the track back to its untranslated
+  start, so the strip would jump every time it left and re-entered the screen.
+*/
+.loop[data-paused='true'] .track {
+  animation-play-state: paused;
+  will-change: auto;
+}
+
+/*
   One sequence. The track holds several; only the first carries real alt text, the rest
   are aria-hidden in the markup, so a screen reader hears the set once.
 */

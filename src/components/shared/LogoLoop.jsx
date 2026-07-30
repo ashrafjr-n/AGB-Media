@@ -49,12 +49,44 @@ function LogoLoop({
   fadeOut = false,
   fadeOutColor = 'transparent',
   ariaLabel = 'Logo loop',
+  paused = false,
 }) {
   const containerRef = useRef(null)
   const sequenceRef = useRef(null)
 
   const [sequenceWidth, setSequenceWidth] = useState(0)
   const [copies, setCopies] = useState(MIN_COPIES)
+
+  /*
+    Whether any of the strip is on screen.
+
+    The animation is infinite and, left alone, runs from first paint until the tab
+    closes — including the several viewports of scrolling before this component is
+    anywhere near the screen. That is not a cheap idle: the track is a `will-change:
+    transform` layer holding a dozen photographs, and keeping it live costs the
+    compositor whether or not anyone can see it.
+
+    It observes the container rather than the track, because the track is the thing
+    moving — a box that is permanently wider than the viewport and mid-transform is a
+    poor thing to ask about intersection. The container is the fixed window onto it.
+
+    Starts `true` so the strip is running on the first frame and only ever stops after
+    an observation says it should; a browser without IntersectionObserver simply keeps
+    the old always-on behaviour.
+  */
+  const [onScreen, setOnScreen] = useState(true)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || typeof IntersectionObserver === 'undefined') return undefined
+
+    const observer = new IntersectionObserver(([entry]) =>
+      setOnScreen(entry.isIntersecting),
+    )
+
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
 
   const measure = useCallback(() => {
     const container = containerRef.current
@@ -104,11 +136,18 @@ function LogoLoop({
     >
       {logos.map((logo, index) => (
         <li className={styles.item} key={`${copyIndex}-${logo.src ?? index}`}>
+          {/*
+            `decoding="async"` so a photograph arriving mid-scroll is decoded off the
+            main thread rather than blocking the frame it lands on. Every copy points
+            at the same handful of files, so the decode happens once per image however
+            many copies the track ends up holding.
+          */}
           <img
             className={styles.image}
             src={logo.src}
             alt={copyIndex === 0 ? (logo.alt ?? '') : ''}
             draggable="false"
+            decoding="async"
           />
         </li>
       ))}
@@ -125,6 +164,14 @@ function LogoLoop({
       data-direction={direction}
       data-pause-on-hover={pauseOnHover ? 'true' : 'false'}
       data-fade={fadeOut ? 'true' : 'false'}
+      /*
+        Two independent reasons to stop, resolved to one attribute because the
+        stylesheet only cares that it is stopped: the caller says the strip is
+        invisible (Founder passes this while the section is still faded out), or it is
+        simply not on screen. Either way this is `paused`, not `none` — the strip holds
+        wherever it is and resumes from there, so nothing jumps when it comes back.
+      */
+      data-paused={paused || !onScreen ? 'true' : 'false'}
       /*
         The only inline styles here, and each is a genuine runtime value: two measured
         lengths, a duration derived from one of them, and the caller's own numbers. They

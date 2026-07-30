@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-import useScrollPosition from '../../hooks/useScrollPosition'
+import useScrollPosition, {
+  isPastFirstViewport,
+} from '../../hooks/useScrollPosition'
 import heroVideo from '../../assets/videos/hero.webm'
 import FluidBar from '../shared/FluidBar'
 import HeroHeader from './HeroHeader'
@@ -33,13 +35,21 @@ function Hero() {
     viewport is the end of the hero, so the header arriving and the video pausing
     are the same event.
 
-    Derived as a boolean rather than acted on directly: viewportProgress changes
-    every frame while scrolling, and pause()/play() should only fire on the two
-    crossings, not on every read.
+    Subscribed as a boolean rather than as the raw position, and that is a render
+    concern rather than an effect one: the effect below already only fires on the
+    two crossings, but a hook returning the scroll offset re-rendered this whole
+    section on every frame of every scroll — the 4K <video>, HeroHeader with its
+    turbulence filter, FluidBar with its own, and six ticker items — to produce
+    identical output. Selecting the boolean lets React bail out of all of it, and
+    the section now re-renders twice a pass: once entering, once leaving.
+
+    Note this makes HeroHeader's per-frame re-render (and the note about it in
+    CLAUDE.md §4) obsolete. Its module-scoped `entrancePlayed` flag is unaffected
+    — it guards against remounts, not against re-renders, which is why it lives at
+    module scope in the first place.
   */
   const videoRef = useRef(null)
-  const { viewportProgress } = useScrollPosition()
-  const isHeroCovered = viewportProgress >= 1
+  const isHeroCovered = useScrollPosition(isPastFirstViewport)
 
   useEffect(() => {
     const video = videoRef.current
@@ -60,7 +70,30 @@ function Hero() {
   }, [isHeroCovered])
 
   return (
-    <section className={styles.hero}>
+    /*
+      `data-offscreen` is the hero telling everything inside it to stop moving.
+
+      Two CSS animations live in here and both ran from first paint until the tab
+      closed, on and off screen alike: FluidBar's three drifting layers, and the gold
+      light travelling the Contact button's rim. Neither is cheap. The layers drift
+      *underneath* an SVG displacement filter, so their transform cannot be composited
+      — every frame re-runs feDisplacementMap across the whole ~1500px strip. The rim
+      light animates a registered custom property feeding a conic-gradient behind two
+      masks, so every frame is a full repaint of the ring.
+
+      At this threshold the hero is a full viewport above the top of the screen, so
+      both elements are genuinely gone rather than merely covered — the only part of
+      the hero still visible past here is the fixed video backdrop, seen through
+      About's glass. Pausing rather than cancelling means each resumes exactly where
+      it stopped, so scrolling back up cannot resync them into a visible jump.
+
+      The attribute rather than a class because CSS Modules hashes class names per
+      file: FluidBar and Button own their own stylesheets and match this from theirs.
+    */
+    <section
+      className={styles.hero}
+      data-offscreen={isHeroCovered ? 'true' : 'false'}
+    >
       {/*
         Full-viewport, fixed video backdrop with a light scrim on top — tinted to
         --color-black, not raw black — to keep the foreground text legible.

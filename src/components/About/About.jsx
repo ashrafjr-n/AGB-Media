@@ -18,6 +18,9 @@ import {
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 
 import useMediaQuery from '../../hooks/useMediaQuery'
+import useScrollPosition, {
+  isPastFirstViewport,
+} from '../../hooks/useScrollPosition'
 import storyVideo from '../../assets/videos/story.webm'
 import Founder from '../Founder/Founder'
 import buttonStyles from '../shared/Button.module.css'
@@ -220,15 +223,73 @@ function About() {
   const circleRef = useRef(null)
   const pointer = useRef({ x: 0, y: 0 })
 
+  /*
+    A handle on the lens canvas's `invalidate`, filled in by FluidLens.
+
+    The canvas renders on demand, and moving the pointer is one of the things that has
+    to wake it — the others (a decoded video frame, a lens still travelling) live inside
+    FluidLens and can ask for themselves. This one cannot: the listener that drives the
+    lens is here, on the whole section, so the request has to come from here too. It
+    matters most while the story video is paused, which is now most of the time the
+    section is on screen at all — with no video frames arriving there is nothing else
+    left to keep the loop alive.
+
+    A ref rather than a prop or state, for the same reason `pointer` is one: it is read
+    from a mousemove handler and must not re-render anything.
+  */
+  const lensInvalidate = useRef(null)
+
+  /*
+    The circle's box, cached — and this was a forced synchronous layout on every single
+    mousemove event.
+
+    The note that used to sit here called the read cheap because nothing was written
+    around it. That is true of the read in isolation and false in context. Framer Motion
+    writes `width` and `height` inline on .zoom-layer from its own frame loop, and the
+    grain layer, the section's backdrop-filter and two sticky boxes all sit above this in
+    the tree — so any pending style invalidation makes `getBoundingClientRect()` flush
+    layout for the whole document before it can answer. A high-polling-rate mouse fires
+    well above the display's refresh, so that was happening several times per frame
+    while the pointer moved, and continuously while it moved *during* the transition,
+    which is exactly when the page has the least to spare.
+
+    Nothing but scrolling or a resize can move this box: .circle is deliberately the
+    untransformed parent (see the note at its call site), so the zoom does not move it
+    and neither does anything else on the page. Marking the cache stale from those two
+    events, and re-reading lazily on the next pointer move, caps the cost at one layout
+    read per frame while scrolling — and takes it to zero for a pointer moving over a
+    still page, which is what a reader is actually doing here.
+  */
+  const circleRect = useRef(null)
+  const circleRectStale = useRef(true)
+
+  useEffect(() => {
+    if (!showLens) return undefined
+
+    const markStale = () => {
+      circleRectStale.current = true
+    }
+
+    /* Passive: this only ever sets a boolean, and must never delay a scroll. */
+    window.addEventListener('scroll', markStale, { passive: true })
+    window.addEventListener('resize', markStale)
+
+    return () => {
+      window.removeEventListener('scroll', markStale)
+      window.removeEventListener('resize', markStale)
+    }
+  }, [showLens])
+
   const handlePointerMove = useCallback((event) => {
     const circle = circleRef.current
     if (!circle) return
 
-    /*
-      Read per event rather than cached: the rect moves with every scroll, and this is
-      a single layout read with no writes interleaved, which is the cheap direction.
-    */
-    const rect = circle.getBoundingClientRect()
+    if (circleRectStale.current || !circleRect.current) {
+      circleRect.current = circle.getBoundingClientRect()
+      circleRectStale.current = false
+    }
+
+    const rect = circleRect.current
     if (!rect.width || !rect.height) return
 
     /*
@@ -242,6 +303,9 @@ function About() {
 
     pointer.current.x = (event.clientX - (rect.left + radiusX)) / radiusX
     pointer.current.y = -(event.clientY - (rect.top + radiusY)) / radiusY
+
+    /* Wakes the on-demand canvas — see the note on lensInvalidate. */
+    lensInvalidate.current?.()
   }, [])
 
   /* --- Scroll-zoom ------------------------------------------------------- */
@@ -257,6 +321,36 @@ function About() {
   */
   const lensVideoRef = useRef(null)
   const fallbackVideoRef = useRef(null)
+
+  /*
+    Whether the hero has finished — and therefore whether the hero's own video has been
+    paused. It is the same `isPastFirstViewport` selector Hero.jsx gates its playback on,
+    so the two are two halves of one switch rather than two thresholds that happen to
+    agree.
+
+    THE RULE: exactly one of the two videos decodes at a time. story.webm used to start
+    the moment About mounted, which is during first paint, which is while the visitor is
+    still on the hero watching hero.webm — two simultaneous decodes for the whole first
+    screen, on top of the hero's fixed backdrop, the section's viewport-wide
+    backdrop-filter, the ticker's SVG displacement and the blended grain layer. That is
+    the heaviest moment on the site and it was carrying an entire video it had no use
+    for. It reverses cleanly too: scrolling back up resumes the hero and pauses this one.
+
+    Held on a ref *as well* as in state so the playback sync below can stay a stable
+    callback — it is handed to two `ref` props, and an identity that changed twice per
+    pass would detach and reattach them for no reason.
+
+    THE ONE COST, stated plainly: About's circle is on screen from roughly a third of
+    the way down the hero, but the hero's video does not pause until a full viewport has
+    been scrolled. Between those points the circle now shows a still frame rather than
+    moving footage. There is no way to close that window without either two decodes or a
+    frozen hero, and a frozen hero is far more visible — it is full-bleed and it is what
+    the visitor is looking at. Moving the handover means changing the shared selector,
+    which moves the site header too.
+  */
+  const heroCovered = useScrollPosition(isPastFirstViewport)
+  const heroCoveredRef = useRef(heroCovered)
+  heroCoveredRef.current = heroCovered
 
   /*
     0 → 1 across exactly the runway's height.
@@ -475,6 +569,51 @@ function About() {
   /* Latches the single re-measurement below. */
   const measuredForRun = useRef(false)
 
+  /*
+    The single place playback is decided, for whichever element is currently on screen.
+
+    Both gates in one expression, because they are one question — "should the story
+    video be running right now?" — and splitting them across a scroll handler and an
+    effect is how the two ends drift apart. The hero gate is above; the progress gate is
+    the transition's own, where the blur is deep enough that the last moving frame and a
+    frozen one are indistinguishable.
+
+    Stable (`easedProgress` is a MotionValue and never changes identity), so the two ref
+    callbacks that call it are stable too, and it can be invoked from anywhere that
+    learns something new: the scroll handler, the effect on the hero gate, or an element
+    arriving.
+
+    play() returns a promise that rejects if the element is torn down or interrupted
+    mid-call; it is caught and dropped because there is nothing useful to do about it
+    and an unhandled rejection in a scroll handler is noise.
+  */
+  const syncPlayback = useCallback(() => {
+    /*
+      During the priming window both elements exist. The one on screen wins, and the
+      fallback outlives the canvas, so it takes precedence wherever both are present.
+    */
+    const video = fallbackVideoRef.current ?? lensVideoRef.current
+    if (!video) return
+
+    const shouldPlay =
+      heroCoveredRef.current && easedProgress.get() < VIDEO_PAUSE_AT
+
+    if (!shouldPlay) {
+      if (!video.paused) video.pause()
+      return
+    }
+
+    if (video.paused) {
+      const played = video.play()
+      if (played) played.catch(() => {})
+    }
+  }, [easedProgress])
+
+  /* The hero gate's own crossings — the scroll handler below only sees the zoom's. */
+  useEffect(() => {
+    syncPlayback()
+  }, [heroCovered, syncPlayback])
+
   useMotionValueEvent(easedProgress, 'change', (progress) => {
     /*
       The backstop to handleRevealSettled: one more reading the first time the transition
@@ -492,42 +631,35 @@ function About() {
     setLensCanvasMounted(progress < LENS_DROP_AT)
     setFallbackPrimed(progress > 0)
 
-    /*
-      Playback follows the same value in both directions, so scrolling back up resumes
-      it. play() is a promise that rejects if the element is torn down or interrupted
-      mid-call; it is caught and dropped because there is nothing useful to do about it
-      and an unhandled rejection in a scroll handler is noise.
-    */
-    const video = fallbackVideoRef.current ?? lensVideoRef.current
-    if (!video) return
-
-    if (progress >= VIDEO_PAUSE_AT) {
-      if (!video.paused) video.pause()
-    } else if (video.paused) {
-      const played = video.play()
-      if (played) played.catch(() => {})
-    }
+    /* Follows the value in both directions, so scrolling back up resumes playback. */
+    syncPlayback()
   })
 
   /*
     Handed up from inside FluidLens, which owns its <video> internally rather than
-    rendering one — see the note at the top of that file.
+    rendering one — see the note at the top of that file. FluidLens no longer autoplays
+    it either (`start: false` there), so this is the only thing that ever starts it.
 
-    It resumes on arrival because the swap below pauses it on the way out, and drei caches
-    the texture by src: scrolling back up through LENS_DROP_AT can hand back the very
-    element that was paused, which would otherwise remount the lens over a frozen frame.
+    Syncing on arrival covers two cases at once: the element turning up for the first
+    time already past the hero gate, and the swap below having paused it on the way out —
+    drei caches the texture by src, so scrolling back up through LENS_DROP_AT hands back
+    the very element that was paused.
   */
-  const handleLensVideo = useCallback((element) => {
-    lensVideoRef.current = element
-    if (!element || !element.paused) return
+  const handleLensVideo = useCallback(
+    (element) => {
+      lensVideoRef.current = element
+      if (element) syncPlayback()
+    },
+    [syncPlayback],
+  )
 
-    const played = element.play()
-    if (played) played.catch(() => {})
-  }, [])
-
-  const handleFallbackVideo = useCallback((element) => {
-    fallbackVideoRef.current = element
-  }, [])
+  const handleFallbackVideo = useCallback(
+    (element) => {
+      fallbackVideoRef.current = element
+      if (element) syncPlayback()
+    },
+    [syncPlayback],
+  )
 
   /*
     The handoff, run on the frame the canvas is torn down.
@@ -724,6 +856,7 @@ function About() {
                         videoSrc={storyVideo}
                         pointer={pointer}
                         onVideo={handleLensVideo}
+                        invalidateRef={lensInvalidate}
                         lensOpacity={lensOpacity}
                         lensProps={{
                           scale: 0.25,
@@ -740,15 +873,21 @@ function About() {
 
                   {/*
                     The plain path, and now also the transition's destination on the lens
-                    path. `muted` is not optional — an unmuted autoplay is refused by every
+                    path. `muted` is not optional — an unmuted play() is refused by every
                     browser — and it is what makes this safe to start without a gesture.
+
+                    No `autoPlay`: playback is decided by syncPlayback, which will not
+                    start this while the hero's own video is still running. The ref
+                    callback calls it on mount, so an element arriving past the gate
+                    starts immediately. `preload` is left at the browser's default so the
+                    file is still buffered and the first frame decoded while it waits —
+                    what is deferred is playback, not loading.
                   */}
                   {(!showLens || fallbackPrimed) && (
                     <video
                       ref={handleFallbackVideo}
                       className={styles.video}
                       src={storyVideo}
-                      autoPlay
                       loop
                       muted
                       playsInline

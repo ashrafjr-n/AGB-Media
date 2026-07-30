@@ -1,15 +1,36 @@
-import { motion, useMotionValue, useTransform } from 'framer-motion'
+import { useState } from 'react'
+import {
+  motion,
+  useMotionValue,
+  useMotionValueEvent,
+  useTransform,
+} from 'framer-motion'
 
 import LogoLoop from '../shared/LogoLoop'
 import styles from './Founder.module.css'
 
+/*
+  The portrait comes from the full-size originals; the strip does not.
+
+  .portrait is drawn at roughly 440x350 CSS px, so its 1280x720 source is about right
+  for a 2x screen. The strip is a different case entirely: LogoLoop sizes each still by
+  height alone, at most clamp(5rem, 15vh, 9.5rem) — 152px, so around 270px wide — and
+  the track holds two or three copies of the set. Feeding it the 1280x720 originals meant
+  1.8MB of JPEG over the wire and, worse, a dozen images decoded to full size and held in
+  a permanently composited layer: about 44MB of pixels to draw a strip 152px tall.
+
+  src/assets/abdullah/strip/ holds 640x360 copies — 2x the largest size they are ever
+  drawn at, so nothing is visibly softer — for 368KB and around 11MB decoded. The
+  originals are kept where they are; nothing imports them, so Vite does not bundle them,
+  and they are there to re-cut from if the strip ever grows.
+*/
 import portrait from '../../assets/abdullah/abdullah.jpg'
-import work002 from '../../assets/abdullah/002.jpg'
-import work003 from '../../assets/abdullah/003.jpg'
-import work004 from '../../assets/abdullah/004.jpg'
-import work005 from '../../assets/abdullah/005.jpg'
-import work006 from '../../assets/abdullah/006.jpg'
-import work007 from '../../assets/abdullah/007.jpg'
+import work002 from '../../assets/abdullah/strip/002.jpg'
+import work003 from '../../assets/abdullah/strip/003.jpg'
+import work004 from '../../assets/abdullah/strip/004.jpg'
+import work005 from '../../assets/abdullah/strip/005.jpg'
+import work006 from '../../assets/abdullah/strip/006.jpg'
+import work007 from '../../assets/abdullah/strip/007.jpg'
 
 /*
   The founder's page-within-a-section, and the tenant of About's .hold — the slot the
@@ -108,6 +129,30 @@ function Founder({ progress, pinned = false }) {
   const pointerEvents = useTransform(source, (value) =>
     value >= 1 ? 'auto' : 'none',
   )
+
+  /*
+    Whether this section is invisible, and the one thing here that has to be state
+    rather than a MotionValue.
+
+    Everything else about the fade is written straight to the DOM by Framer without
+    React knowing, which is exactly right for a value that changes on every scroll
+    frame. This one is different: it decides whether the photo strip's animation runs,
+    and `animation-play-state` is not a style Framer can drive per frame — it is a
+    prop LogoLoop turns into an attribute a stylesheet matches.
+
+    It is affordable because it is not really a per-frame value. It flips at 0 and
+    nowhere else, so it costs two renders of this section per pass through the page,
+    not sixty a second. Reading it off `opacity` rather than off `source` directly ties
+    it to what is actually on screen: at opacity 0 the section paints nothing, so
+    stopping the strip there cannot be seen, and the strip is exactly the thing worth
+    stopping — a `will-change: transform` layer holding a dozen photographs, which was
+    animating for the several viewports of scrolling before this section appears.
+
+    `>` rather than `>=` so the strip is running the instant the fade begins, ahead of
+    the first frame at which anything is visible.
+  */
+  const [hidden, setHidden] = useState(() => opacity.get() <= 0)
+  useMotionValueEvent(opacity, 'change', (value) => setHidden(value <= 0))
 
   return (
     <motion.section
@@ -211,6 +256,8 @@ function Founder({ progress, pinned = false }) {
             them. See the note there.
           */
           ariaLabel="AGB Media productions"
+          /* Nothing is on screen at opacity 0 — see the note on `hidden` above. */
+          paused={hidden}
         />
       </div>
 
