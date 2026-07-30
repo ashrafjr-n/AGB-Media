@@ -167,10 +167,14 @@
   and clips whichever it gets to the round shape.
 
   Framer writes `width`, `height`, `border-radius` and a translate here during the
-  transition, and this element is the only thing that changes: the frame genuinely
-  reshapes from a circle to a screen-sized rectangle while everything inside it is left
-  alone. Nothing is scaled, which is why the footage uncrops instead of magnifying — see
-  the note on .video.
+  transition: the frame genuinely reshapes from a circle to a screen-sized rounded
+  rectangle while the footage inside it is left alone. Nothing is scaled, which is why it
+  uncrops instead of magnifying — see the note on .video.
+
+  `overflow: hidden` is load-bearing in both directions now. It clips the footage to the
+  round shape, and it is also what crops .media's blurred edges back off screen while
+  they are bled outside this box — remove it and a dark band appears around the frame.
+  The clip follows border-radius, so the corners stay clean at every size.
 
   `width`/`height` rather than the logical `inline-size`/`block-size` this project
   otherwise prefers, and deliberately: Framer writes the physical properties inline, and
@@ -239,10 +243,40 @@
   Blurring the layer itself would take its rim and its shadow with it, and the scrim
   above would be blurred too — the point of the transition is a *sharp* dark veil
   settling over softened footage.
+
+  `inset: 0` is the resting value only. About drives all four sides negative while the
+  blur is up, so this box grows *outside* the frame that clips it — a blurred element
+  fades along its own edges, and the faded band has to fall outside the clip rather than
+  on screen. See MEDIA_BLEED_PX in About.jsx; the physical shorthand here matches the
+  physical properties Framer writes inline, the same pairing .zoom-layer makes.
 */
 .media {
   position: absolute;
   inset: 0;
+}
+
+/*
+  The R3F canvas, forced to fill.
+
+  FluidLens.module.css sizes R3F's *wrapper* correctly, but the <canvas> inside it gets
+  its box from three's WebGLRenderer.setSize(), which writes inline pixel width and
+  height — and R3F only calls that from a ResizeObserver, one frame behind the layout it
+  is reacting to. That is invisible while the frame is a fixed-size circle and a real
+  defect while it is growing: every frame of the transition the canvas element would be
+  one step smaller than the box it sits in, leaving a black band of .zoom-layer's own
+  background down the leading edges. The drawing buffer still lags by a frame, but a
+  stale buffer stretched across the right box is a sub-percent distortion nobody can see,
+  where the gap was plainly visible.
+
+  !important because it is overriding an inline style, which is the only way to reach it.
+
+  It belongs in FluidLens.module.css beside the wrapper rule, and it is here because the
+  fix is About's transition and the scope of that change was these two files. Move it if
+  a second caller ever resizes that canvas.
+*/
+.media canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /*

@@ -84,28 +84,51 @@ const BLUR_START_AT = 0.2
 const BLUR_FULL_AT = 0.7
 
 /*
-  The shape, in two legs.
+  The shape, in one leg rather than two.
 
-  Leg one relaxes the circle into a rounded rectangle: the radius falls from half the
-  circle's own width to FRAME_RADIUS_PX while the box is growing, so the corners tighten
-  from both directions at once. Leg two takes that last 24px out and the frame is a plain
-  rectangle well before it reaches the edges of the screen.
+  The circle relaxes into a rounded rectangle over the first 30% — the radius falling
+  from half the circle's own width to FRAME_RADIUS_PX while the box is growing, so the
+  corners tighten from both directions at once — and then it *stops*. There is no second
+  leg taking the last 20px out: the finished frame keeps its corners, which is what makes
+  it read as a framed panel rather than as a section that has simply been replaced.
 
-  Radius is carried in pixels rather than percentages throughout, because a percentage
-  radius on a box that is becoming wider than it is tall resolves to an *ellipse* — the
-  exact shape this replaced. At rest the box is square, so half its width is precisely
-  the 50% the stylesheet holds, and the two agree on the first frame.
+  useTransform clamps outside its input range, so holding the value past 0.3 needs no
+  second stop; the two-element range is the whole statement.
+
+  That the corners survive is why the frame now ends exactly on the viewport rather than
+  a couple of pixels past it. It used to bleed out so its rim finished off screen; the
+  rim and the corners are the point now, so bleeding them away would be throwing out what
+  this is for.
+
+  Radius is carried in pixels rather than percentages, because a percentage radius on a
+  box that is wider than it is tall resolves to an *ellipse*. At rest the box is square,
+  so half its width is precisely the 50% the stylesheet holds, and the two agree on the
+  first frame.
 */
-const FRAME_RADIUS_PX = 24
+const FRAME_RADIUS_PX = 20
 const RADIUS_ROUNDED_AT = 0.3
-const RADIUS_SHARP_AT = 0.7
 
 /*
-  A couple of pixels past the viewport on every side, so subpixel rounding cannot leave a
-  hairline of the section down an edge — and so the frame's own 1px rim ends up just off
-  screen instead of drawing a box around the finished state.
+  How far .media is pushed outside the frame that clips it, and the fix for a dark ring
+  that used to close in around the footage as the blur came up.
+
+  `filter: blur()` samples past the edges of the element it is applied to, and there is
+  nothing out there — so the outermost band of a blurred box fades toward transparent and
+  lets whatever is behind it through. Behind .media is .zoom-layer's opaque --color-black,
+  so the frame was drawing its own dark vignette, tens of pixels deep, exactly in step
+  with the blur ramp.
+
+  CSS blur(v) is a Gaussian with standard deviation v, so the fade is meaningful out to
+  roughly 3v — about 39px at full strength. 48px clears that with room, and .zoom-layer's
+  overflow: hidden crops the surplus, so the only part of .media ever on screen is the
+  part that is fully opaque.
+
+  It ramps with the blur rather than sitting at a constant, which is what keeps the
+  resting section untouched: at progress 0 there is no blur and no bleed, and .media is
+  exactly the frame. The cover crop drifts by a few percent while it is out — under the
+  blur that produced it, and invisible.
 */
-const FRAME_BLEED_PX = 2
+const MEDIA_BLEED_PX = 48
 
 /*
   Scroll → progress is raised to this power before anything reads it: slow start, fast
@@ -249,6 +272,10 @@ function About() {
         the gutter. Height is innerHeight, which is the screen actually on show — on a
         phone with the toolbars out that is less than 100vh, and it is the smaller of the
         two the frame has to cover.
+
+        Exactly the viewport, with nothing added. The frame keeps its rounded corners to
+        the end, so its edges are meant to be seen — overshooting would push the corners
+        off screen and undo them.
       */
       const vw = document.documentElement.clientWidth
       const vh = window.innerHeight
@@ -267,10 +294,10 @@ function About() {
       */
       setTarget({
         size,
-        width: vw + FRAME_BLEED_PX * 2,
-        height: vh + FRAME_BLEED_PX * 2,
-        x: -c.left - FRAME_BLEED_PX,
-        y: -(c.top - a.top) - FRAME_BLEED_PX,
+        width: vw,
+        height: vh,
+        x: -c.left,
+        y: -(c.top - a.top),
       })
     }
 
@@ -319,14 +346,15 @@ function About() {
   const zoomY = useTransform(easedProgress, [0, 1], [0, target.y])
 
   /*
-    Circle → rounded rectangle → rectangle. Half the resting width is the same shape the
-    stylesheet's 50% draws while the box is still square, so the handover on the first
-    frame is exact; see the note on FRAME_RADIUS_PX for why this is carried in pixels.
+    Circle → rounded rectangle, and then held there for the rest of the transition — the
+    clamp past RADIUS_ROUNDED_AT is useTransform's own, not a stop. Half the resting width
+    is the same shape the stylesheet's 50% draws while the box is still square, so the
+    handover on the first frame is exact; see the note on FRAME_RADIUS_PX for the rest.
   */
   const zoomRadius = useTransform(
     easedProgress,
-    [0, RADIUS_ROUNDED_AT, RADIUS_SHARP_AT],
-    [target.size / 2, FRAME_RADIUS_PX, 0],
+    [0, RADIUS_ROUNDED_AT],
+    [target.size / 2, FRAME_RADIUS_PX],
   )
 
   const scrimOpacity = useTransform(easedProgress, [0.1, 0.95], [0, 1])
@@ -343,6 +371,17 @@ function About() {
     easedProgress,
     [BLUR_START_AT, BLUR_FULL_AT],
     ['blur(0px)', `blur(${ZOOM_BLUR_PX}px)`],
+  )
+
+  /*
+    The blur's own margin, on exactly the blur's ramp so the two can never fall out of
+    step — a negative inset applied to all four sides, pushing .media's faded edges out
+    beyond the frame that clips it. See MEDIA_BLEED_PX for why the fade exists at all.
+  */
+  const mediaBleed = useTransform(
+    easedProgress,
+    [BLUR_START_AT, BLUR_FULL_AT],
+    [0, -MEDIA_BLEED_PX],
   )
 
   const lensOpacity = useTransform(easedProgress, [0, LENS_FADE_END], [1, 0])
@@ -504,10 +543,23 @@ function About() {
                 {/*
                   The blur rides on this wrapper rather than on the layer above it, which
                   keeps the rim, the shadow and the scrim sharp while the footage softens.
+
+                  The four insets are one motion value, not four — they are always equal,
+                  and writing them separately would only invite them to drift apart.
                 */}
                 <motion.div
                   className={styles.media}
-                  style={zoomEnabled ? { filter: mediaFilter } : undefined}
+                  style={
+                    zoomEnabled
+                      ? {
+                          filter: mediaFilter,
+                          top: mediaBleed,
+                          right: mediaBleed,
+                          bottom: mediaBleed,
+                          left: mediaBleed,
+                        }
+                      : undefined
+                  }
                 >
                   {showLens ? (
                     /*
