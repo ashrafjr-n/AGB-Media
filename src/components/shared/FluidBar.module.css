@@ -1,0 +1,174 @@
+/*
+  The hero ticker's water: three gradient masses drifting under one shared turbulence
+  displacement. See FluidBar.jsx for why this is DOM rather than the WebGL canvas it
+  replaced.
+
+  Every moving part is a CSS animation, which is deliberate — the
+  prefers-reduced-motion block in global.css already collapses all CSS animations to
+  0.01ms with a single iteration, so the whole effect freezes into a still frame under
+  that preference with no media query of its own here and no JS branch anywhere. That is
+  the entire reason nothing in this file is driven by SMIL or by script.
+*/
+
+.fluid {
+  position: absolute;
+  inset: 0;
+
+  /*
+    Above the host's own fill, below its content. Requires `isolation: isolate` on the
+    host to keep the negative index scoped to it — the ticker already carries one, for
+    exactly this. In-flow content paints above negative-z-index children, so the metadata
+    needs no z-index of its own.
+  */
+  z-index: -1;
+
+  /*
+    The layers are deliberately larger than this box and drift across it; this is what
+    keeps them inside the strip. It also clips the filter's own bleed, since the filter
+    region is widened past the element's bounds.
+  */
+  overflow: hidden;
+
+  /*
+    The master dial for the effect. The layer alphas below are authored to read correctly
+    at this value — turn this down to weaken the whole thing at once rather than
+    adjusting the layers individually.
+  */
+  opacity: var(--fluid-opacity);
+
+  pointer-events: none;
+}
+
+/*
+  The filter definition's host. Zero-sized and out of flow so it can sit inside the strip
+  without taking part in its layout — the <svg> exists only so the filter has somewhere
+  to live in the document.
+*/
+.defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
+
+/*
+  Carries the displacement for all three layers at once.
+
+  The id is a document-wide reference rather than a class, so CSS Modules leaves it
+  alone — it must stay in step with FILTER_ID in FluidBar.jsx by hand.
+*/
+.surface {
+  position: absolute;
+  inset: 0;
+  filter: url(#fluid-bar-turbulence);
+}
+
+/*
+  The three drifting masses.
+
+  Each is twice the strip's width with its gradients tiled at exactly one strip width, so
+  translating by 50% of the layer is exactly one tile and the loop is seamless. Each
+  animates `transform` only, which the compositor handles without repainting.
+
+  Oversized on the block axis, and that matters here in a way it did not for the old
+  gradient sheen: the displacement pushes pixels by up to 26px in both directions, and at
+  the top and bottom edges of a ~60px strip it would otherwise drag in transparency and
+  leave the water looking eaten away along the border. The overhang gives it material to
+  pull from.
+*/
+.layer-light,
+.layer-shade,
+.layer-glint {
+  position: absolute;
+  inset-block: -40%;
+  inset-inline-start: 0;
+  inline-size: 200%;
+
+  background-repeat: repeat;
+  background-size: 50% 100%;
+
+  /* Continuously animating transforms, so the hint is honest rather than blanket. */
+  will-change: transform;
+}
+
+/*
+  The lit surface: two soft highlights of different sizes, offset from each other so the
+  pair does not read as one repeating shape. Ellipses far wider than they are tall, which
+  is what gives the field its along-the-strip grain.
+*/
+.layer-light {
+  background-image: radial-gradient(
+      ellipse 34% 130% at 22% 46%,
+      var(--fluid-highlight),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 26% 105% at 68% 58%,
+      var(--glass-sheen-white),
+      transparent 70%
+    );
+  animation: fluid-drift var(--glass-drift-slow) linear infinite;
+}
+
+/*
+  The dark mass, drifting the other way. This is what gives the strip depth rather than
+  an even wash — the highlights above only read as light on water if something else is
+  reading as its depth.
+
+  `reverse` rather than a second @keyframes block: with a linear from→to translate,
+  reversing is exactly the opposite drift.
+*/
+.layer-shade {
+  background-image: radial-gradient(
+    ellipse 44% 140% at 50% 52%,
+    var(--fluid-shade),
+    transparent 74%
+  );
+  animation: fluid-drift var(--glass-drift) linear infinite reverse;
+}
+
+/*
+  The fastest and faintest layer, and the only one that also moves vertically. Its bob is
+  folded into its own keyframes rather than added as a second animation: two animations
+  on one element cannot both drive `transform` — the later one simply wins.
+*/
+.layer-glint {
+  background-image: radial-gradient(
+    ellipse 18% 90% at 40% 44%,
+    var(--fluid-highlight),
+    transparent 68%
+  );
+  animation: fluid-drift-bob var(--glass-drift-fast) linear infinite;
+}
+
+/*
+  Exactly one tile of travel. translate3d, not translateX, so it is unambiguously a
+  compositor transform.
+*/
+@keyframes fluid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/*
+  One tile of travel with a slight rise and fall along the way. The vertical offset
+  returns to 0 at 100% so the loop still closes seamlessly — the horizontal distance is
+  what has to be exact, and the y is free to wander as long as it comes home.
+*/
+@keyframes fluid-drift-bob {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(-25%, 4%, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}

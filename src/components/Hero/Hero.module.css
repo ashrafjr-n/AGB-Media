@@ -99,17 +99,17 @@
   z-index: var(--z-base);
 
   /*
-    Own stacking context, so the two sheen layers below can sit at z-index -1:
-    above this element's own fill, below the metadata, without either escaping the
-    strip. backdrop-filter already establishes one as a side effect — this states
-    it, so the layering does not silently depend on that.
+    Own stacking context, so the water canvas can sit at z-index -1: above this
+    element's own fill, below the metadata, without escaping the strip.
+    backdrop-filter already establishes one as a side effect — this states it, so
+    the layering does not silently depend on that.
   */
   isolation: isolate;
 
   /*
-    The sheen layers are twice the strip's width and drift across it. Clipping them
-    here is what keeps the effect inside the glass; without it they would paint
-    across the whole hero.
+    Keeps the canvas inside the glass. It is inset to this box so it has nothing to
+    overflow today; this is what guarantees that stays true, and it is also what
+    contains the wrapped metadata if the strip is ever narrow enough to wrap.
   */
   overflow: hidden;
 
@@ -199,106 +199,21 @@
   letter-spacing: var(--tracking-wide);
 }
 
-/* --- Ticker sheen --------------------------------------------------------- */
-
 /*
-  Two warm layers drifting across the glass in opposite directions, at
-  non-harmonic speeds. Neither is doing anything on its own — the effect is the
-  slow interference between them, which is what stops it reading as a loop and
-  starts it reading as light moving through dark water.
+  There is no sheen pseudo-element here any more.
 
-  Both are twice the strip's width with a gradient tiled at exactly one strip
-  width, and both animate `transform` rather than `background-position`. That
-  distinction is the performance of this whole feature: background-position
-  repaints a viewport-wide box every frame, while a transform is handed to the
-  compositor and costs nothing per frame. Translating a 200%-wide box by 50% of
-  itself is exactly one tile, so the loop is seamless with no keyframe bookkeeping.
+  Two counter-drifting linear-gradients used to sit at z-index -1 on ::before and
+  ::after. They were replaced by a fragment shader (shared/FluidBar.jsx, rendered into
+  the strip from Hero.jsx) for the reason a translating gradient cannot be fixed by
+  tuning it: the same shape keeps arriving, so however slow or faint it is, it reads as
+  a gradient that moved. Three octaves of noise under a domain warp never repeat.
 
-  z-index -1 against the strip's `isolation: isolate` puts them above the glass
-  fill and below the metadata. The <li> children are in-flow, and in-flow content
-  always paints above negative-z-index children, so the text needs nothing.
+  The canvas takes the same slot those layers had — absolute, inset, z-index -1 against
+  the `isolation: isolate` above — so nothing about the strip's own box changed.
+
+  Note that --glass-sheen and --glass-sheen-deep are still referenced by the glass
+  buttons in shared/Button.module.css; only this surface stopped using them.
 */
-.ticker::before,
-.ticker::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 200%;
-
-  /* One tile == one strip width, which is what makes the drift seamless. */
-  background-size: 50% 100%;
-  background-repeat: repeat;
-
-  /*
-    Continuously animating transforms, so the hint is honest here rather than
-    speculative — it keeps each layer on its own compositor layer instead of
-    re-rasterising the strip.
-  */
-  will-change: transform;
-
-  pointer-events: none;
-}
-
-/*
-  The upper sheen: two soft warm bands on a shallow diagonal. Transparent at both
-  0% and 100% so consecutive tiles butt together invisibly.
-*/
-.ticker::before {
-  background-image: linear-gradient(
-    100deg,
-    transparent 0%,
-    var(--glass-sheen) 18%,
-    transparent 36%,
-    transparent 60%,
-    var(--glass-sheen) 78%,
-    transparent 100%
-  );
-  animation: sheen-drift var(--glass-drift) linear infinite;
-}
-
-/*
-  The counter-drifting layer, deeper and slightly faster. Rust rather than gold,
-  and a steeper angle, so where the two cross they add up to something warmer than
-  either — that crossing is the "ripple".
-
-  `animation-direction: reverse` rather than a second @keyframes block: with a
-  linear from→to translate, reversing is exactly the opposite drift.
-*/
-.ticker::after {
-  background-image: linear-gradient(
-    145deg,
-    transparent 0%,
-    var(--glass-sheen-deep) 26%,
-    transparent 52%,
-    transparent 74%,
-    var(--glass-sheen-deep) 90%,
-    transparent 100%
-  );
-  /*
-    Held at a third of the strong sheen's alpha through the layer's own opacity
-    rather than a fourth colour token: --glass-sheen-deep is shared with the
-    button, where it is meant to be seen.
-  */
-  opacity: 0.45;
-  animation: sheen-drift var(--glass-drift-fast) linear infinite reverse;
-}
-
-/*
-  Exactly one tile of travel. Shared by both layers here and by both of the
-  button's, which is why it is stated as a bare 50% rather than in strip units.
-  translate3d, not translateX, so it is unambiguously a compositor transform.
-*/
-@keyframes sheen-drift {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
 
 /* --- Ticker content ------------------------------------------------------- */
 
@@ -309,8 +224,15 @@
   color: var(--color-text-muted);
 }
 
-/* Gold dot separator between entries. */
-.ticker-item:not(:first-child)::before {
+/*
+  Gold dot separator between entries.
+
+  `:first-of-type`, not `:first-child`. The canvas that draws the strip's water is the
+  ticker's first *child*, so `:not(:first-child)` also matched the opening <li> and put
+  a stray dot in front of "COMPANY". Matching on type instead keys the rule to the list
+  items alone and is immune to anything non-<li> being added ahead of them.
+*/
+.ticker-item:not(:first-of-type)::before {
   content: '';
   flex-shrink: 0;
   inline-size: 3px;

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 
 import useScrollPosition from '../../hooks/useScrollPosition'
 import heroVideo from '../../assets/videos/hero.mp4'
+import FluidBar from '../shared/FluidBar'
 import HeroHeader from './HeroHeader'
 import styles from './Hero.module.css'
 
@@ -111,6 +112,22 @@ function Hero() {
       */}
 
       <ul className={styles.ticker}>
+        {/*
+          The strip's water, sitting behind the metadata at z-index -1. Drifting gradient
+          masses under an SVG turbulence displacement — see FluidBar.jsx, and the note
+          where the linear-gradient sheen it descends from used to be in Hero.module.css.
+
+          One wart, stated rather than hidden: <ul> is specified to contain only <li> and
+          script-supporting elements, so this <div> child is technically invalid markup.
+          Every browser renders it, it is absolutely positioned so it is out of the flex
+          flow entirely, and it carries aria-hidden so assistive tech never sees it
+          between the list items. The clean fix is to wrap the ticker in a positioned
+          <div> and make this its sibling instead — deliberately not done here, because it
+          would change the strip's box, which is the one thing this section's glass
+          depends on staying still.
+        */}
+        <FluidBar />
+
         {tickerItems.map(({ label, value }) => (
           <li key={label} className={styles['ticker-item']}>
             <span className={styles['ticker-label']}>{label}</span>

@@ -183,6 +183,19 @@
   --glass-sheen-white: rgba(255, 255, 255, 0.07);
   --glass-sheen-warm: rgba(224, 154, 60, 0.12);
 
+  /*
+    The hero ticker's water (shared/FluidBar.jsx): drifting gradient masses pushed
+    through an SVG turbulence displacement. Neutral by intent — light on dark water,
+    no gold anywhere in it.
+
+    --fluid-opacity is the master dial for the whole effect and the first thing to
+    reach for: the layers are authored to read correctly at this value, so turning it
+    down weakens everything together rather than changing the character of it.
+  */
+  --fluid-highlight: rgba(255, 255, 255, 0.12);
+  --fluid-shade: rgba(10, 10, 10, 0.55);
+  --fluid-opacity: 0.4;
+
   /* --- Typography ------------------------------------------------------- */
 
   /*
