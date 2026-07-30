@@ -86,6 +86,22 @@
   --color-scrim: rgba(1, 1, 1, 0.25);
 
   /*
+    A fifth copy of the ground tone, and the Story section's whole surface — see
+    About.module.css. It belongs in this group rather than beside the glass tokens
+    below precisely because of the note above: it is --color-black at an alpha, so it
+    has to be re-derived by hand along with the rest of them whenever that token moves.
+
+    Heavier than every other glass on the site (0.75, against --glass-fill's 0.55)
+    because it is the only one covering the entire viewport rather than sitting on it
+    as a small pane, and because it has to hold text legibility against an unpredictable
+    frame of footage rather than against a known ground.
+
+    This is the dial the section is tuned on. Toward 1 if the footage reads too strongly
+    through the copy; toward 0.6 to let more of the warm tones through.
+  */
+  --section-glass-fill: rgba(1, 1, 1, 0.75);
+
+  /*
     Gold at very low alpha — a tint that warms a surface without colouring it.
     The quiet button's hover fill; deliberately weak enough that it reads as the
     panel catching light rather than as a filled state.
@@ -173,6 +189,21 @@
     backdrop.
   */
   --glass-blur-wide: 14px;
+
+  /*
+    The Story section's blur, and the one that deliberately breaks the "keep the blur
+    radii close to one another" rule above.
+
+    That rule exists so several small panes read as one material. This surface is not a
+    pane — it is the whole viewport, and blur radius has to scale with the area it
+    covers or it reads as a smeared photo rather than as frosted glass. 20px over a
+    full screen is roughly the same *relative* softness that 10px gives the Contact
+    button over its ~140px box.
+
+    It is also the most expensive declaration on the site: see the cost note in
+    About.module.css before raising it.
+  */
+  --section-glass-blur: 20px;
 
   /*
     The two bands that drift through the white glass: a cool highlight and a warm

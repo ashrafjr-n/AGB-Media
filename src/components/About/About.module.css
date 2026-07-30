@@ -5,30 +5,48 @@
 */
 
 /*
-  Fully opaque --color-black, and the opacity is load-bearing rather than cosmetic:
-  the hero's video backdrop is `position: fixed`, so it stays put while the document
-  scrolls over it. This background is the surface that covers it — and what tells
-  the hero to pause the video, since Hero.jsx treats "one viewport scrolled" as
-  "fully covered". Any transparency here — a gradient that fades out, an rgba()
-  alpha — would leave the footage showing through a paused frame. Do not soften it.
+  DARK FROSTED GLASS over the hero's footage — the section no longer covers the video,
+  it filters it.
 
-  This section was briefly tried on an off-white ground and is back on --color-black.
-  What settled it was the top edge: the boundary with the hero is deliberately
-  untreated — flat colour meeting video with no gradient band or shadow easing the join
-  — and against dark footage an off-white section put a hard bright line across the
-  viewport, where the ground tone is nearly seamless. An earlier pass faded that edge
-  with a gradient and it was removed on purpose; do not reintroduce one, and note that
-  the fade is not what would have rescued the light surface either.
+  Read this before touching the background, because it reverses what this comment used
+  to say. The rule here was that the fill must be *fully opaque*: the hero's backdrop is
+  `position: fixed` and stays put while the document scrolls over it, so an opaque
+  --color-black was what hid it, and any alpha "would leave the footage showing through
+  a paused frame". Showing the footage through is now the entire point. The old rule was
+  right about the mechanism and is simply no longer the goal.
 
-  Nothing of the test is left in the tree: the --light-* tokens are out of
-  variables.css, .button-glass-light is out of Button.module.css, and the colours below
-  reference the shared tokens directly again rather than going through a local
-  indirection layer that existed only to make the swap reversible.
+  How it works: --section-glass-fill is --color-black at 0.75, and the backdrop-filter
+  blurs everything painted beneath this element. That reaches the hero's video because
+  nothing between here and the document root establishes a backdrop root — no ancestor
+  carries filter, opacity, mask, contain or isolation — and because `.backdrop` sits at
+  z-index 0 in the root stacking context while this section is positioned at z-index
+  auto, so same-layer boxes paint in tree order and Hero's comes first. Both facts are
+  load-bearing now in a way they were not when this was opaque: adding `isolation:
+  isolate` or an opacity to <main>, or giving this section a z-index below the
+  backdrop's, would each silently flatten the glass to a plain dark panel.
 
-  It paints over the backdrop without needing a z-index: `.backdrop` sits at
-  z-index 0 in the root stacking context, this section is positioned with
-  z-index auto, and same-layer positioned boxes paint in tree order — About
-  comes after Hero in the markup, so it wins.
+  Note the blur sees the footage *already scrimmed* — Hero's .backdrop-overlay is inside
+  the fixed backdrop at --color-scrim (0.25) — so the effective darkening is the two
+  compounded, not 0.75 alone.
+
+  COST. This is the most expensive declaration in the project. A viewport-sized
+  backdrop-filter re-blurs the full frame as the section scrolls, on top of a 4K decode
+  and the blended grain layer in global.css. The video pausing at viewportProgress >= 1
+  helps — a frozen source is cheaper to sample repeatedly — but it does not make the
+  blur free, because the blurred region still moves with the element. If the section
+  ever feels heavy on a mid-range machine, --section-glass-blur is the first dial, not
+  the fill.
+
+  The pause gate in Hero.jsx is untouched and still correct, though its rationale has
+  shifted: it used to stop work on something invisible, and now stops work on something
+  visible but frozen behind glass.
+
+  ONE KNOWN SEAM, and it is in Hero, not here. Hero's .ticker is painted in *fully
+  opaque* --color-black and extends its fill through the hero's block-end padding
+  specifically so it met this section's identical opaque black with no visible join.
+  That premise is gone: an opaque strip now runs straight into translucent glass, so
+  there is a step in tone across the hero's bottom edge. Fixing it means giving the
+  ticker this same treatment — it is a Hero decision, deliberately not made here.
 
   Height: one full screen, with the top padding clearing the fixed header — About is
   the only section that does this, since the hero hides the site header for its whole
@@ -59,7 +77,13 @@
   padding-block-end: var(--space-sm);
   padding-inline: var(--container-padding);
 
-  background-color: var(--color-black);
+  /*
+    -webkit- prefix for Safari, which still requires it for backdrop-filter — the same
+    pairing Header.module.css and Button.module.css already use.
+  */
+  background-color: var(--section-glass-fill);
+  -webkit-backdrop-filter: blur(var(--section-glass-blur));
+  backdrop-filter: blur(var(--section-glass-blur));
 }
 
 /*
@@ -139,19 +163,20 @@
   border: 1px solid var(--glass-border);
 
   /*
-    Painted, and not only for depth: this is what the lens canvas composites its
-    antialiased edge against, and it is what fills the circle for the moment before the
-    model and the first video frame arrive. The footage is dark, so a dark disc is also
-    the honest placeholder.
+    Deliberately opaque --color-black, and NOT the section's glass fill. This is what
+    the lens canvas composites its antialiased edge against and what fills the circle
+    until the model and the first video frame arrive, and both want a known surface
+    rather than a blurred frame of the *hero's* footage showing through the window onto
+    a different video. The disc now reads a shade darker than the section around it,
+    which is the right way round for a media frame.
   */
   background-color: var(--color-black);
 
   /*
-    Worth being honest about — a black shadow on a near-black ground is very nearly
-    invisible, and the rim above is what actually separates the circle from the
-    section. Kept because it does register once the circle is over the footage-lit part
-    of the page, and because --shadow-soft is the project's one legitimate raw-black
-    value.
+    This registers properly now. --shadow-soft was very nearly invisible while the
+    section was flat --color-black; against the lighter, footage-lit glass it actually
+    lifts the disc off the surface. --shadow-soft is also the project's one legitimate
+    raw-black value, so it needs no glass-side equivalent.
   */
   box-shadow: var(--shadow-soft);
 }
