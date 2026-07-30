@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { Fragment, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
@@ -136,9 +136,21 @@ function About() {
             Our Story
           </motion.h2>
 
+          {/*
+            The mark sits *between* the paragraphs rather than after them, so it is
+            rendered from inside the map on the second pass rather than as a sibling
+            after it — which keeps the copy driven by the `paragraphs` array instead of
+            being unrolled into two hardcoded blocks around it.
+
+            "2025" is the founding year the hero's ticker already states; it is repeated
+            here, not introduced. Keep the two in step.
+          */}
           <motion.div className={styles.body} {...revealAt(0.16)}>
-            {paragraphs.map((text) => (
-              <p key={text.slice(0, 32)}>{text}</p>
+            {paragraphs.map((text, index) => (
+              <Fragment key={text.slice(0, 32)}>
+                {index === 1 && <span className={styles.marker}>Est. 2025</span>}
+                <p>{text}</p>
+              </Fragment>
             ))}
           </motion.div>
 
