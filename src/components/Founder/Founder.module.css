@@ -1,0 +1,432 @@
+/*
+  The founder section, and the one section on the site that paints no background at all.
+
+  It lives inside About's .hold, above the Story section's finished zoom — a full-viewport
+  blurred frozen frame of story.webm under a scrim. That frame is this section's ground,
+  so any fill here would cover the thing the whole transition exists to build. Nothing
+  below may set background-color, and the type is weighted for a dark, softly-lit surface.
+
+  IT DOES NOT SCROLL INTO VIEW. On the motion path this is pinned to the viewport and
+  arrives by fading up from nothing; it never translates. See .founder[data-pinned].
+
+  ONE SCREEN. The column is centred in the viewport and every area takes its natural
+  height, so what fills the screen is the content rather than any single stretched block.
+  Vertical values are clamps with a vh middle term rather than rems: a layout tuned to
+  look right at 900px tall would overflow at 700 and float at 1100, and scaling the few
+  things that own real height — block padding, the gaps, the portrait, the photo strip —
+  keeps it inside one screen across the range.
+
+  Below 48rem none of this applies: the content is far taller than a phone screen, so it
+  is left in flow and scrolls normally. See the note on .hold in About.module.css.
+
+  There is no padding-inline on the section. Two areas are full bleed and two are
+  contained, so the container is applied per block rather than pulled back out.
+
+  COLOUR. Values are derived from --color-gold and --color-text with color-mix rather
+  than written as new rgba()s, so the accent stays sampled from the logo in exactly one
+  place (CLAUDE.md §2). --color-text-subtle is already text at 40% and is used directly
+  wherever that is what is wanted.
+*/
+.founder {
+  --founder-gold-strong: color-mix(in srgb, var(--color-gold) 85%, transparent);
+  --founder-gold-mid: color-mix(in srgb, var(--color-gold) 50%, transparent);
+  --founder-gold-soft: color-mix(in srgb, var(--color-gold) 40%, transparent);
+
+  --founder-text-strong: color-mix(in srgb, var(--color-text) 70%, transparent);
+  --founder-text-mid: color-mix(in srgb, var(--color-text) 55%, transparent);
+
+  /*
+    One small gap between all four areas, and the first dial to reach for if the section
+    ever needs to breathe more or fit into less.
+
+    It used to be clamp(0.75rem, 2vh, 1.75rem) with .intro taking `flex: 1` — and that
+    combination, not the gap, is what put a chasm above the career line: the hero block
+    absorbed every spare pixel in the column and then aligned its content to the top,
+    leaving all of the slack in one place. The slack now goes to justify-content below,
+    which spreads it above and below the whole column instead.
+  */
+  --founder-gap: clamp(0.4rem, 1.1vh, 0.85rem);
+  --founder-pad: clamp(0.75rem, 2.5vh, 2rem);
+
+  display: flex;
+  flex-direction: column;
+  /* Centred as a block, which is what leaves even air top and bottom. */
+  justify-content: center;
+  gap: var(--founder-gap);
+
+  padding-block: var(--founder-pad);
+}
+
+/*
+  Pinned to the viewport, and the reason nothing here slides.
+
+  .hold sits at the very end of the stage, so in flow this element only reaches the screen
+  *after* the zoom has finished — it would rise from the bottom edge as the reader kept
+  scrolling, which read as a second section arriving rather than as the founder appearing
+  on the frame. Fixed, it is simply there, at full size, from the start; opacity is the
+  only thing that changes, and About drives it.
+
+  Scoped to 48rem and up, and only while the zoom runs, because both exceptions would
+  break it: below 48rem the content is taller than a phone screen and has to scroll, and
+  on either of those paths .hold carries a backdrop-filter — which makes it a containing
+  block for fixed descendants, so `inset: 0` would resolve against .hold rather than the
+  viewport. The motion path at 48rem and up is the one case where .hold has no filter.
+
+  overflow: hidden here rather than relying on .hold's, for the same reason: a fixed box
+  escapes an ancestor's overflow entirely.
+*/
+@media (min-width: 48rem) {
+  .founder[data-pinned='true'] {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+}
+
+/* --- The eyebrow ---------------------------------------------------------- */
+
+/*
+  The same micro-label About uses, at 0.6rem with 0.3em of tracking — both below the floor
+  of the shared scale on purpose. At this size the letters need the extra air or the word
+  closes into a smudge, and nothing in running text should ever be this small.
+
+  The dot leads rather than trails because the tracking adds a space after the final
+  letter that CSS cannot trim.
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  color: var(--founder-gold-mid);
+  font-size: 0.6rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* flex-shrink so a 5px item with no content cannot collapse in a tight column. */
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 5px;
+  block-size: 5px;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/* --- Area 1: name and portrait, against the profile ----------------------- */
+
+/*
+  Natural height, like every other area. It took `flex: 1` while the column stretched to
+  fill the screen; with the column centred instead there is nothing for it to absorb, and
+  leaving it flexible is exactly what opened the gap above the career line.
+*/
+.intro {
+  flex: 0 0 auto;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: var(--space-lg);
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1.2vh, 0.9rem);
+
+  /* A grid child's automatic minimum is its content; without this the name's own
+     measure would push the track past its share of the row. */
+  min-inline-size: 0;
+}
+
+/*
+  clamp(2rem, 4vw, 3.2rem) as specified, written literally rather than mapped onto the
+  shared scale: --text-3xl is the nearest step and tops out a full rem higher, which
+  would let the name outweigh About's section title on a wide window.
+
+  Weight is --font-weight-heavy (700), NOT the 800 first asked for, and the difference is
+  nil on screen. global.css requests 200–700 from Fontshare and Clash Display arrives as
+  static instances rather than one variable file, so a browser asked for 800 rounds it
+  down to 700 — identical rendering from a value that lies about what is loaded (§3).
+*/
+.name {
+  display: flex;
+  flex-direction: column;
+
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: var(--font-weight-heavy);
+  /* Under 1, so the two lines read as one block rather than a ladder. */
+  line-height: 0.95;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.name-line {
+  display: block;
+}
+
+.name-accent {
+  color: var(--founder-gold-strong);
+}
+
+/*
+  Raw image: no radius, no frame, no card, no shadow. The clean edge against the blurred
+  backdrop is the whole effect, and anything drawn around it would turn the portrait into
+  a component.
+
+  A fixed height, because the file's natural one was by itself enough to make the section
+  unfittable. It gives up height first on a short window, which is right for the one block
+  here with nothing to read, and object-fit centres the crop rather than squashing it.
+*/
+.portrait {
+  display: block;
+  inline-size: 100%;
+  block-size: clamp(6.5rem, 22vh, 18rem);
+  object-fit: cover;
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1.7vh, 1.2rem);
+
+  min-inline-size: 0;
+}
+
+/*
+  `position: relative` for the hairline below, which has to be a pseudo-element: a border
+  cannot fade, and border-image interacts badly with a border on one side only.
+*/
+.bio {
+  position: relative;
+  padding-inline-start: var(--space-sm);
+}
+
+/*
+  Full gold at the top, gone by 85% — stopping short of 100% keeps the last stretch
+  genuinely invisible instead of ending on a faint smudge. inset-block: 0 spans the whole
+  paragraph, so the line is its spine rather than a rule beside part of it.
+*/
+.bio::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+
+  inline-size: 1px;
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-gold),
+    transparent 85%
+  );
+}
+
+/*
+  The bio is the longest run of text here and its leading is where its height lives — a
+  tenth off the line-height saves more than the font-size drop does.
+*/
+.bio p {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-light);
+  line-height: 1.7;
+  color: var(--founder-text-mid);
+}
+
+/* Two by two from the start — four short pairs stack badly as a single column. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.4rem, 1.4vh, 1rem) var(--space-md);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.fact-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+
+  color: var(--founder-gold-soft);
+  font-size: 0.6rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.fact-label::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 4px;
+  block-size: 4px;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/* dd's UA indent is already zeroed by the `*` reset in global.css. */
+.fact-value {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-light);
+  line-height: 1.45;
+  color: var(--founder-text-strong);
+}
+
+/* --- Area 2: career, one flowing line ------------------------------------ */
+
+/*
+  Full bleed by simply not being constrained — the section sets no inline padding, so this
+  block is already the width of .hold. There is no negative-margin breakout in this file.
+*/
+.career {
+  flex: 0 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.3rem, 1vh, 0.6rem);
+
+  inline-size: 100%;
+}
+
+/* The only centred eyebrow on the site; it labels a line rather than a column. */
+.career-label {
+  justify-content: center;
+}
+
+/*
+  Five milestones set as one wrapping line, where they were five bordered cells. The row
+  of cards cost roughly three times this height for the same words, and at this size a
+  card's worth of chrome around thirty characters read as a table rather than as a life.
+
+  Centred and wrapping, so it breaks to a second line gracefully on a narrow window
+  instead of forcing five columns through it.
+*/
+.career-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: var(--space-2xs);
+  row-gap: 0.15rem;
+
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+  list-style: none;
+}
+
+.career-item {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-light);
+  line-height: 1.7;
+  color: var(--color-text-subtle);
+}
+
+/*
+  The separator, as a pseudo-element rather than a character in the copy — a screen reader
+  hears five list items, not one sentence peppered with punctuation. It also means the
+  dots never end a wrapped line, since each belongs to the item that follows it.
+*/
+.career-item + .career-item::before {
+  content: '·';
+  margin-inline-end: var(--space-2xs);
+  color: var(--founder-gold-soft);
+}
+
+/* --- Area 3: the work strip, full bleed ---------------------------------- */
+
+/*
+  The height is passed to LogoLoop from Founder.jsx rather than set here — it is the
+  component's own prop, and it is a clamp for the same reason everything else here is.
+*/
+.strip {
+  flex: 0 0 auto;
+  inline-size: 100%;
+}
+
+/* --- Area 4: closing notes, on one line ---------------------------------- */
+
+/*
+  Both notes on a single line in the same register as the career strip, where they were
+  a two-column block with an eyebrow and a paragraph each. The labels carry the gold and
+  an em dash rather than sitting above their text, which is what collapses four lines to
+  one without losing which half is which.
+*/
+.closing {
+  flex: 0 0 auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: var(--space-2xs);
+  row-gap: 0.15rem;
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+}
+
+.note {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3xs);
+}
+
+/* The same dot as the career line, between the two notes rather than within them. */
+.note + .note::before {
+  content: '·';
+  margin-inline-end: var(--space-2xs);
+  color: var(--founder-gold-soft);
+}
+
+.note-label {
+  color: var(--founder-gold-soft);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+}
+
+/* The em dash belongs to the label, not the copy, so it is drawn rather than typed. */
+.note-label::after {
+  content: ' —';
+}
+
+.note-value {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-light);
+  line-height: 1.7;
+  color: var(--color-text-subtle);
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  /*
+    The 40/60 split. The profile takes the larger share because it carries three blocks
+    against the identity column's two, and both tracks are minmax(0, …) so neither can be
+    forced past its share by its own content.
+  */
+  .intro {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--space-xl);
+  }
+}
+
+@media (min-width: 64rem) {
+  .intro {
+    gap: var(--space-2xl);
+  }
+}

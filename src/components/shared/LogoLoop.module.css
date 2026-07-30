@@ -1,0 +1,132 @@
+/*
+  A continuously scrolling horizontal strip.
+
+  The motion is a single CSS animation on the track rather than anything driven from JS:
+  translating one whole sequence width and repeating is what makes the loop seamless, and
+  keeping it in CSS means it composites on its own and is already covered by the
+  prefers-reduced-motion block in global.css. JS only measures.
+
+  Every value the caller controls arrives as a custom property set inline on .loop — the
+  one place in this file where an inline style is right, because these are genuinely
+  runtime numbers (a measured width, a duration derived from it).
+*/
+
+.loop {
+  position: relative;
+  inline-size: 100%;
+  overflow: hidden;
+}
+
+/*
+  `inline-size: max-content` so the track is as wide as its copies rather than as wide as
+  the viewport — without it the sequences would be squeezed to fit and the measured shift
+  would no longer match what is on screen.
+*/
+.track {
+  display: flex;
+  inline-size: max-content;
+  gap: var(--logo-loop-gap);
+
+  animation: logo-loop-scroll var(--logo-loop-duration) linear infinite;
+  will-change: transform;
+}
+
+/*
+  Nothing moves until the first measurement lands. The shift is a measured width, so
+  animating before it exists would run the whole loop against a 0px translation and show
+  a visible jump when the real value arrived.
+*/
+.loop:not([data-ready='true']) .track {
+  animation: none;
+}
+
+.loop[data-direction='right'] .track {
+  animation-direction: reverse;
+}
+
+/*
+  Paused, not reset — the strip holds wherever it is under the cursor, which is the same
+  behaviour both button variants in Button.module.css use for their sheens.
+*/
+.loop[data-pause-on-hover='true']:hover .track {
+  animation-play-state: paused;
+}
+
+/*
+  One sequence. The track holds several; only the first carries real alt text, the rest
+  are aria-hidden in the markup, so a screen reader hears the set once.
+*/
+.sequence {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--logo-loop-gap);
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  flex: 0 0 auto;
+  display: flex;
+}
+
+/*
+  Height is fixed and width is left to the image, so a mixed set of stills lines up on a
+  common baseline as rectangles of their own natural proportions.
+*/
+.image {
+  display: block;
+  block-size: var(--logo-loop-height);
+  inline-size: auto;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/*
+  The edge fades, painted in whatever colour the caller passes. They sit above the track
+  and take no pointer events, so hovering near an edge still pauses the strip.
+*/
+.loop[data-fade='true']::before,
+.loop[data-fade='true']::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  z-index: var(--z-base);
+
+  inline-size: clamp(3rem, 10%, 9rem);
+  pointer-events: none;
+}
+
+.loop[data-fade='true']::before {
+  inset-inline-start: 0;
+  background-image: linear-gradient(
+    to right,
+    var(--logo-loop-fade),
+    transparent
+  );
+}
+
+.loop[data-fade='true']::after {
+  inset-inline-end: 0;
+  background-image: linear-gradient(
+    to left,
+    var(--logo-loop-fade),
+    transparent
+  );
+}
+
+/*
+  One sequence width plus the track's own gap — the distance from the start of one copy
+  to the start of the next. Landing exactly on that is what makes the repeat invisible.
+*/
+@keyframes logo-loop-scroll {
+  to {
+    transform: translate3d(
+      calc(-1 * (var(--logo-loop-shift) + var(--logo-loop-gap))),
+      0,
+      0
+    );
+  }
+}

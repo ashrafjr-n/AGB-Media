@@ -668,14 +668,81 @@
 }
 
 /*
-  The finished state, held. A second viewport where About is still pinned, the zoom is
-  complete and the frozen blurred frame simply sits there.
+  The finished state, held — and the Founder section's home. About stays pinned behind it,
+  the zoom is complete, and the frozen blurred frame is the ground the Founder is read
+  against.
 
-  This is the slot the Founder section goes in: its content belongs *inside* this
-  element, over the backdrop the transition just built. Until then it is deliberately
-  empty, which is what the brief asked for.
+  Exactly one viewport from 48rem up, and that is load-bearing in two directions.
+
+  The Founder is laid out to fit a single screen with nothing scrolling inside it, so this
+  is its height budget — see the note at the top of Founder.module.css. `overflow: hidden`
+  is the backstop for a window proportion the clamps there do not suit; it should never
+  actually clip anything.
+
+  It also closes the seam this slot had while it was `min-block-size`. .about is sticky
+  inside .stage and releases when .stage's bottom edge reaches it, so a hold *taller* than
+  .about meant the frozen frame slid up and away partway through the Founder, exposing the
+  hero's own footage behind the tail of it. At exactly .about's height the two coincide:
+  the release point is the moment this element reaches the top of the viewport, and from
+  there the frame and the Founder travel together as one. Changing this height without
+  changing .about's would reopen that gap.
+
+  Below 48rem the constraint is dropped. The section is roughly 1200px tall on a phone and
+  no amount of tightening fits that in 667, so it keeps the 100vh floor and scrolls — with
+  the consequences handled by the background rule below.
+
+  Positioned and lifted, which is what puts it *over* the frame rather than under it.
+  .about is sticky and therefore painted as a positioned box; a static sibling after it
+  would be painted in the in-flow layer underneath, and the whole section would disappear
+  behind the blurred frame. --z-base is 1, comfortably below --z-header's 50, so the site
+  header still passes over the top of it.
+
+  No background of any kind, deliberately — see the note at the top of Founder.module.css.
+
+  Neither aria-hidden nor pointer-events: none any more. Both were right while this was an
+  empty spacer and both would now hide real content from assistive technology and swallow
+  its clicks. .lead and .runway keep them; they are still genuinely empty.
 */
 .hold {
-  block-size: 100vh;
-  pointer-events: none;
+  position: relative;
+  z-index: var(--z-base);
+  min-block-size: 100vh;
+}
+
+@media (min-width: 48rem) {
+  .hold {
+    block-size: 100vh;
+    overflow: hidden;
+  }
+}
+
+/*
+  The two cases where the Founder is *not* read against the frozen frame, both given the
+  frosted glass About itself uses so they land on the site's established ground rather
+  than on a special case of their own.
+
+  Under reduced motion there is no zoom at all: .about is never pinned and nothing covers
+  the viewport, so without this the section would sit on the hero's own fixed 4K footage.
+
+  Below 48rem the hold is taller than .about, so the frame releases and slides away
+  partway down — the same exposure, arriving later. The cost is that a phone loses the
+  blurred backdrop behind the founder entirely, since this paints above it. That is the
+  right way round: legible text on the site's own surface beats an effect nobody can read
+  through.
+
+  Neither selector fires on the desktop motion path, which stays transparent — the entire
+  point of the transition.
+*/
+.stage[data-zoom='off'] .hold {
+  background-color: var(--section-glass-fill);
+  -webkit-backdrop-filter: blur(var(--section-glass-blur));
+  backdrop-filter: blur(var(--section-glass-blur));
+}
+
+@media (max-width: 47.999rem) {
+  .hold {
+    background-color: var(--section-glass-fill);
+    -webkit-backdrop-filter: blur(var(--section-glass-blur));
+    backdrop-filter: blur(var(--section-glass-blur));
+  }
 }

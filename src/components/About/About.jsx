@@ -19,6 +19,7 @@ import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 
 import useMediaQuery from '../../hooks/useMediaQuery'
 import storyVideo from '../../assets/videos/story.webm'
+import Founder from '../Founder/Founder'
 import buttonStyles from '../shared/Button.module.css'
 import styles from './About.module.css'
 
@@ -788,10 +789,22 @@ function About() {
           */}
           <div className={styles.lead} aria-hidden="true" />
           <div className={styles.runway} ref={runwayRef} aria-hidden="true" />
-          {/* Where the Founder section's content will go, over the frozen frame. */}
-          <div className={styles.hold} aria-hidden="true" />
         </>
       )}
+
+      {/*
+        The hold, and what the transition was building a backdrop for.
+
+        Rendered unconditionally, unlike the two spacers above it — this one holds content
+        rather than scroll distance. Leaving it inside the zoomEnabled branch would have
+        dropped the Founder section entirely under prefers-reduced-motion, which is the
+        difference between simplifying an animation and deleting a section.
+
+        It is no longer aria-hidden or pointer-events: none for the same reason.
+      */}
+      <div className={styles.hold}>
+        <Founder progress={easedProgress} pinned={zoomEnabled} />
+      </div>
     </div>
   )
 }
