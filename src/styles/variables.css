@@ -12,14 +12,23 @@
     A flat near-black: exactly neutral now, all three channels equal — no steel,
     slate, or blue lean whatsoever.
 
-    The lineage runs #0c0f14 -> #1b1d20 -> #131315 -> #070708 -> #0b0b0c -> here:
-    the early values were set while the grain overlay was still adding luminance on
-    top of them, so the page always rendered lighter than its own token. The grain
-    has blended in soft-light since #131315 and no longer lifts the base, so this
-    value is what actually reaches the screen. This is the final ground tone — the
-    token is settled and takes no further adjustment.
+    The lineage runs #0c0f14 -> #1b1d20 -> #131315 -> #070708 -> #0b0b0c -> #050505
+    -> #030303 -> here: the early values were set while the grain overlay was still
+    adding luminance on top of them, so the page always rendered lighter than its own
+    token. The grain has blended in soft-light since #131315 and no longer lifts the
+    base, so this value is what actually reaches the screen. This is the final ground
+    tone — the token is settled and takes no further adjustment.
+
+    At one point off pure black, the "never darken with raw black" rule below is now
+    academic for *appearance* — rgba(0,0,0,a) and rgba(1,1,1,a) are indistinguishable
+    over this ground. Keep following it anyway: it is what makes the ground a single
+    editable value, and it is what stops a seam reappearing if this token ever lifts.
+
+    Measured, not assumed: with the video backdrop hidden, the hero's composited
+    background and the Story section's flat fill render byte-identical, and the
+    scrim below is an exact no-op over this ground (see --color-scrim).
   */
-  --color-black: #050505;
+  --color-black: #010101;
 
   /*
     The ground lifted just enough to separate a surface from the page — an 8-point
@@ -30,7 +39,7 @@
     Currently unreferenced: the reveal button paints its panels in --color-black on
     purpose, so that at rest they merge into the page (see Button.module.css).
   */
-  --color-raised: #0d0d0d;
+  --color-raised: #090909;
 
   /*
     Signature accent, sampled from the midtone band of the logo
@@ -43,7 +52,7 @@
   /*
     Very dark navy. Secondary surfaces only — never a dominant background.
     Nothing uses it, and it has drifted out of step with the palette: now that the
-    ground is #050505 this is clearly *lighter* than it, and distinctly bluer,
+    ground is #010101 this is clearly *lighter* than it, and distinctly bluer,
     where the rest of the palette has settled on neutral. Retune or delete it before
     using it for anything; --color-raised is the neutral lift to reach for instead.
   */
@@ -67,10 +76,10 @@
     raw black instead; that is what puts a visible seam between two sections, since
     pure black is neither as light nor as cool as the ground everything else uses.
   */
-  --color-glass: rgba(5, 5, 5, 0.5);
+  --color-glass: rgba(1, 1, 1, 0.5);
   --color-border-subtle: rgba(245, 245, 240, 0.08);
-  --color-overlay: rgba(5, 5, 5, 0.72);
-  --color-scrim: rgba(5, 5, 5, 0.25);
+  --color-overlay: rgba(1, 1, 1, 0.72);
+  --color-scrim: rgba(1, 1, 1, 0.25);
 
   /*
     Gold at very low alpha — a tint that warms a surface without colouring it.

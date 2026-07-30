@@ -47,37 +47,56 @@ function About() {
   return (
     <section className={styles.about} id="about">
       <div className={styles.inner}>
+        <div className={styles.copy}>
+          {/*
+            Two-part opening: a tracked gold label, then the section title. The
+            title replaces the pull-quote that used to anchor this section, and it
+            is the section's h2 — previously the block had no heading at all.
+          */}
+          <motion.p className={styles.eyebrow} {...reveal}>
+            Who We Are
+          </motion.p>
+
+          <motion.h2 className={styles.title} {...revealAt(0.08)}>
+            Our <span className={styles['title-accent']}>Story</span>
+          </motion.h2>
+
+          <motion.div className={styles.body} {...revealAt(0.16)}>
+            {paragraphs.map((text) => (
+              <p key={text.slice(0, 32)}>{text}</p>
+            ))}
+          </motion.div>
+
+          {/*
+            /about is not routed yet — the link is wired ahead of the page.
+            Shared button visuals + a local class carrying only its spacing.
+          */}
+          <MotionLink
+            to="/about"
+            className={`${buttonStyles.button} ${buttonStyles['button-reveal']} ${styles.cta}`}
+            {...revealAt(0.24)}
+          >
+            <span>Discover Our Story</span>
+            <HiOutlineArrowNarrowRight size={20} aria-hidden="true" />
+          </MotionLink>
+        </div>
+
         {/*
-          Two-part opening: a tracked gold label, then the section title. The
-          title replaces the pull-quote that used to anchor this section, and it
-          is the section's h2 — previously the block had no heading at all.
+          The mark anchoring the inline end of the section, large.
+
+          Last in the reveal ladder so the copy lands first and the logo settles in
+          behind it. It is also last in source order, which is what puts it *below*
+          the copy on the stacked layout rather than above the heading — see the
+          grid in About.module.css.
+
+          alt="" because it is decorative here: the section is already titled by its
+          h2, and the brand name is announced by the hero's h1 and the header logo.
+          Giving it alt text would only make a screen reader say "AGB Media" a third
+          time.
         */}
-        <motion.p className={styles.eyebrow} {...reveal}>
-          Who We Are
-        </motion.p>
-
-        <motion.h2 className={styles.title} {...revealAt(0.08)}>
-          Our <span className={styles['title-accent']}>Story</span>
-        </motion.h2>
-
-        <motion.div className={styles.body} {...revealAt(0.16)}>
-          {paragraphs.map((text) => (
-            <p key={text.slice(0, 32)}>{text}</p>
-          ))}
+        <motion.div className={styles['logo-panel']} {...revealAt(0.32)}>
+          <img src="/assets/images/agb-logo.png" alt="" />
         </motion.div>
-
-        {/*
-          /about is not routed yet — the link is wired ahead of the page.
-          Shared button visuals + a local class carrying only its spacing.
-        */}
-        <MotionLink
-          to="/about"
-          className={`${buttonStyles.button} ${buttonStyles['button-reveal']} ${styles.cta}`}
-          {...revealAt(0.24)}
-        >
-          <span>Discover Our Story</span>
-          <HiOutlineArrowNarrowRight size={20} aria-hidden="true" />
-        </MotionLink>
       </div>
     </section>
   )

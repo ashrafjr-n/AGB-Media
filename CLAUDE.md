@@ -22,8 +22,8 @@ All colors live as CSS custom properties in `src/styles/variables.css`. **Never 
 
 | Token | Value | Role |
 | --- | --- | --- |
-| `--color-black` | `#050505` | Near-true-black, exactly neutral — all three channels equal, no steel, slate, or blue lean. **The one and only background colour on the site**, for every section. The lineage runs `#0C0F14` → `#1B1D20` → `#131315` → `#070708` → `#0B0B0C` → here; the early values were set while the grain overlay was still adding luminance on top of them, so the page rendered lighter than its token. The grain has blended in soft-light since `#131315`, so this value is what reaches the screen. **This is the final ground tone — the token is settled and takes no further adjustment.** |
-| `--color-raised` | `#0D0D0D` | The ground lifted just enough to separate a surface from it — an 8-point step, same neutral hue. **Retune this whenever `--color-black` moves**, so the lift stays deliberate and never drifts far enough to read as grey. Currently unreferenced — the reveal button paints its panels in `--color-black` on purpose. |
+| `--color-black` | `#010101` | Near-true-black, exactly neutral — all three channels equal, no steel, slate, or blue lean. **The one and only background colour on the site**, for every section. The lineage runs `#0C0F14` → `#1B1D20` → `#131315` → `#070708` → `#0B0B0C` → `#050505` → `#030303` → here; the early values were set while the grain overlay was still adding luminance on top of them, so the page rendered lighter than its token. The grain has blended in soft-light since `#131315`, so this value is what reaches the screen. **This is the final ground tone — the token is settled and takes no further adjustment.** |
+| `--color-raised` | `#090909` | The ground lifted just enough to separate a surface from it — an 8-point step, same neutral hue. **Retune this whenever `--color-black` moves**, so the lift stays deliberate and never drifts far enough to read as grey. Currently unreferenced — the reveal button paints its panels in `--color-black` on purpose. |
 | `--color-gold` | `#C97014` | **Signature accent**, sampled from the logo's midtone. Headings, highlights, borders, interactive states. |
 | `--color-gold-light` | `#E09A3C` | Hover / focus / raised state of the accent. |
 | `--color-gold-deep` | `#8F2804` | Rust from the logo's lower band. Gradient endpoint only. |
@@ -35,7 +35,7 @@ The gold was sampled directly from `/public/assets/images/agb-logo.png`. Do not 
 
 ### Translucent surfaces — one tone, no seams
 
-`--color-glass` (0.5), `--color-overlay` (0.72), and `--color-scrim` (0.25) are all `--color-black` at an alpha, written out as literal `rgba(5, 5, 5, …)` because CSS cannot derive an alpha from a hex token. **They must be edited by hand whenever `--color-black` changes** — all four values move together, `theme-color` in `index.html` is a fifth copy, and `--color-raised` needs retuning as a sixth.
+`--color-glass` (0.5), `--color-overlay` (0.72), and `--color-scrim` (0.25) are all `--color-black` at an alpha, written out as literal `rgba(1, 1, 1, …)` because CSS cannot derive an alpha from a hex token. **They must be edited by hand whenever `--color-black` changes** — all four values move together, `theme-color` in `index.html` is a fifth copy, and `--color-raised` needs retuning as a sixth.
 
 **Never darken a surface with raw black** (`#000`, `rgba(0,0,0,…)`) — reach for one of these three, or add a fourth at the alpha you need. Pure black is both deeper and less cool than the ground tone, so a raw-black tint over one section leaves a visible step where it meets the next. The site is one tone end to end.
 
@@ -59,14 +59,19 @@ A call site applies the base **and exactly one variant**, plus a local class car
 
 | Classes | Look | Used by |
 | --- | --- | --- |
-| `.button .button-quiet` | Gold hairline pill, transparent; hover warms the interior with `--color-gold-veil` and steps edge + label to `--color-gold-light` | Hero — "Contact Us" |
+| `.button .button-featured` | **Solid `--color-gold` fill**, `--radius-md` corners, near-black label; hover brightens to `--color-gold-light` | Hero header — the nav's own "Contact" entry |
+| `.button .button-quiet` | Gold hairline pill, transparent; hover warms the interior with `--color-gold-veil` and steps edge + label to `--color-gold-light` | *unused today* |
 | `.button .button-reveal` | Rectangular; sliding-panel reveal hover | About — "Discover Our Story" |
 
 ```jsx
-className={`${buttonStyles.button} ${buttonStyles['button-quiet']} ${styles['contact-button']}`}
+className={`${buttonStyles.button} ${buttonStyles['button-featured']} ${styles.cta}`}
 ```
 
-**Two variants because the surfaces differ.** The hero's button sits on moving footage and must stay understated rather than compete with it; the Story section is flat and quiet, so it can carry the louder mechanic. A new surface means a new variant here, not a button styled in a component.
+**`.button-featured` is the site's one filled button** — every other button is an outline on transparent, and that contrast is the entire point of it. **Never add a second filled call to action**; a second one cancels the emphasis. Reach for `.button-quiet` or `.button-reveal` instead.
+
+Its label is `--color-black` rather than white on purpose: near-black on this gold is 5.8:1 at rest and 9.3:1 on hover, both clearing WCAG AA for normal text, where white would be about 3.6:1 and fail. Its hover is a colour change only, never a lift — see the transform note below.
+
+**The two outlined variants differ because the surfaces do.** An outline over moving footage must stay understated rather than compete with it; the flat, quiet Story section can carry the louder mechanic. A new surface means a new variant here, not a button styled in a component.
 
 - **Layout is not the button's business.** Nothing in this file sets a margin — where a button sits is the calling section's decision.
 - **`.button-reveal`'s mechanic:** at rest two `--color-black` panels (`::before`, `::after`) cover the button *including its border*, so only the gold label shows. On hover the large panel slides up (`translateY(-25px)`) and collapses its height to `0`, while the thin top strip wipes out with `scaleX(0)` on a `0.15s` delay — uncovering the gold outline and leaving the interior transparent. Revealed, not filled. Because the panels are `--color-black` they merge into a flat section; over footage they would read as a dark block, which is the other half of why the hero uses `.button-quiet`.
@@ -129,6 +134,8 @@ src/
     Hero/
       Hero.jsx
       Hero.module.css
+      HeroHeader.jsx        # the hero's own in-flow header (see "The two headers")
+      HeroHeader.module.css
     shared/           # reusable primitives (Button, Section, Container…)
   pages/              # route-level components
   styles/
@@ -136,6 +143,7 @@ src/
     global.css        # reset, base element styles, noise overlay
   hooks/
   data/               # static content (copy, project lists)
+    navLinks.js       # the nav model, shared by BOTH headers
   assets/
     images/
     videos/
@@ -160,11 +168,42 @@ public/
 
 Framer Motion is the only animation library. Section reveals use `whileInView` with `viewport={{ once: true, amount: 0.3 }}` so content animates a single time on first scroll-in. `About.jsx` is the reference.
 
-**The hero's entrance is different, and deliberately so:** it is mount-triggered (`initial`/`animate`, never `whileInView`) because it should fire on page load rather than on scroll-in, and it must play **once per session**. `Hero.jsx` guards it with a module-scoped `entrancePlayed` flag; when set, `rise()` returns no animation props at all, so elements render in their natural resting state with no `initial` to animate back from.
+**The hero's entrance is different, and deliberately so:** it is mount-triggered (`initial`/`animate`, never `whileInView`) because it should fire on page load rather than on scroll-in, and it must play **once per session**. `HeroHeader.jsx` guards it with a module-scoped `entrancePlayed` flag; when set, `rise()` returns no animation props at all, so elements render in their natural resting state with no `initial` to animate back from. (It lives in `HeroHeader.jsx` rather than `Hero.jsx` because the hero body is empty — the header is the only animated content in the hero.)
 
-Two things about that flag are load-bearing. It lives at **module scope**, not in state — a mount-triggered animation cannot be retriggered by scrolling, but any remount replays it from the top (routing away and back is the obvious case), and a flag inside the component would be reset by exactly that. And it latches on **animation completion, not on mount** — StrictMode deliberately mounts, unmounts and remounts every component in development, so a mount-latched flag would be set by that throwaway first mount and would suppress the entrance before anyone saw it.
+Two things about that flag are load-bearing. It lives at **module scope**, not in state — and note `HeroHeader` is re-rendered on every frame of a scroll, because its parent `Hero` watches `viewportProgress` to gate video playback, which is why the flag is read once into a `useRef` rather than read inline — a mount-triggered animation cannot be retriggered by scrolling, but any remount replays it from the top (routing away and back is the obvious case), and a flag inside the component would be reset by exactly that. And it latches on **animation completion, not on mount** — StrictMode deliberately mounts, unmounts and remounts every component in development, so a mount-latched flag would be set by that throwaway first mount and would suppress the entrance before anyone saw it.
 
 **Every Framer Motion animation must gate on `useReducedMotion()`.** The `@media (prefers-reduced-motion: reduce)` block in `global.css` governs **CSS** animations and transitions only — it has no effect on animations Framer Motion drives inline through JS. When the hook returns `true`, render the element in its final state with no transform. See `About.jsx` for the established pattern.
+
+### The two headers
+
+There are **two** headers, and they are never on screen at the same time.
+
+| | `Header/Header.jsx` | `Hero/HeroHeader.jsx` |
+| --- | --- | --- |
+| Position | `fixed`, floating glass pill | **in flow**, inside `.hero`, scrolls away with it |
+| Visible | only once the hero is behind you | only while you are in the hero |
+| Layout | logo left, nav right, capped pill width | logo hard against the inline start, nav hard against the inline end, full bleed, no `--container-max` cap |
+| Children | logo, nav, mobile toggle + drawer | **two only** — logo and nav. There is no separate CTA: the nav's `featured` entry renders as the filled button |
+| Block alignment | centred in the pill | **top-aligned**; the logo is pulled further up and the nav pushed down, so the mark rides high and the nav sits below it |
+| Logo | `2.25rem` / `2.625rem` | far larger: `5.5rem` / `6.5rem`, inset from the bled edge by `--space-sm` / `--space-md` |
+| Nav underline | Framer Motion variants | CSS `scaleX` on `::after` |
+
+**The handoff is a single threshold: `viewportProgress >= 1` from `useScrollPosition`.** The hero is exactly `100svh`, so one scrolled viewport *is* the end of the hero. That same comparison already gated the hero's video playback in `Hero.jsx`, and `Header.jsx` now reuses it verbatim to decide whether it is hidden — **keep them identical**, or the site header will arrive a frame out of step with the video pausing.
+
+- The site header hides via `data-hidden` on its root, a **CSS transition** (`opacity` + `translateY(-100%)` + `pointer-events: none`) rather than a Framer animation: it is a two-state toggle, not choreography, and CSS transitions are already covered by the `prefers-reduced-motion` block in `global.css`. This matches how `data-menu-open` already drives the pill's corners.
+- It also carries **`inert`** while hidden. `pointer-events: none` alone still leaves the links in the tab order, so an invisible nav would be focusable over the hero.
+- Its docked-pill look and menu-open corner morph are untouched by the hide — those live on `.bar` and come along with whatever state the header is in.
+- **Both render from `src/data/navLinks.js`.** They look different on purpose; they must never offer different destinations. The `Contact` entry carries **`featured: true`** — a hint the hero header honours by rendering it as `.button-featured` instead of a plain link, and the site header deliberately ignores (a filled button would fight its compact glass pill, and there may only be one filled CTA on the site).
+- Because the site header is hidden throughout the hero, `.hero`'s `padding-block-start` is plain `--space-lg` — it no longer reserves `--header-height`, since nothing fixed is overlapping it there.
+- **Below `48rem` the hero header shows only the logo and the gold Contact button** — `.nav-link` is `display: none` there, because three plain links plus the button cannot share a row with a logo that size. The nav element itself is never hidden: it holds the CTA, so hiding it would leave the first screen with no way forward. There is still no hamburger in the hero, so on a phone Contact is the only in-hero destination until you scroll past it.
+
+### The hero body is intentionally empty
+
+Between the hero header and the bottom ticker there is nothing — the footage carries the whole middle of the first screen. The location label, large logo, tagline and CTA that used to sit there are gone; the logo and CTA moved into `HeroHeader`.
+
+There is **no spacer element** for that void: `.ticker` takes `margin-block-start: auto`, which absorbs the free space in the hero's column flex container and pins it to the bottom. That replaced the old `flex: 1` content block, which had become an element existing only to be blank.
+
+The hero's `<h1>` is now **visually hidden** (`className="sr-only"`, a global utility, so a literal string — never `styles['sr-only']`). The old h1 was the large logo with `alt="AGB Media"`; that logo now belongs to a navigation row, where marking it up as the document's top-level heading would be wrong. Without the hidden h1 the document's first heading would be About's `h2`.
 
 ### Naming
 

@@ -1,0 +1,212 @@
+/*
+  The hero's in-flow header: logo hard against the inline start and raised, nav hard
+  against the inline end, sitting over the video backdrop.
+
+  Two children only. The nav's "Contact" entry is the call to action — it renders as
+  the filled gold button — so there is no separate CTA element beside it.
+
+  Not fixed and not the site header — see HeroHeader.jsx for why the two exist.
+*/
+
+.hero-header {
+  /*
+    Lifted above the backdrop explicitly. .backdrop is positioned at z-index 0, and
+    a static element paints below a positioned one regardless of source order, so
+    without its own positioned z-index this header would sit behind the video.
+  */
+  position: relative;
+  z-index: var(--z-base);
+
+  display: flex;
+  /*
+    Top-aligned, not centred. The logo is several times the nav's height, and centring
+    the two against each other dragged the mark down into the middle of the row. Each
+    side now sets its own block offset from the top: the logo rides above the row's
+    edge, the nav sits below it.
+  */
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+
+  /*
+    True full bleed, so the logo and nav reach the section's outer edges instead of
+    stopping at the hero's own inline padding. Cancelling --container-padding with a
+    negative inline margin (rather than a viewport-width trick) keeps it correct
+    whatever that token becomes, and is the same mechanism .ticker uses at the other
+    end of the hero. `inline-size: auto` is required: at 100% the box would still
+    measure the padded content width and the negative margins would overshoot the
+    viewport. .hero is overflow: hidden, so nothing here can produce a scrollbar.
+
+    No --container-max cap, unlike the content block that used to sit below it: the
+    point of this header is to be pinned to the hero's outer corners, and a centred
+    1200px cap would pull both ends inward on any wide display.
+  */
+  inline-size: auto;
+  margin-inline: calc(var(--container-padding) * -1);
+
+  /*
+    Its own inline padding, tighter than the hero's --container-padding, so the ends
+    sit close to the viewport edge without touching it.
+  */
+  padding-inline: var(--space-sm);
+}
+
+/* --- Logo ----------------------------------------------------------------- */
+
+.logo {
+  flex-shrink: 0;
+
+  /*
+    Held off the hard edge. .hero-header is full bleed so it can reach the section's
+    outer edges, and the mark at this size looked pinned to the viewport rather than
+    placed; this inset gives it an optical margin without pulling the row back into
+    the hero's --container-padding. Set on the logo alone, not as row padding, so the
+    nav at the other end keeps its own tighter edge.
+  */
+  margin-inline-start: var(--space-sm);
+
+  /*
+    Raised above the row's own top edge, so the mark reads as sitting high in the hero
+    rather than aligned to the nav.
+
+    Safe to pull negative because .hero carries --space-lg (2rem) of block-start
+    padding: this eats into that padding instead of escaping the section, which
+    matters because .hero is overflow: hidden and would clip anything that did. Keep
+    the pull well under 2rem for that reason.
+  */
+  margin-block-start: calc(var(--space-xs) * -1);
+}
+
+/*
+  Double the previous size (was 2.75rem / 3.25rem), and well clear of the site
+  header's mark (2.25rem / 2.625rem in Header.module.css): this one has the whole
+  first screen to itself and no glass pill around it, so it can carry the weight.
+
+  Height-driven with `inline-size: auto`, because the logo is portrait (360x672) —
+  the width has to derive from the capped height, not the other way round. At this
+  height the mark is still narrow, which is why it can grow this much without
+  crowding the nav.
+
+  It sets the header row's height now that it is the tallest thing in it. The hero
+  has room: .ticker is pinned to the bottom with margin-block-start: auto, so the
+  empty middle absorbs the difference.
+*/
+.logo img {
+  block-size: 5.5rem;
+  inline-size: auto;
+}
+
+/* --- Nav ------------------------------------------------------------------ */
+
+/*
+  The whole right side. Visible at every width — it is the row's only other child, and
+  the featured "Contact" button inside it is the hero's call to action, so hiding the
+  nav would leave the first screen with no way forward. What gives way on a narrow
+  screen is the three plain links (see .nav-link), not this.
+
+  Pushed down from the row's top edge so it sits clearly below the raised logo rather
+  than level with it.
+*/
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+
+  margin-block-start: var(--space-md);
+}
+
+/*
+  A CSS-driven underline rather than the site header's Framer one: this is a plain
+  hover state, and keeping it in CSS means the prefers-reduced-motion block in
+  global.css already covers it with no reduced-motion branch in JS.
+
+  `display: none` until 48rem: three links plus the Contact button cannot share a row
+  with a logo this size without wrapping. The button stays at every width, so the plain
+  links are what get dropped. Restored to `block` rather than `inline-block` in the
+  breakpoint below — it is a flex item either way, so the used value is blockified, and
+  `block` keeps the ::after underline's containing block the full link box.
+*/
+.nav-link {
+  display: none;
+  position: relative;
+  padding-block: var(--space-2xs);
+
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  /* Nav links sit at 500 per the design system's weight ladder. */
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 1px;
+  background-color: var(--color-gold);
+
+  /* Sweeps out from the centre, matching the site header's underline. */
+  transform: scaleX(0);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+  color: var(--color-gold-light);
+}
+
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/*
+  The nav's "Contact" entry, rendered as the site's one filled button.
+
+  Spacing only. Every visual property — the gold fill, the corners, the label colour,
+  the hover — lives in components/shared/Button.module.css and is applied alongside
+  this class. Nothing about its appearance belongs here.
+
+  `flex-shrink: 0` so the label never wraps inside the fill when the row tightens.
+*/
+.nav-cta {
+  flex-shrink: 0;
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  /* Room for the plain links alongside the button. */
+  .nav-link {
+    display: block;
+  }
+}
+
+@media (min-width: 64rem) {
+  /* Room to breathe once the row is comfortable; the ends stay pinned. */
+  .hero-header {
+    padding-inline: var(--space-md);
+  }
+
+  /*
+    A wider inset to match the row's own wider padding at this breakpoint, and a
+    deeper raise to match the larger mark.
+  */
+  .logo {
+    margin-inline-start: var(--space-md);
+    margin-block-start: calc(var(--space-sm) * -1);
+  }
+
+  .logo img {
+    block-size: 6.5rem;
+  }
+
+  /* Pushed a little further down, keeping pace with the taller logo beside it. */
+  .nav {
+    gap: var(--space-xl);
+    margin-block-start: var(--space-lg);
+  }
+}

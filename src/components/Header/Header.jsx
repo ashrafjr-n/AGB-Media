@@ -1,23 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi'
 
+import useScrollPosition from '../../hooks/useScrollPosition'
+import navLinks from '../../data/navLinks'
 import styles from './Header.module.css'
-
-/*
-  Navigation model. Extend this array to add routes — both the desktop bar and
-  the mobile drawer render from it.
-
-  /about and /services have no <Route> in App.jsx yet; the links are wired ahead
-  of the pages, the same way About's CTA already points at /about.
-*/
-const navLinks = [
-  { label: 'Home', to: '/' },
-  { label: 'About', to: '/about' },
-  { label: 'Services', to: '/services' },
-  { label: 'Contact', to: '/contact' },
-]
 
 /*
   Mirrors --ease-out in variables.css. Framer Motion cannot read a CSS custom
@@ -58,6 +46,28 @@ function Header() {
   const shouldReduceMotion = useReducedMotion()
 
   /*
+    This header is suppressed for the whole of the first screen: the hero carries
+    its own in-flow header over the footage (Hero/HeroHeader.jsx), and the two must
+    never be on screen together. It slides in only once the hero is fully behind
+    the viewport.
+
+    `viewportProgress >= 1` is the same threshold Hero.jsx uses to decide the hero
+    is covered and pause the video — the hero is exactly 100svh, so one scrolled
+    viewport *is* the end of the hero. Reusing the identical comparison keeps the
+    reveal and the video pause from ever disagreeing by a frame.
+  */
+  const { viewportProgress } = useScrollPosition()
+  const isPastHero = viewportProgress >= 1
+
+  /*
+    A drawer left open while the header is hidden would reopen mid-air on the way
+    back down, so scrolling back into the hero closes it.
+  */
+  useEffect(() => {
+    if (!isPastHero) setIsMenuOpen(false)
+  }, [isPastHero])
+
+  /*
     The header no longer morphs with scroll — it always renders in the floating
     pill state (previously the "docked" look). Kept as a data attribute purely
     so the menu-open styling in Header.module.css (which targets
@@ -72,10 +82,24 @@ function Header() {
   const closeMenu = () => setIsMenuOpen(false)
 
   return (
+    /*
+      The hide/reveal is a two-state CSS transition keyed off `data-hidden`, not a
+      Framer animation, for two reasons: it is a toggle rather than choreography,
+      and CSS transitions are already covered by the prefers-reduced-motion block
+      in global.css, so it needs no separate reduced-motion branch. It follows the
+      same attribute-driven pattern `data-menu-open` already uses for the pill's
+      corners.
+
+      `inert` does what pointer-events: none cannot — it takes the hidden header's
+      links out of the tab order and hides them from assistive tech, so an
+      invisible nav is never focusable over the hero.
+    */
     <header
       className={styles.header}
       data-docked="true"
+      data-hidden={isPastHero ? 'false' : 'true'}
       data-menu-open={isMenuOpen ? 'true' : 'false'}
+      inert={!isPastHero}
     >
       <div className={styles.bar}>
         <div className={styles.inner}>

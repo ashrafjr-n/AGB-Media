@@ -1,15 +1,20 @@
 /*
   THE buttons for the site. Every call to action pulls from this file — nothing is
-  restyled inside a section module. There is one shared base plus two hover
-  variants, and a call site always applies the base *and* exactly one variant:
+  restyled inside a section module. There is one shared base plus three variants, and
+  a call site always applies the base *and* exactly one variant:
 
-    .button .button-quiet    gold hairline pill, quiet fill-fade hover   (Hero)
-    .button .button-reveal   sliding-panel reveal hover                  (About)
+    .button .button-featured  SOLID gold fill, near-black label   (hero nav "Contact")
+    .button .button-quiet     gold hairline pill, quiet hover     (unused today)
+    .button .button-reveal    sliding-panel reveal hover          (About)
 
-  The two exist because the buttons sit on different surfaces. The hero's button
-  competes with moving footage, so it stays understated; the Story section is flat
-  and quiet, so it can carry the louder mechanic. Adding a third surface means
-  adding a third variant here, not styling a button in a component.
+  .button-featured is the site's single filled button and the only one that is not an
+  outline on transparent. That is the whole point of it, and it holds only while it
+  stays the only one — a second filled call to action anywhere cancels the emphasis.
+
+  The other two differ because they sit on different surfaces: an outline over moving
+  footage has to stay understated, while the flat Story section can carry the louder
+  mechanic. Adding a fourth surface means adding a fourth variant here, not styling a
+  button in a component.
 
   A module without a .jsx sibling, which is the one deviation from the layout in
   CLAUDE.md §4. It is deliberate: both current call sites need to *be* the element
@@ -80,6 +85,59 @@
   background-color: var(--color-gold-veil);
   border-color: var(--color-gold-light);
   color: var(--color-gold-light);
+}
+
+/* --- Variant: featured ---------------------------------------------------- */
+
+/*
+  The one filled button on the site, for the hero nav's "Contact" entry — the nav item
+  *is* the call to action, rather than a button sitting beside a duplicate link.
+
+  Every other button here is an outline on transparent; this is the single exception,
+  and its whole job is to be the one thing that reads as a *button* rather than a
+  link. That only works while it stays unique — a second filled call to action
+  anywhere on the site cancels the distinction, so use .button-quiet or
+  .button-reveal for those.
+
+  Solid --color-gold with a near-black label. Both states clear WCAG AA for normal
+  text against --color-black: 5.8:1 at rest, 9.3:1 on hover, which is why the label
+  is the ground tone rather than white — white on this gold is only about 3.6:1.
+
+  Rounded rather than a full pill, so it does not read as another --radius-full
+  outline like .button-quiet, and rectangular enough to look deliberate at the end of
+  the nav row.
+*/
+.button-featured {
+  border-radius: var(--radius-md);
+
+  background-color: var(--color-gold);
+  /*
+    Border matched to the fill rather than removed: the base rule reserves 1px of
+    border box, and dropping it here would make this button a pixel shorter and
+    narrower than its outlined neighbours in the same row.
+  */
+  border-color: var(--color-gold);
+  color: var(--color-black);
+
+  /* Bolder than the shared base — a filled button can carry the extra weight. */
+  font-weight: var(--font-weight-bold);
+}
+
+/*
+  Hover is a straight brighten to the palette's raised gold, nothing more.
+
+  No lift, to stay inside the base rule's colour-scoped transition. Its own call site
+  is a plain <Link> today, so a transform here would not be overwritten — but the
+  scoped transition is shared with .button-reveal, whose call site *is* a Framer
+  element, and a transform hover would need `transition: transform` on the base to
+  animate. Adding that would smooth over Framer's per-frame writes and make the
+  entrance drag. A colour-only hover keeps all three variants on one transition.
+*/
+.button-featured:hover,
+.button-featured:focus-visible {
+  background-color: var(--color-gold-light);
+  border-color: var(--color-gold-light);
+  color: var(--color-black);
 }
 
 /* --- Variant: reveal ------------------------------------------------------ */

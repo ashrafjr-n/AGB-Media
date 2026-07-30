@@ -1,51 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
-import { HiOutlineMail } from 'react-icons/hi'
 
 import useScrollPosition from '../../hooks/useScrollPosition'
 import heroVideo from '../../assets/videos/hero.mp4'
-import buttonStyles from '../shared/Button.module.css'
+import HeroHeader from './HeroHeader'
 import styles from './Hero.module.css'
-
-/* Lets the CTA animate without wrapping the Link in an extra layout box. */
-const MotionLink = motion.create(Link)
-
-/*
-  Entrance choreography. The reveal order is not DOM order — the logo leads, then
-  the tagline in the opposite column, then the location label, then the CTA — so
-  each element carries an explicit delay instead of a parent `staggerChildren`,
-  which would follow the markup. Delays are spaced ~120ms apart: close enough to
-  read as one gesture, far enough apart that nothing lands simultaneously.
-*/
-const ENTRANCE_DELAY = {
-  logo: 0.1,
-  tagline: 0.24,
-  location: 0.38,
-  cta: 0.5,
-}
-
-/*
-  Has the entrance already run in this session?
-
-  Module scope rather than component state, and that is the whole point: it has to
-  outlive the component. The animation is mount-triggered (`initial`/`animate`, never
-  `whileInView`), so scrolling past the hero and back cannot retrigger it on its own —
-  but *anything* that unmounts and remounts Hero would replay it from the top, and a
-  flag inside the component would be reset by exactly that. Routing away to /contact
-  and back is the obvious case. This survives all of it and resets only on a genuine
-  page load, which is precisely "plays once, on first load".
-
-  Latched on animation *completion*, not on mount, because StrictMode deliberately
-  mounts, unmounts and remounts every component in development. A mount-latched flag
-  would be set by that throwaway first mount and would suppress the animation before
-  anyone ever saw it. Completion happens long after StrictMode is done.
-*/
-let entrancePlayed = false
-
-const markEntrancePlayed = () => {
-  entrancePlayed = true
-}
 
 /*
   Metadata rendered as a single line along the bottom of the hero.
@@ -63,19 +21,16 @@ const tickerItems = [
 
 function Hero() {
   /*
-    The prefers-reduced-motion block in global.css only governs CSS transitions;
-    these animations are driven inline by Framer Motion, so the preference has to
-    be honoured here. When reduced, every element renders in its final state.
-  */
-  const shouldReduceMotion = useReducedMotion()
-
-  /*
     Playback gate. The backdrop is `position: fixed`, so it keeps decoding frames
     long after it is invisible — the section below the hero is 100vh and starts
     exactly one viewport down, so `viewportProgress` reaches 1 at the same moment
     that section finishes covering the screen. Past that point there is nothing to
     see, so the video is paused; it resumes as soon as any of the hero is exposed
     again.
+
+    The same threshold reveals the fixed site header (see Header.jsx): one scrolled
+    viewport is the end of the hero, so the header arriving and the video pausing
+    are the same event.
 
     Derived as a boolean rather than acted on directly: viewportProgress changes
     every frame while scrolling, and pause()/play() should only fire on the two
@@ -103,27 +58,6 @@ function Hero() {
     video.play()?.catch(() => {})
   }, [isHeroCovered])
 
-  /*
-    Read once per mount and held in a ref, so the scroll hook above — which
-    re-renders this component on every frame of a scroll — cannot flip it while the
-    entrance is still in flight.
-  */
-  const playEntrance = useRef(!entrancePlayed).current
-
-  /*
-    Returns no animation props at all when the entrance is not to play, which leaves
-    each element rendering in its natural resting state: no `initial`, so nothing
-    starts at opacity 0 and nothing has to animate back.
-  */
-  const rise = (delay) =>
-    shouldReduceMotion || !playEntrance
-      ? {}
-      : {
-          initial: { opacity: 0, y: 20 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.85, delay, ease: [0.22, 1, 0.36, 1] },
-        }
-
   return (
     <section className={styles.hero}>
       {/*
@@ -148,48 +82,33 @@ function Hero() {
         <div className={styles['backdrop-overlay']} />
       </div>
 
-      <div className={styles.content}>
-        {/* Left column — location label above the logo. */}
-        <div className={styles.identity}>
-          <motion.p {...rise(ENTRANCE_DELAY.location)} className={styles.location}>
-            Doha · Qatar
-          </motion.p>
+      {/*
+        The page's h1, visually hidden.
 
-          {/*
-            The logo stands in for the removed "AGB Media" wordmark, so it takes
-            over as the page's h1 — its alt text is the heading's text.
-          */}
-          <h1 className={styles['logo-heading']}>
-            <motion.img
-              {...rise(ENTRANCE_DELAY.logo)}
-              src="/assets/images/agb-logo.png"
-              alt="AGB Media"
-              className={styles.logo}
-            />
-          </h1>
-        </div>
+        The hero used to carry a visible one: the large logo, with "AGB Media" as
+        its alt text. That logo has moved into HeroHeader, where it belongs to a
+        navigation row and would be the wrong thing to mark up as the document's
+        top-level heading. Nothing else in the hero is heading-shaped now that the
+        body is deliberately empty, so the heading stays and only its presentation
+        goes — without it the document's first heading would be About's h2.
 
-        {/* Right column — tagline above the call to action. */}
-        <div className={styles.pitch}>
-          <motion.p {...rise(ENTRANCE_DELAY.tagline)} className={styles.tagline}>
-            Arts &amp; Media Production
-          </motion.p>
+        `.sr-only` is a global utility in global.css, so its name is not hashed and
+        it is absent from the styles object: it has to be a literal string.
+      */}
+      <h1 className="sr-only">AGB Media — Arts &amp; Media Production</h1>
 
-          {/*
-            The quiet button variant, not the reveal one: this sits over moving
-            footage and should stay understated. Local class carries spacing only.
-          */}
-          <MotionLink
-            {...rise(ENTRANCE_DELAY.cta)}
-            onAnimationComplete={markEntrancePlayed}
-            to="/contact"
-            className={`${buttonStyles.button} ${buttonStyles['button-quiet']} ${styles['contact-button']}`}
-          >
-            <HiOutlineMail size={20} aria-hidden="true" />
-            <span>Contact Us</span>
-          </MotionLink>
-        </div>
-      </div>
+      <HeroHeader />
+
+      {/*
+        Between the header above and the ticker below, the hero is intentionally
+        empty — the footage carries the whole middle of the first screen. The
+        location label, large logo, tagline and CTA that used to sit here are gone;
+        the logo and CTA now live in HeroHeader.
+
+        There is no spacer element for that void: .ticker takes `margin-block-start:
+        auto` in the stylesheet, which absorbs all the free space in this column
+        flex container and pins the ticker to the bottom.
+      */}
 
       <ul className={styles.ticker}>
         {tickerItems.map(({ label, value }) => (

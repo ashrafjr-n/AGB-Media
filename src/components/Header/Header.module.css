@@ -23,6 +23,33 @@
 
   padding-block-start: var(--header-dock-top);
   padding-inline: var(--header-dock-inset);
+
+  /*
+    Only these two properties, never `all`: the bar's corner radius runs its own
+    transition at --duration-fast (see .bar), and a blanket transition here would
+    fight it.
+  */
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+/*
+  Hidden for the whole of the hero, which carries its own in-flow header over the
+  footage instead (Hero/HeroHeader.jsx). Header.jsx sets this from
+  `viewportProgress >= 1`, so the bar arrives exactly as the hero leaves.
+
+  translateY(-100%) is measured against the header's own box, which clears the
+  viewport's top edge including --header-dock-top. Paired with `inert` on the
+  element in Header.jsx, so the hidden nav is neither clickable nor focusable —
+  pointer-events alone would still leave the links in the tab order.
+
+  The docked-pill look and its menu-open corner morph are untouched by this: they
+  live on .bar and simply come along with whatever state the header is in.
+*/
+.header[data-hidden='true'] {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
 }
 
 /* --- Glass bar ------------------------------------------------------------ */

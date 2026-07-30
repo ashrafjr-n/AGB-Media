@@ -1,7 +1,8 @@
 /*
   Full-viewport landing hero.
-  Column flow: the two-column content block takes the free space and centers
-  itself, and the metadata ticker is pinned to the bottom of the same box.
+  Column flow with only two children that occupy space: the hero's own header at
+  the top (HeroHeader.jsx) and the metadata ticker pinned to the bottom. The middle
+  is deliberately empty — the footage carries it.
 
   `100svh` rather than `100vh` — on mobile, `vh` measures against the *largest*
   viewport, so the browser's address bar would push the ticker off-screen.
@@ -14,7 +15,7 @@
 
   inline-size: 100%;
   min-block-size: 100svh;
-  padding-block-start: calc(var(--header-height) + var(--space-lg));
+  padding-block-start: var(--space-lg);
   padding-block-end: var(--space-lg);
   padding-inline: var(--container-padding);
 
@@ -65,10 +66,11 @@
   Light scrim above the video — just enough to keep the foreground text legible
   without hiding the footage.
 
-  --color-scrim, not raw black. It is --color-black at 0.25, so the hero darkens
-  toward exactly the tone the body and the Story section are painted in; a pure
-  black tint here read cooler-and-deeper than the rest of the site and left a
-  visible step at the hero's bottom edge.
+  --color-scrim, not raw black, so the hero darkens toward exactly the tone the body
+  and the Story section are painted in rather than toward something cooler and
+  deeper. At the current ground the two are within a hair of each other and the
+  distinction no longer shows, but the rule holds for whatever the ground becomes:
+  raw black is what puts a visible step at a section boundary.
 */
 .backdrop-overlay {
   position: absolute;
@@ -76,123 +78,17 @@
   background-color: var(--color-scrim);
 }
 
-/*
-  The two content blocks are lifted above the backdrop explicitly. Static
-  elements paint *below* positioned ones regardless of source order, so without a
-  z-index of their own they would sit behind the video.
-*/
-.content,
-.ticker {
-  position: relative;
-  z-index: var(--z-base);
-}
-
-.content {
-  display: grid;
-  grid-template-columns: 1fr;
-  align-items: center;
-  gap: var(--space-2xl);
-
-  flex: 1;
-  inline-size: 100%;
-  max-inline-size: var(--container-max);
-  margin-inline: auto;
-  padding-block: var(--space-xl);
-}
-
-/*
-  --- Left column: location label, then the logo ---------------------------
-
-  `.identity` and `.pitch` replace the former `.intro` / `.brand` pair: the
-  columns swapped contents, and the old names described the old contents.
-*/
-
-.identity {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-md);
-}
-
-/*
-  The logo is the page's h1 — it carries the brand name (via its alt text) now
-  that the "AGB Media" wordmark is gone, so the document keeps a top-level
-  heading.
-
-  A *column* flex container, and that is not arbitrary: the logo is portrait
-  (360x672) and sized by max-block-size, so its width has to be derived from that
-  capped height. Only along a flex container's main axis does the cap constrain
-  the size that the inline axis then resolves against — in a row flex container
-  the image would be laid out at its natural 360px width and `object-fit:
-  contain` would letterbox it, leaving the visible mark floating off to one side.
-  This is the same geometry the image had as a direct child of the old `.brand`.
-*/
-.logo-heading {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.logo {
-  inline-size: auto;
-  block-size: auto;
-  max-block-size: min(46svh, 26rem);
-  object-fit: contain;
-}
-
-.location {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-light);
-  letter-spacing: var(--tracking-widest);
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-/* --- Contact button ------------------------------------------------------ */
-
-/*
-  Spacing only. Every visual property of this button — fill, hairline, type, the
-  hover — lives in components/shared/Button.module.css and is applied alongside
-  this class. Nothing about its appearance belongs here.
-*/
-.contact-button {
-  margin-block-start: var(--space-sm);
-}
-
-/* --- Right column: tagline, then the contact button ---------------------- */
-
-/*
-  End-aligned, unlike .identity: the tagline and CTA are pushed to the far edge of
-  the right grid track so the hero reads as content pinned to its two outer
-  corners, with the footage open through the middle. The stacked layout overrides
-  this back to centre in the breakpoint below.
-*/
-.pitch {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-2xs);
-}
-
-/*
-  Tagline: solid gold, set small and widely tracked in lowercase. The restraint
-  is the point — it names what the company does without competing with the logo
-  in the opposite column.
-
-  No text-align of its own: it follows .pitch, which is end-aligned on desktop and
-  centred by .content's text-align on the stacked layout.
-*/
-.tagline {
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-widest);
-  text-transform: lowercase;
-  color: var(--color-gold);
-}
-
 /* --- Bottom metadata ticker ---------------------------------------------- */
 
 .ticker {
+  /*
+    Lifted above the backdrop explicitly. A static element paints below a
+    positioned one regardless of source order, so without a z-index of its own this
+    would sit behind the video.
+  */
+  position: relative;
+  z-index: var(--z-base);
+
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -201,8 +97,16 @@
   gap: var(--space-2xs) var(--space-xl);
 
   /*
-    True full bleed — the only element in the hero that ignores the section's own
-    edge padding. Cancelling --container-padding with a negative inline margin
+    Absorbs every bit of free space between the hero's header and this strip, which
+    is what pins the ticker to the bottom of the section. It replaces the old
+    `flex: 1` content block that used to do the same job by filling the middle — the
+    middle is empty now, so the space is claimed as margin instead of by an element
+    that would exist only to be blank.
+  */
+  margin-block-start: auto;
+
+  /*
+    True full bleed — cancelling --container-padding with a negative inline margin
     (rather than a viewport-width trick) keeps it correct whatever that token
     becomes. `inline-size: auto` is required: at 100% the box would still measure
     the padded content width and the negative margins would overshoot the
@@ -247,77 +151,4 @@
 
 .ticker-value {
   color: var(--color-text-muted);
-}
-
-/* --- Breakpoints ---------------------------------------------------------- */
-
-@media (max-width: 63.9375rem) {
-  .content {
-    justify-items: center;
-    text-align: center;
-  }
-
-  /*
-    Both columns centre themselves. No `order` override any more: the logo is the
-    strongest visual anchor and should lead the stack, and it now lives in
-    .identity, which is already first in the markup.
-
-    .logo-heading is in the list because its own box can end up wider than the
-    mark it holds (see its comment) — centring the box alone would leave the logo
-    visibly off-centre, so the image is centred inside it too.
-  */
-  .identity,
-  .pitch,
-  .logo-heading {
-    align-items: center;
-  }
-}
-
-@media (min-width: 64rem) {
-  .content {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  /*
-    Both columns are nudged apart and up so more of the footage reads between
-    and below them. `transform` rather than margin so nothing reflows and the
-    grid tracks stay even.
-
-    These offsets live on the columns, never on their children: the children
-    carry Framer Motion entrance transforms (see Hero.jsx), and an inline
-    transform from JS would overwrite a CSS one on the same element.
-  */
-  .identity {
-    transform: translate(-1.5rem, -2rem);
-  }
-
-  /*
-    No inline offset — the column's own end-alignment already puts this pair at
-    the right edge. Only the block axis is nudged, and further up than the left
-    column so the pair reads as pinned to the top of its column rather than
-    floating in the middle of it.
-
-    text-align follows the box: the tagline is one line at every desktop width
-    today, but if it ever wraps, ragged-left copy against a right edge would give
-    the alignment away. Set here rather than on the base rule so it cannot
-    override the centred stacked layout above.
-  */
-  .pitch {
-    transform: translateY(-3.5rem);
-    text-align: end;
-  }
-
-  /*
-    Set in from the logo's left edge, deliberately far enough that it reads as an
-    indent rather than a misalignment. A margin rather than a transform — this
-    element carries a Framer Motion entrance transform (see Hero.jsx), and an inline
-    transform from JS overwrites a CSS one on the same element.
-  */
-  .location {
-    margin-inline-start: var(--space-lg);
-  }
-
-  .tagline {
-    font-size: var(--text-lg);
-  }
 }

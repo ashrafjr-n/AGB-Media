@@ -41,10 +41,66 @@
   background-color: var(--color-black);
 }
 
+/*
+  Two-part layout: the copy column holds everything it always held, and the logo
+  anchors the inline end beside it.
+
+  One column by default, so on a narrow screen the logo stacks *below* the copy
+  (it is last in source order) instead of squeezing alongside it. The second track
+  only appears once there is width for both — see the breakpoint at the bottom.
+*/
 .inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: var(--space-2xl);
+
   inline-size: 100%;
   max-inline-size: var(--container-max);
   margin-inline: auto;
+}
+
+/*
+  The copy column keeps its own block flow — the eyebrow, title, body and CTA all
+  carry their own margins and stack exactly as they did before this became a grid.
+*/
+.copy {
+  /*
+    `minmax(0, …)` behaviour for a grid item: without it a grid child's minimum size
+    is its content, and the body copy's 65ch measure could push the track wider than
+    its share and squeeze the logo.
+  */
+  min-inline-size: 0;
+}
+
+/* --- Logo ---------------------------------------------------------------- */
+
+/*
+  A column flex container, and that is not arbitrary: the logo is portrait (360x672)
+  and sized by max-block-size, so its width has to be derived from that capped
+  height. Only along a flex container's main axis does the cap constrain the size the
+  inline axis then resolves against — the same geometry the hero's mark needs.
+
+  Centred while stacked; pushed to the inline end once the second column exists.
+*/
+.logo-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-panel img {
+  inline-size: auto;
+  block-size: auto;
+  /*
+    Height-capped against the viewport as well as in rem, so the mark cannot outgrow
+    the one-screen section it sits in on a short window. The section is min-block-size
+    100vh, so `vh` is the right unit to measure the cap against.
+  */
+  max-block-size: min(34vh, 15rem);
+  max-inline-size: 100%;
+  object-fit: contain;
 }
 
 /* --- Opening ------------------------------------------------------------- */
@@ -133,6 +189,26 @@
 /* --- Breakpoints ---------------------------------------------------------- */
 
 @media (min-width: 64rem) {
+  /*
+    Copy takes the free space, the logo track sizes to the mark itself — `auto`
+    rather than a fraction so the image is never stretched or starved by the
+    ratio, and the copy simply gets whatever is left.
+  */
+  .inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-3xl);
+  }
+
+  /* Hard against the section's inline end, mirroring the copy at the start. */
+  .logo-panel {
+    align-items: flex-end;
+  }
+
+  /* Large here, where there is a whole column for it. */
+  .logo-panel img {
+    max-block-size: min(58vh, 28rem);
+  }
+
   .title {
     font-size: var(--text-3xl);
   }
