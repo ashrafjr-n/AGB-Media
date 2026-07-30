@@ -6,15 +6,76 @@ Single source of truth for every task in this repository. Read this before writi
 
 ## 1. Project Overview
 
-- **Project:** AGB Media — portfolio website for a TV & artistic production company (agb-media.net).
+- **Project:** AGB Media — portfolio website for a TV & artistic production company based in **Doha, Qatar** (agb-media.net).
+- **Shape:** **frontend-only.** No API, no server, no data fetching, no auth, no env vars. All copy is hardcoded in the components or in `src/data/`.
 - **Stack:** React 19 + Vite 8, React Router 7, Framer Motion, react-icons.
 - **Language:** **English throughout, LTR.** All user-facing copy, code, comments, and identifiers are English. There is **no Arabic anywhere in this project** — do not add Arabic copy, Arabic fonts, or RTL handling.
 - **Document direction:** `<html lang="en" dir="ltr">` is set in `index.html`.
 - **CSS direction:** keep writing **logical properties** (`inset-inline`, `margin-inline`, `padding-inline-start`, `border-inline-end`). Under LTR they resolve to left/right at no cost, and they keep the layout direction-agnostic. `left`/`right` are acceptable where a value is genuinely visual, but prefer the logical form for consistency with existing code.
 
+### Tech stack
+
+| Concern | Choice | Notes |
+| --- | --- | --- |
+| Framework | React 19.2 | `StrictMode` on — see the StrictMode note under §4 Motion |
+| Build | Vite 8 + `@vitejs/plugin-react` | `vite.config.js` is the react plugin and nothing else |
+| Routing | React Router 7 (`BrowserRouter`) | one route today; see below |
+| Styling | **CSS Modules only** | tokens in `variables.css`, base in `global.css` |
+| DOM motion | **Framer Motion 12 — the only animation library** | every animation gates on `useReducedMotion()` |
+| WebGL | `ogl` 1.0 | one unused component; see §7 |
+| Icons | `react-icons` (Heroicons `hi` outline set) | never hand-build an SVG — §5 |
+| Type | Clash Display via Fontshare | sole typeface, §3 |
+| Lint | `oxlint` (`npm run lint`) | `.oxlintrc.json`: react hooks rules only |
+
+### Routing, and what is wired ahead of itself
+
+`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with `<Hero />` and `<About />`.
+
+`/about`, `/services` and `/contact` are linked from `navLinks.js`, and About's CTA points at `/about`, but **none of them has a `<Route>`** — following one renders an empty page. The links are deliberately wired ahead of the pages. When adding one of those pages, add the route *and* check nothing in `navLinks.js` needs to change.
+
+### Component inventory
+
+| File | What it is |
+| --- | --- |
+| `App.jsx` | Router shell. One route. |
+| `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`). |
+| `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden for the whole hero via `data-hidden` + `inert`. See §4 "The two headers". |
+| `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`. |
+| `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
+| `components/About/About.jsx` | The "Our Story" section — gold eyebrow, `h2`, two paragraphs held in a local `paragraphs` array, `.button-reveal` CTA to `/about`, and a large logo panel. The reference implementation for `whileInView` reveals. |
+| `components/shared/Button.module.css` | **The** button definition — base + three variants. A module with no `.jsx` sibling, on purpose. |
+| `components/shared/Grainient.jsx` | OGL/WebGL animated gradient shader. **Imported by nothing** — see §7 before touching it. |
+| `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. `viewportProgress` is 0→1 over the first viewport, which is what both the header handoff and the video gate compare against. |
+| `data/navLinks.js` | The nav model, shared by both headers. `Contact` carries `featured: true`. |
+| `styles/variables.css` | Design tokens **only** — no selectors beyond `:root`. |
+| `styles/global.css` | The `@import`s, reset, base element styles, film-grain overlay, `.noise-overlay` and `.sr-only`. Imported once, by `main.jsx`. |
+
+### Assets
+
+| Path | What | Status |
+| --- | --- | --- |
+| `public/assets/images/agb-logo.png` | 360×672 **portrait** mark, 256 KB. Referenced as `/assets/images/agb-logo.png` from `Header`, `HeroHeader` and `About`. | in use |
+| `src/assets/videos/hero.mp4` | 3840×2160, 20 s, **23 MB**. Vite-imported, so it is bundled and hashed rather than served from `public/`. | in use (Hero backdrop) |
+| `src/assets/images/story.png` | 2310×1226, 3.1 MB | **unreferenced** |
+| `src/assets/images/zero.png` | 2126×1216, 4.1 MB | **unreferenced** |
+
+Because the logo is portrait, **anything sizing it must drive `block-size` and leave `inline-size: auto`** — width has to derive from the capped height, not the reverse. `About`'s `.logo-panel` is a column flex container for exactly this reason. There are no 3D models and no icon sprites.
+
+The hero video is the site's whole weight budget: 23 MB of 4K for a 20-second loop, decoded on the first screen. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, should account for that.
+
 ---
 
 ## 2. Design System
+
+### Direction
+
+**Today: dark cinematic.** A flat `#010101` ground end to end, a single gold/amber accent sampled from the logo, Clash Display for everything, film grain over the whole viewport, and 4K footage carrying the first screen. Restraint is the through-line — one filled button on the site, no gradient bands at section joins, one typeface, one background colour.
+
+**In flight: a shift toward a fluid / water + gold aesthetic.** The user has flagged this and **more detail is still to come.** Until that detail arrives:
+
+- **Do not pre-emptively rewrite the palette, the grain, or the section boundaries toward it.** The rules below describe what is on screen now and are what current work is judged against.
+- Read the "settled" language below as settled *for the dark-cinematic direction*. `--color-black` takes no further tuning **within** that direction; a deliberate move to a new one is a different decision, made with the user, and it would have to carry all six copies of the ground tone together (see the translucent-surfaces note).
+- `components/shared/Grainient.jsx` (§7) is the most likely home for a fluid/water treatment — it is an unused WebGL gradient-warp shader already in the repo, with warp, flow-speed and three colour uniforms. Look there before adding a new dependency for liquid motion.
 
 ### Colors
 
@@ -235,6 +296,34 @@ Already installed — do not reinstall:
 
 `react` · `react-dom` · `react-router-dom` · `framer-motion` · `react-icons` · `ogl`
 
-`ogl` is the WebGL layer behind `components/shared/Grainient.jsx` (the hero's animated gradient backdrop) and is used for nothing else. Framer Motion remains the only animation library for anything in the DOM — see §4 Motion.
+`ogl` is the WebGL layer behind `components/shared/Grainient.jsx` and is used for nothing else. **Grainient is not currently rendered anywhere** — the hero's backdrop is `hero.mp4`, not a shader (see §7). Framer Motion remains the only animation library for anything in the DOM — see §4 Motion.
 
 `tailwindcss` and `@tailwindcss/vite` remain in `package.json` but are **disconnected from the build**. They can be uninstalled by the user at any time.
+
+`oxlint` is the linter (`npm run lint`). `.oxlintrc.json` enables the `react` and `oxc` plugins with `react/rules-of-hooks` as an error and `react/only-export-components` as a warning — nothing else. It is not a formatter, and there is no Prettier config; match the surrounding file's style by hand.
+
+---
+
+## 7. Unused, and stale — as of 2026-07-30
+
+Things in the tree that look load-bearing and are not. Check this list before assuming something is wired up.
+
+**`components/shared/Grainient.jsx` is imported by nothing.** It is a ~290-line vendored WebGL component: an OGL renderer over a fullscreen triangle running a gradient-warp fragment shader with 22 uniforms, RAF-driven, correctly paused by both an `IntersectionObserver` and `visibilitychange`. Three things to know before using it:
+
+- Its default `color1`/`color2`/`color3` are still the **vendor's purples** (`#FF9FFC`, `#5227FF`, `#B497CF`) — nothing in this palette. Pass gold/ground colours explicitly; it takes hex strings.
+- It **does not follow this project's conventions**: semicolons, an arrow-function component with props destructured in the signature, and a `WeakMap` keyed on the container element to keep the renderer alive across re-renders. That is vendored code, not the house style — do not copy its shape into new components, and do not reformat it purely for consistency either.
+- It has no `useReducedMotion()` gate. §4 requires one for Framer animations; a continuously animating shader needs the same consideration before it ships.
+
+**Unreferenced assets:** `src/assets/images/story.png` (3.1 MB) and `zero.png` (4.1 MB). Neither is imported. Do not delete them without asking — they read as material staged for upcoming work.
+
+**Unreferenced tokens:** `--color-raised`, `--color-navy`, `--color-surface` (an alias of `--color-navy`, so it inherits that token's drift), `--text-5xl`, `--duration-morph`, `--shadow-soft`, `--shadow-gold`, `--z-modal`, and the `.button-quiet` variant. Each is documented where it is defined; read the note there before reaching for one.
+
+**Vestigial:** `Header.jsx` sets `data-docked="true"` unconditionally. Its comment says the menu-open styling targets `[data-docked='true'][data-menu-open='true']`, but `Header.module.css` actually targets `[data-menu-open='true'] .bar` alone — the attribute is doing nothing. Harmless; worth knowing before trusting that comment.
+
+**Comments that have gone stale as the code moved around them:**
+
+- `About.module.css` — `.about`'s `padding-block-start` says it clears the fixed header "the same way `.hero` does". `.hero` no longer reserves `--header-height` (the site header is hidden for the hero's whole height), so only About does this now.
+- `About.jsx` — the icon import comment says the outline set matches "the hero CTA's `HiOutlineMail`". The hero CTA has no icon anymore; `HiOutlineArrowNarrowRight` in About is the only icon outside `Header`'s hamburger.
+- `Hero.module.css` — `.backdrop-overlay` refers to "the Story section", as do several notes elsewhere. The component is `About/`; its `id` is `about` and its visible title is "Our **Story**". **"About" and "the Story section" mean the same component** throughout this file and the codebase.
+
+Fix any of these in passing if you are editing the file anyway. Do not make a separate pass just to correct comments.

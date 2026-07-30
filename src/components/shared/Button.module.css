@@ -3,13 +3,15 @@
   restyled inside a section module. There is one shared base plus three variants, and
   a call site always applies the base *and* exactly one variant:
 
-    .button .button-featured  SOLID gold fill, near-black label   (hero nav "Contact")
-    .button .button-quiet     gold hairline pill, quiet hover     (unused today)
-    .button .button-reveal    sliding-panel reveal hover          (About)
+    .button .button-featured  fluid glass, drifting gold sheen     (hero nav "Contact")
+    .button .button-quiet     gold hairline pill, quiet hover      (unused today)
+    .button .button-reveal    sliding-panel reveal hover           (About)
 
-  .button-featured is the site's single filled button and the only one that is not an
-  outline on transparent. That is the whole point of it, and it holds only while it
-  stays the only one — a second filled call to action anywhere cancels the emphasis.
+  .button-featured is the site's single high-emphasis button. It was a solid gold fill
+  with a near-black label; it is now glass with liquid gold drifting behind it. Either
+  way it is the one button that reads as a *button* rather than a link, and that holds
+  only while it stays the only one — a second emphatic call to action anywhere cancels
+  the distinction.
 
   The other two differ because they sit on different surfaces: an outline over moving
   footage has to stay understated, while the flat Story section can carry the louder
@@ -90,18 +92,24 @@
 /* --- Variant: featured ---------------------------------------------------- */
 
 /*
-  The one filled button on the site, for the hero nav's "Contact" entry — the nav item
-  *is* the call to action, rather than a button sitting beside a duplicate link.
+  The high-emphasis button, for the hero nav's "Contact" entry — the nav item *is* the
+  call to action, rather than a button sitting beside a duplicate link.
 
-  Every other button here is an outline on transparent; this is the single exception,
-  and its whole job is to be the one thing that reads as a *button* rather than a
-  link. That only works while it stays unique — a second filled call to action
-  anywhere on the site cancels the distinction, so use .button-quiet or
-  .button-reveal for those.
+  Fluid glass: a thin dark fill, a backdrop blur, a lit rim, and two warm layers
+  drifting behind the label. It sits over the hero's video backdrop, so the blur has
+  real footage to work with and the button reads as a small pane with liquid gold
+  moving inside it.
 
-  Solid --color-gold with a near-black label. Both states clear WCAG AA for normal
-  text against --color-black: 5.8:1 at rest, 9.3:1 on hover, which is why the label
-  is the ground tone rather than white — white on this gold is only about 3.6:1.
+  It replaced a solid --color-gold fill with a --color-black label, and one thing was
+  lost in that trade that is worth stating plainly. The old pairing was chosen for
+  contrast: near-black on gold measured 5.8:1 at rest and 9.3:1 on hover, both clearing
+  WCAG AA, where white on that gold was about 3.6:1 and failed. The label is now
+  --color-text over --glass-fill-light, which is 0.3 alpha — thin enough that the
+  composite tracks the footage behind it. Over a dark frame that is comfortably
+  legible; over a bright one the contrast can fall below AA, and unlike a static
+  background there is no fixed ratio to quote. --glass-fill-light is the dial: raising
+  it toward 0.55 (what the ticker uses) restores a predictable floor at the cost of
+  some transparency.
 
   Rounded rather than a full pill, so it does not read as another --radius-full
   outline like .button-quiet, and rectangular enough to look deliberate at the end of
@@ -110,34 +118,130 @@
 .button-featured {
   border-radius: var(--radius-md);
 
-  background-color: var(--color-gold);
-  /*
-    Border matched to the fill rather than removed: the base rule reserves 1px of
-    border box, and dropping it here would make this button a pixel shorter and
-    narrower than its outlined neighbours in the same row.
-  */
-  border-color: var(--color-gold);
-  color: var(--color-black);
+  background-color: var(--glass-fill-light);
+  -webkit-backdrop-filter: blur(var(--glass-blur-tight));
+  backdrop-filter: blur(var(--glass-blur-tight));
 
-  /* Bolder than the shared base — a filled button can carry the extra weight. */
+  /*
+    Border kept rather than removed, as the gold fill's was: the base rule reserves
+    1px of border box, and dropping it here would make this button a pixel shorter and
+    narrower than its outlined neighbours in the same row. It is the pane's lit rim
+    now rather than an edge matched to a fill.
+  */
+  border-color: var(--glass-border-bright);
+  color: var(--color-text);
+
+  /* Bolder than the shared base — the emphatic button carries the extra weight. */
   font-weight: var(--font-weight-bold);
+
+  /*
+    Own stacking context, so the sheen layers below sit at z-index -1: above this
+    button's fill, below its label. That is the mechanism here rather than
+    .button-reveal's `> *` lift, because this call site renders the label as a bare
+    text node with no element to lift — see HeroHeader.jsx.
+  */
+  isolation: isolate;
+
+  /*
+    Clips the oversized sheen layers to the button's rounded box.
+
+    Scoped to this variant and never moved up to .button: .button-reveal's panels
+    overhang their box deliberately and clipping them would destroy that effect. Safe
+    here because nothing in this variant paints outside the border box.
+  */
+  overflow: hidden;
 }
 
 /*
-  Hover is a straight brighten to the palette's raised gold, nothing more.
+  No hover state, deliberately — but a gap rather than a finished decision. The gold
+  fill's brighten went with the fill and nothing has replaced it, so the button looks
+  identical under the cursor. Keyboard users are still served, since the global
+  :focus-visible ring in global.css is untouched, but a pointer gets no feedback.
 
-  No lift, to stay inside the base rule's colour-scoped transition. Its own call site
-  is a plain <Link> today, so a transform here would not be overwritten — but the
-  scoped transition is shared with .button-reveal, whose call site *is* a Framer
-  element, and a transform hover would need `transition: transform` on the base to
-  animate. Adding that would smooth over Framer's per-frame writes and make the
-  entrance drag. A colour-only hover keeps all three variants on one transition.
+  Whatever lands here, keep it to colour: the base rule's transition is scoped to
+  colour properties on purpose (a transform transition would smooth over Framer
+  Motion's own per-frame writes at .button-reveal's call site and make that entrance
+  drag), so a hover needing `transition: transform` on the base is the one thing not
+  to add.
 */
-.button-featured:hover,
-.button-featured:focus-visible {
-  background-color: var(--color-gold-light);
-  border-color: var(--color-gold-light);
-  color: var(--color-black);
+
+/* --- The featured button's sheen ------------------------------------------ */
+
+/*
+  The same two-layer construction as the hero ticker's, for the same reasons — see
+  .ticker::before in Hero.module.css: twice the box width, a gradient tiled at exactly
+  one box width, animating `transform` rather than `background-position` so the drift
+  is composited instead of repainted, and 50% of travel being exactly one tile.
+
+  Louder than the ticker's, per the brief: that strip runs the full width of the
+  viewport and has to stay at the edge of visible, while this is a small surface where
+  the gold is the point.
+
+  Percentages on an absolutely positioned box resolve against the padding box, so
+  these cover the button's interior and stop short of the rim — which keeps the border
+  crisp instead of washed by the sheen.
+*/
+.button-featured::before,
+.button-featured::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 200%;
+
+  background-size: 50% 100%;
+  background-repeat: repeat;
+
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* The bright pass: amber, and the layer doing most of the work. */
+.button-featured::before {
+  background-image: linear-gradient(
+    110deg,
+    transparent 0%,
+    var(--glass-sheen-strong) 22%,
+    var(--color-gold-veil) 40%,
+    transparent 56%,
+    transparent 76%,
+    var(--glass-sheen-strong) 92%,
+    transparent 100%
+  );
+  animation: sheen-flow var(--glass-drift-fast) linear infinite;
+}
+
+/*
+  The counter-drifting rust pass, slower and steeper. Where the two cross the gold
+  deepens, and that beat is what makes it read as liquid rather than as a sweep.
+*/
+.button-featured::after {
+  background-image: linear-gradient(
+    150deg,
+    transparent 0%,
+    var(--glass-sheen-deep) 30%,
+    transparent 58%,
+    transparent 78%,
+    var(--glass-sheen-deep) 94%,
+    transparent 100%
+  );
+  animation: sheen-flow var(--glass-drift) linear infinite reverse;
+}
+
+/*
+  Declared here rather than shared with Hero.module.css: CSS Modules scope @keyframes
+  names per file, so one module cannot reference another's animation. Same shape as
+  `sheen-drift` there — one tile of travel, on the compositor.
+*/
+@keyframes sheen-flow {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* --- Variant: reveal ------------------------------------------------------ */

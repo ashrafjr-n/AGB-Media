@@ -98,6 +98,21 @@
   position: relative;
   z-index: var(--z-base);
 
+  /*
+    Own stacking context, so the two sheen layers below can sit at z-index -1:
+    above this element's own fill, below the metadata, without either escaping the
+    strip. backdrop-filter already establishes one as a side effect — this states
+    it, so the layering does not silently depend on that.
+  */
+  isolation: isolate;
+
+  /*
+    The sheen layers are twice the strip's width and drift across it. Clipping them
+    here is what keeps the effect inside the glass; without it they would paint
+    across the whole hero.
+  */
+  overflow: hidden;
+
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -124,23 +139,52 @@
   inline-size: auto;
   margin-inline: calc(var(--container-padding) * -1);
   padding-block-start: var(--space-md);
-  border-block-start: 1px solid var(--color-border-subtle);
 
   /*
-    Fully opaque --color-black, the same token About paints with, so the strip reads as
-    the Story section's flat ground rather than as more footage. Opaque and not a scrim:
-    any alpha here would let the video through and put a different tone under the
-    metadata than under the copy below it.
-
-    It hides the video because .ticker is positioned at --z-base while .backdrop sits at
-    z-index 0 — the strip is already above both the footage and its scrim.
+    The lit top edge of the pane. Only the block-start edge, and deliberately not a
+    full 1px box: the strip is full bleed, so its inline edges are off-screen, and a
+    block-end border would draw a hairline exactly along the hero/About seam —
+    the one join this project keeps untreated.
   */
-  background-color: var(--color-black);
+  border-block-start: 1px solid var(--glass-border);
+
+  /*
+    Glass, not the flat ground it used to be.
+
+    This strip was fully opaque --color-black, matching About's fill so that the
+    bottom of the hero and the top of the next section read as one continuous
+    surface. That is now traded away on purpose: a translucent fill plus a backdrop
+    blur, so the footage is visible *through* the strip as a soft, out-of-focus
+    wash. The strip reads as a pane laid over the video rather than as the page's
+    ground reaching up behind the metadata.
+
+    What that costs, and it is worth knowing before tuning any of this: the strip no
+    longer matches About below it, so there is a step at the hero's bottom edge where
+    blurred footage meets flat --color-black. See the padding/margin note below,
+    which is what carries this fill down to that edge.
+
+    --glass-fill is --color-black at 0.55, on top of the backdrop's own 0.25 scrim,
+    so the footage arrives at roughly a third of its luminance before the blur takes
+    the detail out of it. That is what keeps --color-text-muted legible at
+    --text-xs over moving 4K footage; thinning the fill is the first thing that
+    breaks the metadata.
+  */
+  background-color: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
 
   /*
     Carries the fill down through .hero's --space-lg of block-end padding so the strip
-    reaches the section's bottom edge and meets About directly, with no sliver of
-    footage between two identically painted surfaces.
+    reaches the section's bottom edge and butts straight against About.
+
+    Written for an opaque strip, where this closed the last sliver of footage between
+    two identically painted surfaces. It is kept as-is now that the strip is glass,
+    which changes what it achieves rather than whether it works: instead of hiding a
+    seam it moves one, from the strip's own edge down to the section boundary, where
+    blurred footage now meets About's flat --color-black. Dropping *both* values would
+    leave the pane hugging the metadata with 2rem of open footage below it — the pane
+    would then float over the video instead of meeting the next section. Either reads;
+    this is the one that does not change the geometry.
 
     Padding and an equal negative margin rather than a taller box: the padding extends
     what gets painted, the negative margin gives the space back to the layout, so the
@@ -154,6 +198,109 @@
   font-weight: var(--font-weight-light);
   letter-spacing: var(--tracking-wide);
 }
+
+/* --- Ticker sheen --------------------------------------------------------- */
+
+/*
+  Two warm layers drifting across the glass in opposite directions, at
+  non-harmonic speeds. Neither is doing anything on its own — the effect is the
+  slow interference between them, which is what stops it reading as a loop and
+  starts it reading as light moving through dark water.
+
+  Both are twice the strip's width with a gradient tiled at exactly one strip
+  width, and both animate `transform` rather than `background-position`. That
+  distinction is the performance of this whole feature: background-position
+  repaints a viewport-wide box every frame, while a transform is handed to the
+  compositor and costs nothing per frame. Translating a 200%-wide box by 50% of
+  itself is exactly one tile, so the loop is seamless with no keyframe bookkeeping.
+
+  z-index -1 against the strip's `isolation: isolate` puts them above the glass
+  fill and below the metadata. The <li> children are in-flow, and in-flow content
+  always paints above negative-z-index children, so the text needs nothing.
+*/
+.ticker::before,
+.ticker::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 200%;
+
+  /* One tile == one strip width, which is what makes the drift seamless. */
+  background-size: 50% 100%;
+  background-repeat: repeat;
+
+  /*
+    Continuously animating transforms, so the hint is honest here rather than
+    speculative — it keeps each layer on its own compositor layer instead of
+    re-rasterising the strip.
+  */
+  will-change: transform;
+
+  pointer-events: none;
+}
+
+/*
+  The upper sheen: two soft warm bands on a shallow diagonal. Transparent at both
+  0% and 100% so consecutive tiles butt together invisibly.
+*/
+.ticker::before {
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    var(--glass-sheen) 18%,
+    transparent 36%,
+    transparent 60%,
+    var(--glass-sheen) 78%,
+    transparent 100%
+  );
+  animation: sheen-drift var(--glass-drift) linear infinite;
+}
+
+/*
+  The counter-drifting layer, deeper and slightly faster. Rust rather than gold,
+  and a steeper angle, so where the two cross they add up to something warmer than
+  either — that crossing is the "ripple".
+
+  `animation-direction: reverse` rather than a second @keyframes block: with a
+  linear from→to translate, reversing is exactly the opposite drift.
+*/
+.ticker::after {
+  background-image: linear-gradient(
+    145deg,
+    transparent 0%,
+    var(--glass-sheen-deep) 26%,
+    transparent 52%,
+    transparent 74%,
+    var(--glass-sheen-deep) 90%,
+    transparent 100%
+  );
+  /*
+    Held at a third of the strong sheen's alpha through the layer's own opacity
+    rather than a fourth colour token: --glass-sheen-deep is shared with the
+    button, where it is meant to be seen.
+  */
+  opacity: 0.45;
+  animation: sheen-drift var(--glass-drift-fast) linear infinite reverse;
+}
+
+/*
+  Exactly one tile of travel. Shared by both layers here and by both of the
+  button's, which is why it is stated as a bare 50% rather than in strip units.
+  translate3d, not translateX, so it is unambiguously a compositor transform.
+*/
+@keyframes sheen-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* --- Ticker content ------------------------------------------------------- */
 
 .ticker-item {
   display: flex;

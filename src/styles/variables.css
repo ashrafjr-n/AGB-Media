@@ -88,6 +88,59 @@
   */
   --color-gold-veil: rgba(201, 112, 20, 0.1);
 
+  /* --- Glass ------------------------------------------------------------ */
+
+  /*
+    The fluid-glass surfaces: the hero's metadata ticker and the hero nav's
+    Contact button. Both sit over the video backdrop, so both are a translucent
+    fill plus a backdrop blur plus a slowly drifting warm sheen.
+
+    Blur radii. --header-blur (12px) already covers the header pill and these
+    match its weight deliberately — three glass surfaces reading as one material.
+    The tight one is for the small surface, where 12px over a ~140px box blurs
+    more of the footage than the box can show.
+  */
+  --glass-blur: 12px;
+  --glass-blur-tight: 10px;
+
+  /*
+    Glass fills. Both are --color-black at an alpha, written out literally for
+    the same reason --color-glass / --color-overlay / --color-scrim are: CSS
+    cannot derive an alpha from a hex token. That makes these two more
+    hand-maintained copies of the ground tone — when --color-black moves, they
+    move with it.
+
+    The light one is deliberately thin (0.3): it is the Contact button, and it is
+    meant to read as glass rather than as a fill. See the contrast note in
+    Button.module.css — over a bright frame of footage it is thin enough that the
+    white label can lose contrast, and this token is the one dial that fixes it.
+  */
+  --glass-fill: rgba(1, 1, 1, 0.55);
+  --glass-fill-light: rgba(1, 1, 1, 0.3);
+
+  /*
+    Glass edges — the lit rim that makes a translucent panel read as a pane
+    rather than as a hole. The subtle one is the same value as
+    --color-border-subtle and is kept separate only so the glass system can be
+    tuned without touching every hairline on the site.
+  */
+  --glass-border: rgba(245, 245, 240, 0.08);
+  --glass-border-bright: rgba(245, 245, 240, 0.15);
+
+  /*
+    The warm tints that drift through the glass. Gold at an alpha, so they read
+    as light refracting through the pane rather than as a colour fill.
+
+    The ticker takes the weak one and must stay at the edge of visible — it runs
+    the full width of the viewport directly above flat --color-black, and
+    anything stronger stops looking like a shimmer and starts looking like a
+    gradient band. The button takes the strong pair, where the surface is small
+    and the brief is liquid gold behind glass.
+  */
+  --glass-sheen: rgba(201, 112, 20, 0.14);
+  --glass-sheen-strong: rgba(224, 154, 60, 0.4);
+  --glass-sheen-deep: rgba(143, 40, 4, 0.32);
+
   /* --- Typography ------------------------------------------------------- */
 
   /*
@@ -194,6 +247,26 @@
   --duration-slow: 600ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /*
+    Glass sheen cycles — the drift of the warm layers inside the two glass
+    surfaces. Orders of magnitude slower than everything above, because these are
+    ambient rather than a response to anything: the eye should never catch a
+    start or an end.
+
+    Each surface runs two layers at these two durations, drifting in opposite
+    directions. The pair is deliberately non-harmonic (18 : 12 is 3 : 2, and the
+    second layer of each surface is offset again) so the two never re-align on a
+    short beat — that slow interference is what reads as water rather than as a
+    loop. Keep them coprime-ish if you retune; 18 and 9 would visibly repeat.
+
+    The prefers-reduced-motion block in global.css collapses these to 0.01ms with
+    one iteration, which is the whole reason the sheen is a CSS animation and not
+    a Framer one — it needs no JS branch to honour the preference. The gradients
+    stay, they simply stop moving.
+  */
+  --glass-drift: 18s;
+  --glass-drift-fast: 12s;
 
   /* --- Layers ----------------------------------------------------------- */
 
