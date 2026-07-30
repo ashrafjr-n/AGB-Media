@@ -262,7 +262,7 @@
 /* --- The glass button's sheen --------------------------------------------- */
 
 /*
-  The Story section's animated gold sheen, unchanged.
+  The Story section's animated gold sheen.
 
   The same two-layer construction as the hero ticker's water was, for the same reasons:
   twice the box width, a gradient tiled at exactly one box width, animating `transform`
@@ -272,6 +272,30 @@
   Percentages on an absolutely positioned box resolve against the padding box, so these
   cover the button's interior and stop short of the rim — which keeps the border crisp
   instead of washed by the sheen.
+
+  --- Why both gradients below start and end with a flat transparent run ---
+
+  There was a hard vertical line drifting through this button where the tile repeated,
+  and it was not the tiling arithmetic: 200% wide at `background-size: 50%` is exactly
+  two tiles, and the keyframe travels exactly one. That part was always right.
+
+  It was the *angle*. In a tiled linear-gradient, the colour is seamless across a tile
+  boundary only if the last stop matches the first — and for an angled gradient that is
+  not enough, because progress along the gradient line depends on y as well as x. Down
+  the tile's trailing edge the gradient is not at one position but spread over a band of
+  them, and the leading edge of the next tile is spread over a matching band at the other
+  end. The two only agree if both bands are a single flat colour.
+
+  So each gradient holds `transparent` from 0% to its first real stop and again from its
+  last real stop to 100%, and those runs have to be wider than the band the angle
+  smears. That width is h·|cos(angle)| / (w·|sin(angle)| + h·|cos(angle)|) — about 6% at
+  110deg on this button's proportions, about 22% at 150deg, the steeper angle costing far
+  more. The margins below are set well clear of both, which is why the shallow layer can
+  keep two highlights per tile and the steep one only has room for one.
+
+  Those flat runs are load-bearing, not padding. Narrowing them, or steepening either
+  angle without widening them to match, brings the seam straight back. The colours,
+  angles, layer count and timing are all unchanged.
 */
 .button-glass::before,
 .button-glass::after {
@@ -289,16 +313,25 @@
   pointer-events: none;
 }
 
-/* The bright pass: amber, and the layer doing most of the work. */
+/*
+  The bright pass: amber, and the layer doing most of the work.
+
+  Two highlights per tile, as before — the shallow 110deg only smears about 6%, so 18%
+  of flat transparent at each end clears it with room to spare and still leaves the
+  middle two thirds for the sheen. The second highlight used to peak at 92%, i.e. right
+  on the tile boundary, which is what made this the layer the seam was visible in.
+*/
 .button-glass::before {
   background-image: linear-gradient(
     110deg,
     transparent 0%,
-    var(--glass-sheen-strong) 22%,
-    var(--color-gold-veil) 40%,
+    transparent 18%,
+    var(--glass-sheen-strong) 31%,
+    var(--color-gold-veil) 43%,
     transparent 56%,
-    transparent 76%,
-    var(--glass-sheen-strong) 92%,
+    transparent 63%,
+    var(--glass-sheen-strong) 74%,
+    transparent 82%,
     transparent 100%
   );
   animation: sheen-flow var(--glass-drift-fast) linear infinite;
@@ -307,15 +340,21 @@
 /*
   The counter-drifting rust pass, slower and steeper. Where the two cross the gold
   deepens, and that beat is what makes it read as liquid rather than as a sweep.
+
+  One highlight per tile rather than two, and that is the angle's doing: at 150deg the
+  smear is around 22% of the tile at this button's proportions, so the flat runs have to
+  be 34% at each end to stay clear of it on a narrower button too, leaving only the
+  middle third to work in. No density is lost — the element is two tiles wide, so this
+  still puts two rust masses on screen, exactly as the old pair did with one of them
+  split across the seam.
 */
 .button-glass::after {
   background-image: linear-gradient(
     150deg,
     transparent 0%,
-    var(--glass-sheen-deep) 30%,
-    transparent 58%,
-    transparent 78%,
-    var(--glass-sheen-deep) 94%,
+    transparent 34%,
+    var(--glass-sheen-deep) 50%,
+    transparent 66%,
     transparent 100%
   );
   animation: sheen-flow var(--glass-drift) linear infinite reverse;

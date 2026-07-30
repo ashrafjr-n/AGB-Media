@@ -22,10 +22,23 @@
   z-index auto, and same-layer positioned boxes paint in tree order — About
   comes after Hero in the markup, so it wins.
 
-  Height: one full screen, with the top padding clearing the fixed header the
-  same way .hero does. `min-block-size` rather than `block-size` — it resolves to
-  exactly 100vh wherever the copy fits, but on a short phone in landscape the
-  block would otherwise overflow its own box and bleed past the section.
+  Height: one full screen, with the top padding clearing the fixed header — About is
+  the only section that does this, since the hero hides the site header for its whole
+  height. `min-block-size` rather than `block-size` — it resolves to exactly 100vh
+  wherever the copy fits, but on a short phone in landscape the block would otherwise
+  overflow its own box and bleed past the section.
+
+  The block padding is down about 30%, from 8.25rem of it to 5.75rem: --header-height
+  plus --space-2xs at the top rather than plus --space-lg, and --space-sm at the
+  bottom. The header clearance itself is untouched — it is the only part of that
+  figure that is load-bearing, and cutting into it would put the pill over the eyebrow.
+
+  Worth knowing before tuning this further: the section is centred (`justify-content:
+  center`) inside a 100vh box, so on a tall window the padding is not what is creating
+  the empty space above and below — the 100vh floor is, and the free height is split
+  evenly whatever the padding says. This cut is felt on shorter windows, where the
+  content is close to filling the box, and it is what buys the circle its extra 12vh
+  above.
 */
 .about {
   position: relative;
@@ -34,8 +47,8 @@
   justify-content: center;
 
   min-block-size: 100vh;
-  padding-block-start: calc(var(--header-height) + var(--space-lg));
-  padding-block-end: var(--space-lg);
+  padding-block-start: calc(var(--header-height) + var(--space-2xs));
+  padding-block-end: var(--space-sm);
   padding-inline: var(--container-padding);
 
   background-color: var(--color-black);
@@ -153,7 +166,8 @@
   align-items: center;
   gap: var(--space-sm);
 
-  margin-block-end: var(--space-sm);
+  /* Tight to the title it labels — the two read as one opening, not two blocks. */
+  margin-block-end: var(--space-2xs);
 
   /* White, not the gold it was — the type on this side carries no accent now. */
   color: var(--color-text);
@@ -187,7 +201,12 @@
   with the ladder.
 */
 .title {
-  margin-block-end: var(--space-xl);
+  /*
+    Half what it was (--space-xl). The copy column is narrower now, so it is taller,
+    and 3rem of air under a two-word heading was the largest single gap in a block
+    that should read as one column of text.
+  */
+  margin-block-end: var(--space-md);
 
   font-size: var(--text-2xl);
   line-height: 1.05;
@@ -200,10 +219,15 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 
-  /* ~65ch keeps line length inside a comfortable reading measure. */
-  max-inline-size: 65ch;
+  /*
+    52ch, down from 65. Still inside a comfortable reading measure — the low end of it
+    rather than the high — and it is the cap that keeps the copy from spreading back
+    out on an ultrawide window, where the circle stops growing at 40rem and the free
+    space would otherwise all land in this column.
+  */
+  max-inline-size: 52ch;
   padding-inline-start: var(--space-md);
   border-inline-start: 1px solid var(--color-border);
 }
@@ -235,7 +259,7 @@
   hover nudge comes from there too.
 */
 .cta {
-  margin-block-start: var(--space-xl);
+  margin-block-start: var(--space-lg);
   /* Matches .body's hairline indent so the button lines up under the copy. */
   margin-inline-start: var(--space-md);
 }
@@ -247,6 +271,14 @@
     Two columns from here up, which is also where About.jsx starts mounting the lens.
     Copy takes the free space; the circle's track sizes to the circle itself, so the
     ratio is never stretched or starved.
+
+    Deliberately not an fr ratio like `5fr 4fr`. An fr track would make the circle a
+    fixed fraction of the container and cap it there — 4fr of a 1200px container is
+    484px, which is *smaller* than it is today, so stating the split that way would
+    fight the size the circle is asked to be. Keeping the circle's track `auto` lets
+    its own `min()` cap decide how much it takes and hands the copy the remainder,
+    which is the same split expressed from the other end. Widen the circle to narrow
+    the text.
   */
   .inner {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -274,7 +306,7 @@
       tied to the window the circle would starve the text at the narrow end of this
       range, where the container is only ~720px wide.
     */
-    inline-size: min(100%, 48vh, 38vw, 24rem);
+    inline-size: min(100%, 56vh, 40vw, 28rem);
   }
 }
 
@@ -284,14 +316,21 @@
   }
 
   /*
-    Room for it here, where the column is its own half of the section. 34.375rem is
-    550px — the size the circle actually reaches once the window is wide enough for
-    the 40vw term to clear it (~1375px). Below that the vw and vh caps take over, so
-    the circle grows with the window rather than jumping to a fixed 550 and pushing
-    the copy into a narrow strip.
+    The circle is now the larger of the two columns, not the smaller. 40rem is 640px —
+    the size it reaches once the window is wide enough for the 44vw term to clear it
+    (~1455px). Below that the vw and vh caps take over, so it grows with the window
+    rather than jumping to a fixed 640 and starving the copy on a 1024px laptop.
+
+    This track is `auto` (see .inner), so this cap is also what decides the split
+    between the two columns: whatever the circle takes, the copy gets the rest. Raising
+    these numbers is how the circle gains ground on the text, and it is why the grid
+    is not written as an fr ratio — see the note on .inner.
+
+    70vh, up from 58: the section is min-block-size 100vh and its block padding is now
+    ~5.75rem, so a 70vh circle still clears the padding on a short laptop window.
   */
   .circle {
-    inline-size: min(100%, 60vh, 40vw, 34.375rem);
+    inline-size: min(100%, 70vh, 44vw, 40rem);
   }
 
   .title {
