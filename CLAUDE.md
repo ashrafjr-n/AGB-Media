@@ -45,6 +45,8 @@ Shadows are the exception: `--shadow-soft` is legitimately black-based, because 
 
 The hero's video backdrop is `position: fixed`, so every section below it scrolls *over* the footage. Sections meet that footage **directly** — flat colour against video, with no gradient band, shadow, or any other treatment easing the join. An earlier pass faded the `About` edge with a gradient band and it was removed deliberately; **do not reintroduce one.**
 
+The hero's own metadata ticker is part of that flat surface, not part of the footage: `.ticker` is painted in **fully opaque `--color-black`** and extends its fill through `.hero`'s block-end padding (`padding-block-end` plus an equal negative `margin-block-end`), so the strip runs to the section's bottom edge and meets `About` directly. **Keep those two values equal** — they cancel, which is what leaves the metadata sitting where it would without them. Never give the ticker an alpha: a translucent strip shows footage through it and puts a different tone under the metadata than under the copy below.
+
 ### Background noise
 
 A subtle film-grain overlay is applied globally via `body::after` in `global.css` (SVG `feTurbulence`, `--noise-opacity: 0.03`). It is `position: fixed`, `inset: 0`, `pointer-events: none`. A `.noise-overlay` utility class exists for applying the same texture to an individual surface.
