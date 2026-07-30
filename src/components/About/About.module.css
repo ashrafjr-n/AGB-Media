@@ -668,51 +668,60 @@
 }
 
 /*
-  The finished state, held — and the Founder section's home. About stays pinned behind it,
-  the zoom is complete, and the frozen blurred frame is the ground the Founder is read
-  against.
+  The dwell, and scroll distance only — this element is empty again.
 
-  Exactly one viewport from 48rem up, and that is load-bearing in two directions.
+  It used to be the Founder's home. The Founder now lives in .founder-layer below, because
+  a block sitting *after* the runway can only reach the screen after the zoom has finished,
+  which meant the section rose into view from the bottom edge instead of appearing on the
+  frame. What is left here is the job this always did well: one viewport of scrolling
+  during which the zoom is complete, the founder is fully faded in, and both simply hold.
 
-  The Founder is laid out to fit a single screen with nothing scrolling inside it, so this
-  is its height budget — see the note at the top of Founder.module.css. `overflow: hidden`
-  is the backstop for a window proportion the clamps there do not suit; it should never
-  actually clip anything.
-
-  It also closes the seam this slot had while it was `min-block-size`. .about is sticky
-  inside .stage and releases when .stage's bottom edge reaches it, so a hold *taller* than
-  .about meant the frozen frame slid up and away partway through the Founder, exposing the
-  hero's own footage behind the tail of it. At exactly .about's height the two coincide:
-  the release point is the moment this element reaches the top of the viewport, and from
-  there the frame and the Founder travel together as one. Changing this height without
-  changing .about's would reopen that gap.
-
-  Below 48rem the constraint is dropped. The section is roughly 1200px tall on a phone and
-  no amount of tightening fits that in 667, so it keeps the 100vh floor and scrolls — with
-  the consequences handled by the background rule below.
-
-  Positioned and lifted, which is what puts it *over* the frame rather than under it.
-  .about is sticky and therefore painted as a positioned box; a static sibling after it
-  would be painted in the in-flow layer underneath, and the whole section would disappear
-  behind the blurred frame. --z-base is 1, comfortably below --z-header's 50, so the site
-  header still passes over the top of it.
-
-  No background of any kind, deliberately — see the note at the top of Founder.module.css.
-
-  Neither aria-hidden nor pointer-events: none any more. Both were right while this was an
-  empty spacer and both would now hide real content from assistive technology and swallow
-  its clicks. .lead and .runway keep them; they are still genuinely empty.
+  Without it the section would be carried off the top the instant it finished arriving.
 */
 .hold {
+  block-size: 100vh;
+  pointer-events: none;
+}
+
+/*
+  The Founder's layer, and the thing that makes the section pin and release in step with
+  the frame it stands on.
+
+  On the motion path this is absolutely positioned across the WHOLE stage rather than
+  placed in flow, and that span is the entire trick. The Founder inside it is
+  `position: sticky` (see Founder.module.css), so it pins from the top of the stage and
+  releases when this box's bottom edge reaches it — at exactly the scroll position .about
+  releases, since both are 100vh sticky boxes bounded by the same 340vh of stage. The
+  blurred frame and the founder standing on it therefore leave the screen as one surface,
+  with no chance of sliding apart.
+
+  Absolute rather than a negative margin, which is the other way to reach the same span:
+  taken out of flow it cannot affect the stage's height at all, so the zoom's scroll
+  arithmetic is untouched and stays readable as lead + runway + hold.
+
+  z-index puts it over the frame. .about is sticky and therefore painted as a positioned
+  box; a static sibling would paint in the in-flow layer underneath it and the section
+  would vanish behind the blur. --z-base is 1, comfortably below --z-header's 50, so the
+  site header still passes over the top.
+
+  pointer-events: none because this box covers the entire stage — including the Story
+  section, whose lens needs the mousemove events it would otherwise swallow. The Founder
+  re-enables them on itself once it has finished fading in.
+
+  Below 48rem, and under reduced motion, it stays in normal flow: the content is far
+  taller than a phone screen and there is no pinned frame to stand on in either case, so
+  it simply follows the stage as an ordinary block.
+*/
+.founder-layer {
   position: relative;
   z-index: var(--z-base);
-  min-block-size: 100vh;
 }
 
 @media (min-width: 48rem) {
-  .hold {
-    block-size: 100vh;
-    overflow: hidden;
+  .stage[data-zoom='on'] .founder-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 }
 
@@ -724,23 +733,23 @@
   Under reduced motion there is no zoom at all: .about is never pinned and nothing covers
   the viewport, so without this the section would sit on the hero's own fixed 4K footage.
 
-  Below 48rem the hold is taller than .about, so the frame releases and slides away
-  partway down — the same exposure, arriving later. The cost is that a phone loses the
-  blurred backdrop behind the founder entirely, since this paints above it. That is the
-  right way round: legible text on the site's own surface beats an effect nobody can read
-  through.
+  Below 48rem the layer is in flow and far taller than .about, so the frame releases and
+  slides away partway down it — the same exposure, arriving later. The cost is that a
+  phone loses the blurred backdrop behind the founder, since this paints above it. That is
+  the right way round: legible text on the site's own surface beats an effect nobody can
+  read through.
 
-  Neither selector fires on the desktop motion path, which stays transparent — the entire
+  Neither rule fires on the desktop motion path, which stays transparent — the entire
   point of the transition.
 */
-.stage[data-zoom='off'] .hold {
+.stage[data-zoom='off'] .founder-layer {
   background-color: var(--section-glass-fill);
   -webkit-backdrop-filter: blur(var(--section-glass-blur));
   backdrop-filter: blur(var(--section-glass-blur));
 }
 
 @media (max-width: 47.999rem) {
-  .hold {
+  .founder-layer {
     background-color: var(--section-glass-fill);
     -webkit-backdrop-filter: blur(var(--section-glass-blur));
     backdrop-filter: blur(var(--section-glass-blur));

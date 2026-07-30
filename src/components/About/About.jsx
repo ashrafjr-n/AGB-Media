@@ -789,20 +789,28 @@ function About() {
           */}
           <div className={styles.lead} aria-hidden="true" />
           <div className={styles.runway} ref={runwayRef} aria-hidden="true" />
+
+          {/*
+            The dwell. Scroll distance and nothing else, again — the founder is fully
+            faded in and pinned across it, and it is what stops the section being carried
+            off the top the instant it finishes arriving.
+          */}
+          <div className={styles.hold} aria-hidden="true" />
         </>
       )}
 
       {/*
-        The hold, and what the transition was building a backdrop for.
+        The founder, in a layer of its own so it can be pinned across the stage and
+        released at exactly the point .about is — see .founder-layer in About.module.css.
 
-        Rendered unconditionally, unlike the two spacers above it — this one holds content
-        rather than scroll distance. Leaving it inside the zoomEnabled branch would have
-        dropped the Founder section entirely under prefers-reduced-motion, which is the
-        difference between simplifying an animation and deleting a section.
+        Rendered unconditionally, unlike the spacers above it. Those are scroll distance
+        and must not exist when there is no zoom; this is a section of the site, and
+        leaving it inside the branch would have deleted it under prefers-reduced-motion.
 
-        It is no longer aria-hidden or pointer-events: none for the same reason.
+        Last in source order, so it is also last in the reading order — the founder follows
+        the story, which is how the page reads on the paths where nothing is pinned at all.
       */}
-      <div className={styles.hold}>
+      <div className={styles['founder-layer']}>
         <Founder progress={easedProgress} pinned={zoomEnabled} />
       </div>
     </div>

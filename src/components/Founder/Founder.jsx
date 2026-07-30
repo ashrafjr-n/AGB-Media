@@ -204,12 +204,12 @@ function Founder({ progress, pinned = false }) {
           gap={16}
           pauseOnHover={true}
           /*
-            The token rather than a literal #010101. It is passed straight into a custom
-            property, so `var()` resolves at use time and the fade stays tied to the one
-            ground colour instead of becoming an eighth hand-copy of it (CLAUDE.md §2).
+            fadeOut is deliberately left off. It paints its gradient in a colour, which
+            needs a known ground — and this strip sits on a blurred video, where a pair of
+            --color-black gradients would read as smudges rather than as a fade. .strip
+            masks its own edges instead, so the images dissolve into whatever is behind
+            them. See the note there.
           */
-          fadeOut={true}
-          fadeOutColor="var(--color-black)"
           ariaLabel="AGB Media productions"
         />
       </div>

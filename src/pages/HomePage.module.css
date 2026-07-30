@@ -1,0 +1,23 @@
+/*
+  The slot for whatever follows the founder. Empty on purpose — it exists so the founder
+  has somewhere to scroll away *to*, and so that the handoff can be seen working before
+  there is any content to see it with.
+
+  `position: relative` is not cosmetic. Hero's .backdrop is `position: fixed` at
+  `z-index: 0`, and a positioned box at z-index 0 paints above every non-positioned
+  in-flow block in the same stacking context — so a static section here would be drawn
+  *underneath* the hero's video no matter what colour it was given. Positioning it puts it
+  in the same painting layer, where tree order wins. It is the same reason .about is
+  positioned. --z-base keeps it below the site header's 50.
+
+  The background is opaque --color-black rather than nothing, for the same reason: the
+  hero's footage is fixed and would otherwise still be showing through here, four
+  viewports down the page.
+*/
+.placeholder {
+  position: relative;
+  z-index: var(--z-base);
+
+  min-block-size: 100vh;
+  background-color: var(--color-black);
+}

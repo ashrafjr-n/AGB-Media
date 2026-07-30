@@ -60,25 +60,27 @@
 /*
   Pinned to the viewport, and the reason nothing here slides.
 
-  .hold sits at the very end of the stage, so in flow this element only reaches the screen
-  *after* the zoom has finished — it would rise from the bottom edge as the reader kept
-  scrolling, which read as a second section arriving rather than as the founder appearing
-  on the frame. Fixed, it is simply there, at full size, from the start; opacity is the
-  only thing that changes, and About drives it.
+  STICKY, NOT FIXED, and the difference is the whole of the section's exit. Fixed would
+  hold this on screen forever — there is no scroll position at which a fixed box leaves —
+  so the founder could never scroll away to reveal what follows it. Sticky is pinned for a
+  range and then releases into flow, which is exactly the behaviour wanted: locked to the
+  viewport while it fades up and dwells, then carried off the top by ordinary scrolling.
 
-  Scoped to 48rem and up, and only while the zoom runs, because both exceptions would
-  break it: below 48rem the content is taller than a phone screen and has to scroll, and
-  on either of those paths .hold carries a backdrop-filter — which makes it a containing
-  block for fixed descendants, so `inset: 0` would resolve against .hold rather than the
-  viewport. The motion path at 48rem and up is the one case where .hold has no filter.
+  The range is set by .founder-layer in About.module.css, which spans the whole stage and
+  is what this sticks inside. It is sized so this releases at precisely the scroll position
+  .about does, so the blurred frame and the founder standing on it leave together as one
+  surface rather than sliding apart.
 
-  overflow: hidden here rather than relying on .hold's, for the same reason: a fixed box
-  escapes an ancestor's overflow entirely.
+  Scoped to 48rem and up, and only while the zoom runs. Below 48rem the content is far
+  taller than a phone screen and a 100vh sticky box would simply crop it, so there it is
+  left in flow to scroll normally; under reduced motion there is no pinned frame to stand
+  on in the first place.
 */
 @media (min-width: 48rem) {
   .founder[data-pinned='true'] {
-    position: fixed;
-    inset: 0;
+    position: sticky;
+    inset-block-start: 0;
+    block-size: 100vh;
     overflow: hidden;
   }
 }
@@ -185,12 +187,17 @@
   A fixed height, because the file's natural one was by itself enough to make the section
   unfittable. It gives up height first on a short window, which is right for the one block
   here with nothing to read, and object-fit centres the crop rather than squashing it.
+
+  0.75rem is 12px, written in rem to match the rest of the file but not drawn from the
+  radius scale: --radius-md is 8px and --radius-lg is 16px, and neither is near enough to
+  pass for the value asked for. Adding a token for one image would be worse than this.
 */
 .portrait {
   display: block;
   inline-size: 100%;
   block-size: clamp(6.5rem, 22vh, 18rem);
   object-fit: cover;
+  border-radius: 0.75rem;
 }
 
 .profile {
@@ -296,6 +303,14 @@
   flex-direction: column;
   gap: clamp(0.3rem, 1vh, 0.6rem);
 
+  /*
+    A little air above the label, on top of the column's own --founder-gap. The facts grid
+    ends on a run of short values and the career line begins with a centred eyebrow, so
+    without this the two read as one continuous block of small type rather than as the end
+    of the profile and the start of something else.
+  */
+  margin-block-start: clamp(0.5rem, 1.2vh, 1rem);
+
   inline-size: 100%;
 }
 
@@ -349,10 +364,35 @@
 /*
   The height is passed to LogoLoop from Founder.jsx rather than set here — it is the
   component's own prop, and it is a clamp for the same reason everything else here is.
+
+  The edges fade with a MASK rather than with LogoLoop's own fadeOut, and the distinction
+  matters here: fadeOut paints a gradient *in a colour*, which works over a known ground
+  and would be a pair of dark smudges over a blurred video. A mask removes the pixels
+  instead, so the strip genuinely dissolves into whatever is behind it. LogoLoop's fadeOut
+  is left off at the call site for that reason.
+
+  The inline margin is a clamp rather than a flat 3rem so a phone does not lose a sixth of
+  its width to it; 3rem is what it resolves to from about 1000px up.
 */
 .strip {
   flex: 0 0 auto;
-  inline-size: 100%;
+
+  margin-inline: clamp(1rem, 4vw, 3rem);
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 60px,
+    black calc(100% - 60px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 60px,
+    black calc(100% - 60px),
+    transparent
+  );
 }
 
 /* --- Area 4: closing notes, on one line ---------------------------------- */
