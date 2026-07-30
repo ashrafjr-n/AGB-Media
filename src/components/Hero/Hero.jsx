@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import useScrollPosition from '../../hooks/useScrollPosition'
-import heroVideo from '../../assets/videos/hero.mp4'
+import heroVideo from '../../assets/videos/hero.webm'
 import FluidBar from '../shared/FluidBar'
 import HeroHeader from './HeroHeader'
 import styles from './Hero.module.css'

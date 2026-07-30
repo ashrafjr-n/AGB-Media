@@ -10,7 +10,7 @@ import {
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 
 import useMediaQuery from '../../hooks/useMediaQuery'
-import storyVideo from '../../assets/videos/story.mp4'
+import storyVideo from '../../assets/videos/story.webm'
 import FluidLens from '../shared/FluidLens'
 import buttonStyles from '../shared/Button.module.css'
 import styles from './About.module.css'
@@ -403,7 +403,7 @@ function About() {
 
                       The canvas stays mounted through the whole transition and only the
                       lens *mesh* is dropped. Unmounting the Canvas instead would destroy
-                      the single decode of story.mp4 partway through the scroll and force a
+                      the single decode of story.webm partway through the scroll and force a
                       swap to a second <video> at the moment the frame is most visible;
                       the expensive part is the transmission material, and dropping the
                       mesh sheds all of it. Scaling a canvas with CSS costs nothing extra

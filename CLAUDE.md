@@ -57,13 +57,13 @@ Single source of truth for every task in this repository. Read this before writi
 | Path | What | Status |
 | --- | --- | --- |
 | `public/assets/images/agb-logo.png` | 360×672 **portrait** mark, 256 KB. Referenced as `/assets/images/agb-logo.png` from `Header`, `HeroHeader` and `About`. | in use |
-| `src/assets/videos/hero.mp4` | 3840×2160, 20 s, **23 MB**. Vite-imported, so it is bundled and hashed rather than served from `public/`. | in use (Hero backdrop) |
-| `src/assets/videos/story.mp4` | **75 MB.** Also Vite-imported and bundled. | in use (Story circle, via `FluidLens` or the plain `<video>` fallback) |
+| `src/assets/videos/hero.webm` | 3840×2160, 20 s, **23 MB**. Vite-imported, so it is bundled and hashed rather than served from `public/`. | in use (Hero backdrop) |
+| `src/assets/videos/story.webm` | **75 MB.** Also Vite-imported and bundled. | in use (Story circle, via `FluidLens` or the plain `<video>` fallback) |
 | `public/assets/3d/lens.glb` | The lens mesh, fetched at runtime from `public/` rather than bundled. `FluidLens` reads node `Cylinder` and **guards for its absence** — a re-export under a different node name renders no lens rather than throwing. | in use |
 
 Because the logo is portrait, **anything sizing it must drive `block-size` and leave `inline-size: auto`** — width has to derive from the capped height, not the reverse. There are no icon sprites; the one 3D model is `lens.glb`.
 
-**Video is the site's entire weight budget, and it is now ~100 MB.** `hero.mp4` is 23 MB of 4K decoded on the first screen; `story.mp4` is **75 MB** on top of it, and both are Vite-imported, so both land in the bundle rather than being streamed from `public/`. A production build emits them as two hashed assets totalling ~100 MB. That is far past what a portfolio site should ship, and compressing `story.mp4` is the single highest-value optimisation available — it is a small circular window that never displays more than ~600 px of the frame. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, has to account for this.
+**Video is the site's entire weight budget, and it is now ~100 MB.** `hero.webm` is 23 MB of 4K decoded on the first screen; `story.webm` is **75 MB** on top of it, and both are Vite-imported, so both land in the bundle rather than being streamed from `public/`. A production build emits them as two hashed assets totalling ~100 MB. That is far past what a portfolio site should ship, and compressing `story.webm` is the single highest-value optimisation available — it is a small circular window that never displays more than ~600 px of the frame. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, has to account for this.
 
 The JS bundle is ~1.86 MB (540 KB gzipped), essentially all of it `three` + `@react-three/*` for the lens. `About.jsx` already gates the lens behind `useMediaQuery` so phones never mount it, but the library is still in the main chunk — a `React.lazy` split is the obvious next step if that matters.
 
@@ -237,7 +237,7 @@ src/
   data/                     # static content (copy, project lists)
     navLinks.js             # the nav model, shared by BOTH headers
   assets/
-    videos/                 # hero.mp4, story.mp4 — bundled, ~100 MB together
+    videos/                 # hero.webm, story.webm — bundled, ~100 MB together
 public/
   assets/images/agb-logo.png
   assets/3d/lens.glb        # fetched at runtime, not bundled

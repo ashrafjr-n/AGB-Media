@@ -310,7 +310,7 @@ function FluidLens({
           go to get it: MeshTransmissionMaterial re-renders the scene to an offscreen
           buffer every frame to sample it, and that cost is the whole reason the lens is
           expensive. A lone textured quad is close to free. Unmounting the Canvas
-          instead would also destroy the only decode of story.mp4 mid-scroll — see the
+          instead would also destroy the only decode of story.webm mid-scroll — see the
           note at About's call site.
         */}
         {showLens && (
