@@ -15,7 +15,16 @@
 
   inline-size: 100%;
   min-block-size: 100svh;
-  padding-block-start: var(--space-lg);
+  /*
+    Tighter than the block-end padding on purpose: the hero header should start close
+    to the top of the page. Nothing fixed overlaps the hero — the site header is hidden
+    for its whole height — so there is no --header-height to clear here.
+
+    This is also the budget the hero header's logo pulls against with its negative
+    margin-block-start; keep that pull comfortably under this value, or the mark is
+    clipped by .hero's overflow: hidden.
+  */
+  padding-block-start: var(--space-sm);
   padding-block-end: var(--space-lg);
   padding-inline: var(--container-padding);
 

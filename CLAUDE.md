@@ -184,7 +184,7 @@ There are **two** headers, and they are never on screen at the same time.
 | Visible | only once the hero is behind you | only while you are in the hero |
 | Layout | logo left, nav right, capped pill width | logo hard against the inline start, nav hard against the inline end, full bleed, no `--container-max` cap |
 | Children | logo, nav, mobile toggle + drawer | **two only** — logo and nav. There is no separate CTA: the nav's `featured` entry renders as the filled button |
-| Block alignment | centred in the pill | **top-aligned**; the logo is pulled further up and the nav pushed down, so the mark rides high and the nav sits below it |
+| Block alignment | centred in the pill | **top-aligned**; the nav sits flush at the row's top with no offset of its own, and the logo takes a small negative `margin-block-start` so it stays the higher of the two |
 | Logo | `2.25rem` / `2.625rem` | far larger: `5.5rem` / `6.5rem`, inset from the bled edge by `--space-sm` / `--space-md` |
 | Nav underline | Framer Motion variants | CSS `scaleX` on `::after` |
 
@@ -194,7 +194,7 @@ There are **two** headers, and they are never on screen at the same time.
 - It also carries **`inert`** while hidden. `pointer-events: none` alone still leaves the links in the tab order, so an invisible nav would be focusable over the hero.
 - Its docked-pill look and menu-open corner morph are untouched by the hide — those live on `.bar` and come along with whatever state the header is in.
 - **Both render from `src/data/navLinks.js`.** They look different on purpose; they must never offer different destinations. The `Contact` entry carries **`featured: true`** — a hint the hero header honours by rendering it as `.button-featured` instead of a plain link, and the site header deliberately ignores (a filled button would fight its compact glass pill, and there may only be one filled CTA on the site).
-- Because the site header is hidden throughout the hero, `.hero`'s `padding-block-start` is plain `--space-lg` — it no longer reserves `--header-height`, since nothing fixed is overlapping it there.
+- Because the site header is hidden throughout the hero, `.hero`'s `padding-block-start` does not reserve `--header-height` — nothing fixed overlaps the hero. It is `--space-sm` (1rem), tighter than the block-end padding, so the hero header starts high on the page. **That 1rem is also the budget the logo's negative `margin-block-start` pulls against**: `.hero` is `overflow: hidden`, so a pull exceeding it clips the mark instead of raising it. Move the two together.
 - **Below `48rem` the hero header shows only the logo and the gold Contact button** — `.nav-link` is `display: none` there, because three plain links plus the button cannot share a row with a logo that size. The nav element itself is never hidden: it holds the CTA, so hiding it would leave the first screen with no way forward. There is still no hamburger in the hero, so on a phone Contact is the only in-hero destination until you scroll past it.
 
 ### The hero body is intentionally empty

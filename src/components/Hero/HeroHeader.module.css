@@ -66,15 +66,16 @@
   margin-inline-start: var(--space-sm);
 
   /*
-    Raised above the row's own top edge, so the mark reads as sitting high in the hero
-    rather than aligned to the nav.
+    Raised above the row's own top edge, so the mark still reads as the higher of the
+    two now that the nav sits flush at the top.
 
-    Safe to pull negative because .hero carries --space-lg (2rem) of block-start
-    padding: this eats into that padding instead of escaping the section, which
-    matters because .hero is overflow: hidden and would clip anything that did. Keep
-    the pull well under 2rem for that reason.
+    Small on purpose. This eats into .hero's block-start padding, which is only
+    --space-sm (1rem) — the hero header starts high deliberately — and .hero is
+    overflow: hidden, so a pull that exceeded that padding would clip the mark rather
+    than move it. It was --space-xs while the hero carried 2rem of padding; both
+    shrank together.
   */
-  margin-block-start: calc(var(--space-xs) * -1);
+  margin-block-start: calc(var(--space-3xs) * -1);
 }
 
 /*
@@ -104,15 +105,15 @@
   nav would leave the first screen with no way forward. What gives way on a narrow
   screen is the three plain links (see .nav-link), not this.
 
-  Pushed down from the row's top edge so it sits clearly below the raised logo rather
-  than level with it.
+  Sits at the row's top edge, with no block offset of its own — the header is meant to
+  start as high in the hero as it can. It briefly carried a margin-block-start to push
+  it below the raised logo; that read as dead space at the top of the page and was
+  removed. The logo is still the higher of the two, by its own small negative pull.
 */
 .nav {
   display: flex;
   align-items: center;
   gap: var(--space-lg);
-
-  margin-block-start: var(--space-md);
 }
 
 /*
@@ -193,20 +194,19 @@
 
   /*
     A wider inset to match the row's own wider padding at this breakpoint, and a
-    deeper raise to match the larger mark.
+    slightly deeper raise to match the larger mark — still inside the hero's 1rem of
+    block-start padding, with room to spare.
   */
   .logo {
     margin-inline-start: var(--space-md);
-    margin-block-start: calc(var(--space-sm) * -1);
+    margin-block-start: calc(var(--space-2xs) * -1);
   }
 
   .logo img {
     block-size: 6.5rem;
   }
 
-  /* Pushed a little further down, keeping pace with the taller logo beside it. */
   .nav {
     gap: var(--space-xl);
-    margin-block-start: var(--space-lg);
   }
 }

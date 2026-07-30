@@ -15,7 +15,7 @@ const tickerItems = [
   { label: 'Founded', value: '2025' },
   { label: 'HQ', value: 'Doha, Qatar' },
   { label: 'Founder', value: 'Abdullah Ghifan' },
-  { label: 'CEO', value: 'Nael Al-Jarabaa' },
+  { label: 'CEO', value: 'Nael Al-Jarabah' },
   { label: 'Scope', value: 'Qatar · Gulf · Arab World' },
 ]
 
