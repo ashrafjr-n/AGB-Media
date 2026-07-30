@@ -96,6 +96,56 @@ function HeroHeader() {
   return (
     <div className={styles['hero-header']}>
       {/*
+        The turbulence that distorts the Contact button's frozen texture, referenced by
+        `filter: url(#hero-cta-turbulence)` on .button-featured in shared/Button.module.css.
+
+        It lives here, at that variant's only call site, rather than being shared with the
+        ticker's filter or the site header's. Sharing one definition would save nothing at
+        render time — a filter is evaluated per element it is applied to, so two elements
+        pointing at one id still pay twice — and it cannot be shared anyway: baseFrequency
+        is in user-space pixels, so the value that gives this ~140px button visible
+        structure would be a near-uniform push across a 1500px strip.
+
+        Static seed, no <animate>: this texture is frozen by design. See FluidBar.jsx for
+        why an animated seed would pop rather than flow even where motion is wanted.
+
+        color-interpolation-filters="sRGB" is not optional — the default linearRGB
+        reinterprets the displacement map's channels and both washes out the result and
+        shifts where the field pushes.
+      */}
+      <svg className={styles['filter-defs']} aria-hidden="true" focusable="false">
+        <filter
+          id="hero-cta-turbulence"
+          x="-20%"
+          y="-20%"
+          width="140%"
+          height="140%"
+          colorInterpolationFilters="sRGB"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            /* High, and anisotropic: at this box size a lower frequency has no room to
+               show a second feature, and the taller vertical value keeps the warp from
+               reading as horizontal banding across a short button. */
+            baseFrequency="0.05 0.09"
+            /* Two, not the ticker's three — the third octave's detail lands below a
+               pixel at this scale and only costs time. */
+            numOctaves="2"
+            seed="4"
+            result="noise"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            /* ±4px. The ticker's 26 would tear a 40px-tall button apart. */
+            scale="8"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </svg>
+
+      {/*
         Hard inline-start edge, and raised: the row is top-aligned and this is pulled
         further up still, so the mark sits high in the header rather than centred
         against the nav. See .logo in the stylesheet.

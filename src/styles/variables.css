@@ -196,6 +196,18 @@
   --fluid-shade: rgba(10, 10, 10, 0.55);
   --fluid-opacity: 0.4;
 
+  /*
+    The frosted end of the same material, for the fixed header's pill.
+
+    Where --fluid-shade gives the ticker its depth by darkening, this pair only ever
+    lightens: the pill is built up from white (--glass-fill-white) rather than down from
+    the ground, so a dark mass in it would read as a smudge instead of as water. Both are
+    much weaker than the ticker's tones because the header sits over flat
+    --color-black — with nothing behind it to compete, very little goes a long way.
+  */
+  --fluid-frost: rgba(255, 255, 255, 0.1);
+  --fluid-frost-soft: rgba(232, 234, 240, 0.05);
+
   /* --- Typography ------------------------------------------------------- */
 
   /*
@@ -267,14 +279,20 @@
   */
   --header-height: 4.25rem;      /* 68px */
   /*
-    The floating pill's own height on desktop. Still taller than the row it
-    contains strictly needs — the surplus is breathing room around the logo and
-    nav, which keep their own sizes — but tightened so the bar reads as a slim
-    strip rather than a slab. Purely visual: with --header-dock-top it must stay
-    under --header-height plus the hero's top padding, or the pill starts
-    crowding hero content.
+    The floating pill's own height on desktop, cut from 4.25rem (68px) to make the bar
+    read as a slim strip rather than a slab.
+
+    It is now the logo's constraint rather than the other way round: the mark is
+    2.625rem (42px) at this breakpoint, so 50px leaves it 4px of clearance top and
+    bottom. Going shorter than this means shrinking the logo first, or it will touch the
+    pill's edges.
+
+    Purely visual, and deliberately no longer equal to --header-height: that token is
+    what page sections offset their top padding against, and this one must never feed
+    layout. With --header-dock-top it must stay under --header-height plus the hero's top
+    padding, or the pill starts crowding hero content — which this now clears easily.
   */
-  --header-height-docked: 4.25rem; /* 68px */
+  --header-height-docked: 3.125rem; /* 50px, was 68px */
   --header-dock-inset: 1rem;     /* 16px from each side once floating */
   --header-dock-top: 0.75rem;    /* 12px clear of the top edge */
   /*

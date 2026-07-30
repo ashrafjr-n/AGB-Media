@@ -51,6 +51,23 @@
   padding-inline: var(--space-sm);
 }
 
+/* --- Filter definitions --------------------------------------------------- */
+
+/*
+  Host for the Contact button's turbulence filter. It exists only so the filter has
+  somewhere to live in the document, and must never be seen or measured.
+
+  `position: absolute` is load-bearing rather than tidiness: .hero-header is a flex row
+  with `justify-content: space-between`, so an in-flow <svg> here would become a third
+  flex item and push the logo and nav off their edges. Absolutely positioned children are
+  not flex items at all.
+*/
+.filter-defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
+
 /* --- Logo ----------------------------------------------------------------- */
 
 .logo {

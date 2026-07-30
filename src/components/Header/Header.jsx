@@ -102,6 +102,47 @@ function Header() {
       inert={!isPastHero}
     >
       <div className={styles.bar}>
+        {/*
+          The turbulence that distorts the pill's frosted texture, referenced by
+          `filter: url(#site-header-turbulence)` on .bar::before in Header.module.css.
+
+          Its own definition rather than a shared one, for the same reason the hero's CTA
+          has its own: baseFrequency is in user-space pixels, so a wide pill and a small
+          button need different values, and a shared id would save nothing at render time
+          — filters are evaluated per element, not per definition.
+
+          Static seed, no <animate>: this texture is frozen by design.
+        */}
+        <svg className={styles['filter-defs']} aria-hidden="true" focusable="false">
+          <filter
+            id="site-header-turbulence"
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+            colorInterpolationFilters="sRGB"
+          >
+            <feTurbulence
+              type="fractalNoise"
+              /* Low and wide, for a box that is ~1500px across and ~50 tall — this puts
+                 features around 80px, so the pill carries several of them rather than one
+                 gradient's worth of push. */
+              baseFrequency="0.012 0.03"
+              numOctaves="3"
+              seed="11"
+              result="noise"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="noise"
+              /* ±7px, against a 50px-tall pill. */
+              scale="14"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </svg>
+
         <div className={styles.inner}>
           <Link to="/" className={styles.logo} onClick={closeMenu}>
             <img src="/assets/images/agb-logo.png" alt="AGB Media" />

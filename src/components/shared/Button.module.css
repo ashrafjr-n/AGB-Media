@@ -3,23 +3,28 @@
   restyled inside a section module. There is one shared base plus four variants, and
   a call site always applies the base *and* exactly one variant:
 
-    .button .button-featured  fluid glass, drifting gold sheen     (hero nav "Contact")
-    .button .button-glass     the same glass, brighter rim         (About)
+    .button .button-featured  glass, frozen fluid texture          (hero nav "Contact")
+    .button .button-glass     glass, drifting gold sheen           (About)
     .button .button-quiet     gold hairline pill, quiet hover      (unused today)
     .button .button-reveal    sliding-panel reveal hover           (unused today)
 
   .button-featured is the site's single high-emphasis button. It was a solid gold fill
-  with a near-black label; it is now glass with liquid gold drifting behind it. Either
-  way it is the one button that reads as a *button* rather than a link, and that holds
-  only while it stays the only one — a second emphatic call to action anywhere cancels
-  the distinction.
+  with a near-black label, then glass with liquid gold drifting behind it; it is now glass
+  over a still fluid texture. Through all three it has been the one button that reads as a
+  *button* rather than a link, and that holds only while it stays the only one — a second
+  emphatic call to action anywhere cancels the distinction.
 
-  .button-glass is that same material on a second surface. The two are not one variant
-  with a modifier because the surfaces differ in the one way that matters to glass:
-  .button-featured sits over the hero's footage, where a backdrop blur has detail to
-  work with and a faint rim is enough to find the edge, while this one sits on About's
-  flat --color-black, where the blur has nothing to soften and the rim is doing all the
-  work of separating the button from the ground.
+  .button-glass shares the glass body but not what happens inside it. Both take the same
+  fill, blur and label from the rule below; featured carries a frozen turbulence texture
+  and glass carries the drifting gold sheen, and the site's whole motion budget for
+  frozen-versus-moving is settled that way — the hero ticker is the only thing that
+  actually flows, and everything else is the same material held still.
+
+  Their rims also differ, and for a reason the surfaces force: featured sits over the
+  hero's footage, where a backdrop blur has detail to work with and a faint rim is enough
+  to find the edge, while glass sits on About's flat --color-black, where the blur has
+  nothing to soften and the rim does all the work of separating the button from the
+  ground.
 
   .button-quiet and .button-reveal are both unreferenced now — reveal was About's until
   the glass variant replaced it. Each is still the right answer for the surface it was
@@ -102,13 +107,13 @@
 /* --- Variants: featured and glass ----------------------------------------- */
 
 /*
-  The two glass buttons. Everything they have in common lives in this one rule, and
-  the only thing that differs between them is the rim — so the difference is stated
-  as the one declaration each carries on its own, below.
+  The glass body both buttons share: a thin dark fill, a backdrop blur, a lit rim, and a
+  --color-text label. .button-featured is the hero nav's "Contact" entry, over the video
+  backdrop; .button-glass is About's "Discover Our Story", on flat ground.
 
-  Fluid glass: a thin dark fill, a backdrop blur, a lit rim, and two warm layers
-  drifting behind the label. .button-featured is the hero nav's "Contact" entry, over
-  the video backdrop; .button-glass is About's "Discover Our Story", on flat ground.
+  What sits *inside* the glass is no longer shared — featured carries a frozen turbulence
+  texture, glass carries a drifting gold sheen — and neither is their rim. Both of those
+  live in their own rules below.
 
   .button-featured replaced a solid --color-gold fill with a --color-black label, and
   one thing was lost in that trade that is worth stating plainly, because it now
@@ -191,28 +196,83 @@
   a hover needing `transition: transform` on the base is the one thing not to add.
 */
 
-/* --- The glass buttons' sheen --------------------------------------------- */
+/* --- The featured button's frozen texture --------------------------------- */
 
 /*
-  The same two-layer construction as the hero ticker's, for the same reasons — see
-  .ticker::before in Hero.module.css: twice the box width, a gradient tiled at exactly
-  one box width, animating `transform` rather than `background-position` so the drift
-  is composited instead of repainted, and 50% of travel being exactly one tile.
+  A still fluid texture behind the hero's Contact label: layered radial gradients pushed
+  through an SVG turbulence displacement, exactly the material the ticker's water is made
+  of, with nothing animating it. The ticker is the only element on the site that actually
+  moves; this is the same surface caught still.
 
-  Louder than the ticker's, per the brief: that strip runs the full width of the
-  viewport and has to stay at the edge of visible, while these are small surfaces where
-  the gold is the point.
+  It replaced two counter-drifting gold gradients, which is why this variant no longer
+  shares its pseudo-elements with .button-glass below. They were one rule while they were
+  one material — now they genuinely differ, and grouping them would mean writing
+  `animation: none` and a fresh background over an inherited one instead of just saying
+  what this is.
 
-  Shared by both variants rather than duplicated, which also means they cannot drift
-  apart: the two buttons are meant to be the same material, and the only intended
-  difference between them is the rim above.
+  Note this variant has lost its gold entirely. The ticker's palette is deliberately
+  neutral — light on dark water, no warm tones — and adopting it here means the hero's
+  only remaining gold is the ticker's separator dots. Swapping --fluid-highlight for
+  --glass-sheen-strong in the stops below is the one-token change that warms it back up.
+
+  ONE pseudo-element, where the animated version needed two: the second existed to
+  counter-drift against the first, and two static layers at fixed offsets are just one
+  more complicated gradient.
+
+  The filter id is a document-wide reference that CSS Modules does not touch, and the
+  filter itself is defined inline in HeroHeader.jsx — this variant's only call site. That
+  coupling is the cost of the effect: applied anywhere the filter is not in the document,
+  the texture silently renders undistorted. Keep the definition and this rule together.
+*/
+.button-featured::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+
+  /*
+    Overhangs the box by more than the displacement can push (scale 8 moves a pixel by up
+    to ±4px), so the warp always has material to pull from instead of dragging in
+    transparency and eating the texture's edges. .button-featured is overflow: hidden, so
+    the overhang is clipped to the rounded rect.
+  */
+  inset: -0.5rem;
+
+  /*
+    Two soft masses at fixed positions — a light one high and inline-start, a darker one
+    low and inline-end. Offset from each other rather than concentric, so the pair reads
+    as a surface with a current in it rather than as a vignette.
+  */
+  background-image: radial-gradient(
+      ellipse 62% 120% at 26% 32%,
+      var(--fluid-highlight),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 54% 130% at 76% 72%,
+      var(--fluid-shade),
+      transparent 72%
+    );
+
+  filter: url(#hero-cta-turbulence);
+
+  /* No animation, and no will-change: nothing here ever moves. */
+  pointer-events: none;
+}
+
+/* --- The glass button's sheen --------------------------------------------- */
+
+/*
+  The Story section's animated gold sheen, unchanged.
+
+  The same two-layer construction as the hero ticker's water was, for the same reasons:
+  twice the box width, a gradient tiled at exactly one box width, animating `transform`
+  rather than `background-position` so the drift is composited instead of repainted, and
+  50% of travel being exactly one tile.
 
   Percentages on an absolutely positioned box resolve against the padding box, so these
   cover the button's interior and stop short of the rim — which keeps the border crisp
   instead of washed by the sheen.
 */
-.button-featured::before,
-.button-featured::after,
 .button-glass::before,
 .button-glass::after {
   content: '';
@@ -230,7 +290,6 @@
 }
 
 /* The bright pass: amber, and the layer doing most of the work. */
-.button-featured::before,
 .button-glass::before {
   background-image: linear-gradient(
     110deg,
@@ -249,7 +308,6 @@
   The counter-drifting rust pass, slower and steeper. Where the two cross the gold
   deepens, and that beat is what makes it read as liquid rather than as a sweep.
 */
-.button-featured::after,
 .button-glass::after {
   background-image: linear-gradient(
     150deg,
@@ -264,9 +322,12 @@
 }
 
 /*
-  Declared here rather than shared with Hero.module.css: CSS Modules scope @keyframes
-  names per file, so one module cannot reference another's animation. Same shape as
-  `sheen-drift` there — one tile of travel, on the compositor.
+  One tile of travel, on the compositor. translate3d rather than translateX so it is
+  unambiguously a compositor transform.
+
+  Used only by .button-glass now — .button-featured's texture is frozen, and the hero
+  ticker's water moved to layered DOM in shared/FluidBar.module.css, which has its own
+  keyframes because CSS Modules scope @keyframes names per file.
 */
 @keyframes sheen-flow {
   from {

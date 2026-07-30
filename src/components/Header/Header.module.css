@@ -122,76 +122,79 @@
   border-radius: var(--radius-lg);
 }
 
-/* --- Shimmer -------------------------------------------------------------- */
+/* --- Frozen frost texture ------------------------------------------------- */
 
 /*
-  A faint band of light drifting across the frosted pane, on the same construction
-  as the hero ticker's sheen (see .ticker::before in Hero.module.css): twice the
-  pill's width, the gradient tiled at exactly one pill width, and `transform`
-  animated rather than `background-position` so the drift is handed to the
-  compositor instead of repainting the bar every frame. Translating a 200%-wide box
-  by 50% of itself is exactly one tile, so the loop is seamless.
+  A still fluid texture across the pane: layered radial gradients pushed through an SVG
+  turbulence displacement — the same material the hero ticker's water is made of, with
+  nothing animating it. The ticker is the only element on the site that actually moves.
 
-  One layer here, where the ticker and the Contact button each use two. Those two
-  need the slow interference between counter-drifting layers to read as water; this
-  is a slim strip carrying nav links, and a second crossing band would be movement
-  behind text for no gain. The single gradient holds both tones instead — a cool
-  highlight and a warm one — which is what gives the pass its faint gold cast.
+  It replaced a drifting gradient band. Nothing about that drift was wrong; it was
+  composited and cheap. But a moving highlight behind nav links is motion the reader did
+  not ask for, and the site now says this in one voice: one surface flows, everything else
+  is the same material held still.
 
-  z-index -1 against .bar's `isolation: isolate` puts it above the white fill and
-  below both .inner and the drawer, neither of which needs a z-index of its own:
-  in-flow content always paints above negative-z-index children.
+  Lighter than the ticker's, per the brief. --fluid-frost and --fluid-frost-soft only ever
+  *lighten*, where the ticker takes its depth from a dark mass: this pill is built up from
+  white (--glass-fill-white) rather than down from the ground, so a dark blob in it would
+  read as a smudge rather than as water. The result is meant to be barely there — just
+  enough structure to tell the pane apart from the flat --color-black behind it.
+
+  z-index -1 against .bar's `isolation: isolate` puts it above the white fill and below
+  both .inner and the drawer, neither of which needs a z-index of its own: in-flow content
+  always paints above negative-z-index children.
+
+  The filter id is a document-wide reference that CSS Modules does not touch — it is
+  defined inline in Header.jsx, and the two are kept in step by hand.
 */
 .bar::before {
   content: '';
   position: absolute;
   z-index: -1;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 200%;
 
-  background-image: linear-gradient(
-    105deg,
-    transparent 0%,
-    var(--glass-sheen-white) 20%,
-    transparent 38%,
-    transparent 60%,
-    var(--glass-sheen-warm) 80%,
-    transparent 100%
-  );
-  /* One tile == one pill width, which is what makes the drift seamless. */
-  background-size: 50% 100%;
-  background-repeat: repeat;
+  /*
+    Overhangs the pill by more than the displacement can push (scale 14 moves a pixel by
+    up to ±7px), so the warp has material to pull from at the edges instead of dragging in
+    transparency and leaving the frost eaten away along the rim. .bar is overflow: hidden,
+    so the overhang is clipped back to the pill's radius.
+  */
+  inset: -0.75rem;
 
-  animation: header-shimmer var(--glass-drift-slow) linear infinite;
+  /*
+    Three soft masses at fixed positions, spread along the pill so the texture is not one
+    centred bloom. Wide, shallow ellipses: the box is roughly thirty times wider than it is
+    tall, and anything approaching circular would read as a spot rather than as a surface.
+  */
+  background-image: radial-gradient(
+      ellipse 26% 150% at 18% 38%,
+      var(--fluid-frost),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 20% 130% at 52% 64%,
+      var(--fluid-frost-soft),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 24% 140% at 84% 42%,
+      var(--fluid-frost),
+      transparent 74%
+    );
 
-  /* Continuously animating transform, so the hint is honest rather than blanket. */
-  will-change: transform;
+  filter: url(#site-header-turbulence);
 
+  /* No animation, and no will-change: nothing here ever moves. */
   pointer-events: none;
 }
 
 /*
-  Parked while the header is hidden, which is the whole of the hero — the single
-  heaviest scene on the site, with 4K footage decoding behind two more animated
-  glass surfaces. Compositing a third invisible one through it is pure waste.
-
-  Keyed off the same `data-hidden` attribute that drives the hide itself, so it
-  needs nothing from Header.jsx and stays a pure-CSS concern.
+  Host for the turbulence filter defined in Header.jsx. Absolute and zero-sized so it can
+  live inside the bar without being seen or taking part in its layout.
 */
-.header[data-hidden='true'] .bar::before {
-  animation-play-state: paused;
-}
-
-/* Same shape as the ticker's `sheen-drift` — one tile of travel, on the compositor. */
-@keyframes header-shimmer {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
+.filter-defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
 }
 
 /* --- Inner row ------------------------------------------------------------ */
@@ -210,7 +213,15 @@
   align-items: center;
   justify-content: space-between;
 
-  block-size: 3.75rem;
+  /*
+    2.875rem (46px), down from 3.75rem (60px) — about 23% shorter, so the pill reads as a
+    compact strip rather than a bar with room in it.
+
+    The logo is the floor here, not the type: it is 2.25rem (36px) at this breakpoint, so
+    this leaves 5px of clearance above and below. Anything shorter needs the mark to shrink
+    first, or it will touch the pill's edges.
+  */
+  block-size: 2.875rem;
   padding-inline: var(--space-lg);
 }
 
