@@ -1,11 +1,12 @@
 /*
   THE buttons for the site. Every call to action pulls from this file — nothing is
-  restyled inside a section module. There is one shared base plus three variants, and
+  restyled inside a section module. There is one shared base plus four variants, and
   a call site always applies the base *and* exactly one variant:
 
     .button .button-featured  fluid glass, drifting gold sheen     (hero nav "Contact")
+    .button .button-glass     the same glass, brighter rim         (About)
     .button .button-quiet     gold hairline pill, quiet hover      (unused today)
-    .button .button-reveal    sliding-panel reveal hover           (About)
+    .button .button-reveal    sliding-panel reveal hover           (unused today)
 
   .button-featured is the site's single high-emphasis button. It was a solid gold fill
   with a near-black label; it is now glass with liquid gold drifting behind it. Either
@@ -13,10 +14,19 @@
   only while it stays the only one — a second emphatic call to action anywhere cancels
   the distinction.
 
-  The other two differ because they sit on different surfaces: an outline over moving
-  footage has to stay understated, while the flat Story section can carry the louder
-  mechanic. Adding a fourth surface means adding a fourth variant here, not styling a
-  button in a component.
+  .button-glass is that same material on a second surface. The two are not one variant
+  with a modifier because the surfaces differ in the one way that matters to glass:
+  .button-featured sits over the hero's footage, where a backdrop blur has detail to
+  work with and a faint rim is enough to find the edge, while this one sits on About's
+  flat --color-black, where the blur has nothing to soften and the rim is doing all the
+  work of separating the button from the ground.
+
+  .button-quiet and .button-reveal are both unreferenced now — reveal was About's until
+  the glass variant replaced it. Each is still the right answer for the surface it was
+  written for (see their own notes); neither is dead by accident.
+
+  Adding a fifth surface means adding a fifth variant here, not styling a button in a
+  component.
 
   A module without a .jsx sibling, which is the one deviation from the layout in
   CLAUDE.md §4. It is deliberate: both current call sites need to *be* the element
@@ -89,83 +99,99 @@
   color: var(--color-gold-light);
 }
 
-/* --- Variant: featured ---------------------------------------------------- */
+/* --- Variants: featured and glass ----------------------------------------- */
 
 /*
-  The high-emphasis button, for the hero nav's "Contact" entry — the nav item *is* the
-  call to action, rather than a button sitting beside a duplicate link.
+  The two glass buttons. Everything they have in common lives in this one rule, and
+  the only thing that differs between them is the rim — so the difference is stated
+  as the one declaration each carries on its own, below.
 
   Fluid glass: a thin dark fill, a backdrop blur, a lit rim, and two warm layers
-  drifting behind the label. It sits over the hero's video backdrop, so the blur has
-  real footage to work with and the button reads as a small pane with liquid gold
-  moving inside it.
+  drifting behind the label. .button-featured is the hero nav's "Contact" entry, over
+  the video backdrop; .button-glass is About's "Discover Our Story", on flat ground.
 
-  It replaced a solid --color-gold fill with a --color-black label, and one thing was
-  lost in that trade that is worth stating plainly. The old pairing was chosen for
-  contrast: near-black on gold measured 5.8:1 at rest and 9.3:1 on hover, both clearing
-  WCAG AA, where white on that gold was about 3.6:1 and failed. The label is now
-  --color-text over --glass-fill-light, which is 0.3 alpha — thin enough that the
-  composite tracks the footage behind it. Over a dark frame that is comfortably
-  legible; over a bright one the contrast can fall below AA, and unlike a static
-  background there is no fixed ratio to quote. --glass-fill-light is the dial: raising
-  it toward 0.55 (what the ticker uses) restores a predictable floor at the cost of
-  some transparency.
+  .button-featured replaced a solid --color-gold fill with a --color-black label, and
+  one thing was lost in that trade that is worth stating plainly, because it now
+  applies to both of these. The old pairing was chosen for contrast: near-black on gold
+  measured 5.8:1 at rest and 9.3:1 on hover, both clearing WCAG AA, where white on that
+  gold was about 3.6:1 and failed. The label is now --color-text over
+  --glass-fill-light, which is 0.3 alpha.
 
-  Rounded rather than a full pill, so it does not read as another --radius-full
-  outline like .button-quiet, and rectangular enough to look deliberate at the end of
-  the nav row.
+  Those two surfaces now diverge on exactly this point, and only one of them is a
+  problem. On About the backdrop is flat --color-black, so the composite is a fixed
+  ~#1f1f1f and the label sits near 11:1 — safely AA. Over the hero's footage there is
+  no fixed ratio at all: a dark frame is comfortable, a bright one can fall below AA.
+  --glass-fill-light is the dial for that, and raising it toward 0.55 (what the ticker
+  uses) restores a predictable floor at the cost of some transparency.
+
+  Rounded rather than a full pill, so neither reads as another --radius-full outline
+  like .button-quiet.
 */
-.button-featured {
+.button-featured,
+.button-glass {
   border-radius: var(--radius-md);
 
   background-color: var(--glass-fill-light);
   -webkit-backdrop-filter: blur(var(--glass-blur-tight));
   backdrop-filter: blur(var(--glass-blur-tight));
 
-  /*
-    Border kept rather than removed, as the gold fill's was: the base rule reserves
-    1px of border box, and dropping it here would make this button a pixel shorter and
-    narrower than its outlined neighbours in the same row. It is the pane's lit rim
-    now rather than an edge matched to a fill.
-  */
-  border-color: var(--glass-border-bright);
   color: var(--color-text);
 
-  /* Bolder than the shared base — the emphatic button carries the extra weight. */
+  /* Bolder than the shared base — a glass pane carries the extra weight. */
   font-weight: var(--font-weight-bold);
 
   /*
-    Own stacking context, so the sheen layers below sit at z-index -1: above this
+    Own stacking context, so the sheen layers below sit at z-index -1: above the
     button's fill, below its label. That is the mechanism here rather than
-    .button-reveal's `> *` lift, because this call site renders the label as a bare
-    text node with no element to lift — see HeroHeader.jsx.
+    .button-reveal's `> *` lift, because HeroHeader renders its label as a bare text
+    node with no element to lift, and this rule has to work for both call sites.
   */
   isolation: isolate;
 
   /*
     Clips the oversized sheen layers to the button's rounded box.
 
-    Scoped to this variant and never moved up to .button: .button-reveal's panels
+    Scoped to these variants and never moved up to .button: .button-reveal's panels
     overhang their box deliberately and clipping them would destroy that effect. Safe
-    here because nothing in this variant paints outside the border box.
+    here because nothing in either variant paints outside the border box.
   */
   overflow: hidden;
 }
 
 /*
-  No hover state, deliberately — but a gap rather than a finished decision. The gold
-  fill's brighten went with the fill and nothing has replaced it, so the button looks
+  The rim, and the only difference between the two.
+
+  Border kept rather than removed, as the old gold fill's was: the base rule reserves
+  1px of border box, and dropping it would make the button a pixel shorter and
+  narrower than its outlined neighbours in the same row.
+
+  Featured takes the fainter edge because it sits over footage — a backdrop blur with
+  real detail behind it already separates the pane from what it covers, and a brighter
+  line there reads as a drawn outline rather than as a lit edge. Glass takes the
+  brighter one because on About's flat ground the blur has nothing to soften, so the
+  rim is the only thing distinguishing the button from the section.
+*/
+.button-featured {
+  border-color: var(--glass-border-bright);
+}
+
+.button-glass {
+  border-color: var(--glass-border-white);
+}
+
+/*
+  Neither has a hover state, deliberately — but a gap rather than a finished decision.
+  The gold fill's brighten went with the fill and nothing has replaced it, so both look
   identical under the cursor. Keyboard users are still served, since the global
   :focus-visible ring in global.css is untouched, but a pointer gets no feedback.
 
   Whatever lands here, keep it to colour: the base rule's transition is scoped to
   colour properties on purpose (a transform transition would smooth over Framer
-  Motion's own per-frame writes at .button-reveal's call site and make that entrance
-  drag), so a hover needing `transition: transform` on the base is the one thing not
-  to add.
+  Motion's own per-frame writes at About's call site and make that entrance drag), so
+  a hover needing `transition: transform` on the base is the one thing not to add.
 */
 
-/* --- The featured button's sheen ------------------------------------------ */
+/* --- The glass buttons' sheen --------------------------------------------- */
 
 /*
   The same two-layer construction as the hero ticker's, for the same reasons — see
@@ -174,15 +200,21 @@
   is composited instead of repainted, and 50% of travel being exactly one tile.
 
   Louder than the ticker's, per the brief: that strip runs the full width of the
-  viewport and has to stay at the edge of visible, while this is a small surface where
+  viewport and has to stay at the edge of visible, while these are small surfaces where
   the gold is the point.
 
-  Percentages on an absolutely positioned box resolve against the padding box, so
-  these cover the button's interior and stop short of the rim — which keeps the border
-  crisp instead of washed by the sheen.
+  Shared by both variants rather than duplicated, which also means they cannot drift
+  apart: the two buttons are meant to be the same material, and the only intended
+  difference between them is the rim above.
+
+  Percentages on an absolutely positioned box resolve against the padding box, so these
+  cover the button's interior and stop short of the rim — which keeps the border crisp
+  instead of washed by the sheen.
 */
 .button-featured::before,
-.button-featured::after {
+.button-featured::after,
+.button-glass::before,
+.button-glass::after {
   content: '';
   position: absolute;
   z-index: -1;
@@ -198,7 +230,8 @@
 }
 
 /* The bright pass: amber, and the layer doing most of the work. */
-.button-featured::before {
+.button-featured::before,
+.button-glass::before {
   background-image: linear-gradient(
     110deg,
     transparent 0%,
@@ -216,7 +249,8 @@
   The counter-drifting rust pass, slower and steeper. Where the two cross the gold
   deepens, and that beat is what makes it read as liquid rather than as a sweep.
 */
-.button-featured::after {
+.button-featured::after,
+.button-glass::after {
   background-image: linear-gradient(
     150deg,
     transparent 0%,

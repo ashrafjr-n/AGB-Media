@@ -58,18 +58,47 @@
   /*
     Required so the drawer is clipped by the bar's radius. Anything that needs
     to paint outside the bar's box (the nav underline, notably) has to stay
-    inside it — see .nav-link-underline.
+    inside it — see .nav-link-underline. It clips the shimmer layer below too,
+    which is twice the pill's width.
   */
   overflow: hidden;
 
   /*
-    Translucent (--color-black at 0.5) rather than solid: the backdrop-filter has
-    to have something to show through. -webkit- prefix for Safari, which still
-    requires it for backdrop-filter.
+    Own stacking context, so the shimmer can sit at z-index -1: above this
+    element's fill, below the row and the drawer. backdrop-filter establishes one
+    as a side effect — this states it, so the layering does not silently depend on
+    that.
   */
-  background-color: var(--color-glass);
-  -webkit-backdrop-filter: blur(var(--header-blur));
-  backdrop-filter: blur(var(--header-blur));
+  isolation: isolate;
+
+  /*
+    Frosted *white* glass, not the dark pane it used to be.
+
+    This was --color-black at 0.5 — the page's own ground, thinned. It is now
+    white at 0.12, which is a lift rather than a tint: the pill no longer reads as
+    a darker slice of the page but as a light pane laid on top of it. Over flat
+    --color-black that composites to about #1f1f1f, so the surface is still dark in
+    absolute terms and the existing text colours hold (see .nav-link).
+
+    -webkit- prefix for Safari, which still requires it for backdrop-filter.
+
+    Worth knowing before tuning the blur: this header is hidden for the whole of
+    the hero and only appears once About is covering the screen, and About is a flat
+    opaque fill. There is no detail behind the pill for a 14px blur to soften
+    today — it is doing nothing visible and is here for the moment there is
+    something other than flat colour scrolling past underneath.
+  */
+  background-color: var(--glass-fill-white);
+  -webkit-backdrop-filter: blur(var(--glass-blur-wide));
+  backdrop-filter: blur(var(--glass-blur-wide));
+
+  /*
+    The pane's lit rim. This adds 2px to the pill's outer height, since .bar takes
+    its height from .inner rather than setting one — the only geometry this restyle
+    moves, and invisible on a floating pill. --header-height is untouched, so
+    nothing that offsets against it shifts.
+  */
+  border: 1px solid var(--glass-border-white);
 
   /*
     Substantially wider than the content container. The cap only exists to stop
@@ -91,6 +120,78 @@
 
 .header[data-menu-open='true'] .bar {
   border-radius: var(--radius-lg);
+}
+
+/* --- Shimmer -------------------------------------------------------------- */
+
+/*
+  A faint band of light drifting across the frosted pane, on the same construction
+  as the hero ticker's sheen (see .ticker::before in Hero.module.css): twice the
+  pill's width, the gradient tiled at exactly one pill width, and `transform`
+  animated rather than `background-position` so the drift is handed to the
+  compositor instead of repainting the bar every frame. Translating a 200%-wide box
+  by 50% of itself is exactly one tile, so the loop is seamless.
+
+  One layer here, where the ticker and the Contact button each use two. Those two
+  need the slow interference between counter-drifting layers to read as water; this
+  is a slim strip carrying nav links, and a second crossing band would be movement
+  behind text for no gain. The single gradient holds both tones instead — a cool
+  highlight and a warm one — which is what gives the pass its faint gold cast.
+
+  z-index -1 against .bar's `isolation: isolate` puts it above the white fill and
+  below both .inner and the drawer, neither of which needs a z-index of its own:
+  in-flow content always paints above negative-z-index children.
+*/
+.bar::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 200%;
+
+  background-image: linear-gradient(
+    105deg,
+    transparent 0%,
+    var(--glass-sheen-white) 20%,
+    transparent 38%,
+    transparent 60%,
+    var(--glass-sheen-warm) 80%,
+    transparent 100%
+  );
+  /* One tile == one pill width, which is what makes the drift seamless. */
+  background-size: 50% 100%;
+  background-repeat: repeat;
+
+  animation: header-shimmer var(--glass-drift-slow) linear infinite;
+
+  /* Continuously animating transform, so the hint is honest rather than blanket. */
+  will-change: transform;
+
+  pointer-events: none;
+}
+
+/*
+  Parked while the header is hidden, which is the whole of the hero — the single
+  heaviest scene on the site, with 4K footage decoding behind two more animated
+  glass surfaces. Compositing a third invisible one through it is pure waste.
+
+  Keyed off the same `data-hidden` attribute that drives the hide itself, so it
+  needs nothing from Header.jsx and stays a pure-CSS concern.
+*/
+.header[data-hidden='true'] .bar::before {
+  animation-play-state: paused;
+}
+
+/* Same shape as the ticker's `sheen-drift` — one tile of travel, on the compositor. */
+@keyframes header-shimmer {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* --- Inner row ------------------------------------------------------------ */
@@ -182,12 +283,21 @@
 }
 
 /*
-  The drawer sits inside .bar so it shares the glass and gets clipped by the
-  bar's radius. It stays transparent for that reason — the bar paints the glass.
+  The drawer sits inside .bar so it shares the glass and gets clipped by the bar's
+  radius. It stays transparent for that reason — the bar paints the glass.
+
+  That is why it needs no white fill, blur or shimmer of its own to match the new
+  pane: it already shows the pill's, through the same fill and under the same
+  drifting band, which extends the full height of the bar as the drawer opens.
+  Giving it a second 0.12 white layer would stack two lifts where the drawer
+  overlaps the pill and leave a visible step across the middle of one surface, and
+  a second backdrop-filter would blur an already-blurred backdrop.
+
+  Only the divider changes, to the white rim's tone.
 */
 .mobile-nav {
   overflow: hidden;
-  border-block-start: 1px solid var(--color-border-subtle);
+  border-block-start: 1px solid var(--glass-border-white);
 }
 
 .mobile-nav-list {

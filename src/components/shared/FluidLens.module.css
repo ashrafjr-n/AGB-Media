@@ -1,0 +1,30 @@
+/*
+  The lens canvas, laid over the circle that hosts it.
+
+  Absolute and inset rather than sized here: the host decides how big the circle is
+  (About sizes it against the viewport at three breakpoints) and this fills whatever
+  it is given. R3F measures the element and sizes its drawing buffer to match.
+*/
+
+.canvas {
+  position: absolute;
+  inset: 0;
+
+  /*
+    Not `display: block` via the global img/canvas reset alone — R3F writes its own
+    inline width/height onto the canvas, so the box has to come from here.
+  */
+  inline-size: 100%;
+  block-size: 100%;
+
+  /*
+    The pointer has to reach it: the lens tracks `state.pointer`, which R3F only
+    updates from pointer events on this element. That also gives the "only while
+    hovering the circle" behaviour for free — outside it there are no events, so the
+    lens simply rests where it was left.
+  */
+  pointer-events: auto;
+
+  /* Above the host's own background, and above a fallback video if one is present. */
+  z-index: var(--z-base);
+}

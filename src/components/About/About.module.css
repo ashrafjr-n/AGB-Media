@@ -42,12 +42,12 @@
 }
 
 /*
-  Two-part layout: the copy column holds everything it always held, and the logo
-  anchors the inline end beside it.
+  Two-part layout: the copy column, and the circular video window beside it.
 
-  One column by default, so on a narrow screen the logo stacks *below* the copy
-  (it is last in source order) instead of squeezing alongside it. The second track
-  only appears once there is width for both — see the breakpoint at the bottom.
+  One column below 48rem, where the circle stacks *above* the copy — it is last in
+  source order so that reading and tab order stay copy-first, and the stacked case
+  reorders visually rather than in the markup (see .visual). The second track appears
+  at 48rem, which is the same threshold About.jsx gates the lens on.
 */
 .inner {
   display: grid;
@@ -73,34 +73,77 @@
   min-inline-size: 0;
 }
 
-/* --- Logo ---------------------------------------------------------------- */
+/* --- Visual: the circular video window ------------------------------------ */
 
 /*
-  A column flex container, and that is not arbitrary: the logo is portrait (360x672)
-  and sized by max-block-size, so its width has to be derived from that capped
-  height. Only along a flex container's main axis does the cap constrain the size the
-  inline axis then resolves against — the same geometry the hero's mark needs.
-
   Centred while stacked; pushed to the inline end once the second column exists.
+
+  `order: -1` puts the circle above the copy on the stacked layout without moving it
+  in the markup — the copy stays first in source order, so it is what a screen reader
+  reaches first and what the tab order runs through, which is the right priority for a
+  section whose subject is the text. The order is reset at 48rem, where the two sit
+  side by side and source order no longer decides anything visual.
 */
-.logo-panel {
+.visual {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  order: -1;
 }
 
-.logo-panel img {
-  inline-size: auto;
-  block-size: auto;
+/*
+  The window. `aspect-ratio: 1` with a sized inline axis rather than a fixed height, so
+  the circle scales with the column and stays a circle at every width.
+
+  It hosts either the lens canvas or a plain <video>, both absolutely filling it, and
+  clips whichever it gets to the round shape.
+*/
+.circle {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  aspect-ratio: 1;
+  /* ~300px on a phone, per the brief, and never wider than the column. */
+  inline-size: min(100%, 18.75rem);
+
+  border-radius: 50%;
+
   /*
-    Height-capped against the viewport as well as in rem, so the mark cannot outgrow
-    the one-screen section it sits in on a short window. The section is min-block-size
-    100vh, so `vh` is the right unit to measure the cap against.
+    --glass-border rather than a literal rgba(255,255,255,0.1): 0.08 warm white against
+    0.1 pure white is not a distinguishable edge on this ground, and reusing the token
+    keeps the rim tied to the rest of the glass system.
   */
-  max-block-size: min(34vh, 15rem);
-  max-inline-size: 100%;
-  object-fit: contain;
+  border: 1px solid var(--glass-border);
+
+  /*
+    Painted, and not only for depth: this is what the lens canvas composites its
+    antialiased edge against, and it is what fills the circle for the moment before the
+    model and the first video frame arrive.
+  */
+  background-color: var(--color-black);
+
+  /*
+    Worth being honest about — a black shadow on a near-black ground is very nearly
+    invisible, and the rim above is what actually separates the circle from the
+    section. Kept because it does register once the circle is over the footage-lit part
+    of the page, and because --shadow-soft is the project's one legitimate raw-black
+    value.
+  */
+  box-shadow: var(--shadow-soft);
+}
+
+/*
+  The no-lens path's video. Absolute rather than in flow so it fills the circle
+  identically to the canvas that replaces it, and `object-fit: cover` so a 16:9 source
+  fills a 1:1 hole instead of letterboxing inside it.
+*/
+.video {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 /* --- Opening ------------------------------------------------------------- */
@@ -112,14 +155,22 @@
 
   margin-block-end: var(--space-sm);
 
-  color: var(--color-gold);
+  /* White, not the gold it was — the type on this side carries no accent now. */
+  color: var(--color-text);
   font-size: var(--text-xs);
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
 }
 
-/* Short gold rule trailing the label. */
+/*
+  Short rule trailing the label, and still gold.
+
+  Left deliberately: with the eyebrow and title both white, this and .body's hairline
+  are the only gold left on this side of the section, and they keep the accent present
+  without colouring any type. Swap both to --glass-border together if the column should
+  go fully neutral — one without the other reads as an oversight.
+*/
 .eyebrow::after {
   content: '';
   inline-size: 3rem;
@@ -130,6 +181,10 @@
 /*
   Sized a step under the hero wordmark on purpose — it anchors this section
   without competing with the first screen.
+
+  No font-weight here: global.css already sets h2 to --font-weight-heavy (700), which
+  is the weight this wants, and restating it would be a second place to keep in step
+  with the ladder.
 */
 .title {
   margin-block-end: var(--space-xl);
@@ -138,11 +193,6 @@
   line-height: 1.05;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
-}
-
-/* Carries the gold the removed pull-quote used to bring to this section. */
-.title-accent {
-  color: var(--color-gold);
 }
 
 /* --- Body ---------------------------------------------------------------- */
@@ -158,18 +208,22 @@
   border-inline-start: 1px solid var(--color-border);
 }
 
+/*
+  Both paragraphs are full --color-text now; the second used to sit at
+  --color-text-muted. The hierarchy between them is carried by size and weight alone
+  rather than by fading the second one out.
+*/
 .body p {
   font-size: var(--text-base);
   font-weight: var(--font-weight-light);
   line-height: var(--leading-relaxed);
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 /* The opening paragraph carries slightly more weight and presence. */
 .body p:first-child {
   font-size: var(--text-lg);
   font-weight: var(--font-weight-regular);
-  color: var(--color-text);
 }
 
 /* --- CTA ----------------------------------------------------------------- */
@@ -188,25 +242,45 @@
 
 /* --- Breakpoints ---------------------------------------------------------- */
 
-@media (min-width: 64rem) {
+@media (min-width: 48rem) {
   /*
-    Copy takes the free space, the logo track sizes to the mark itself — `auto`
-    rather than a fraction so the image is never stretched or starved by the
-    ratio, and the copy simply gets whatever is left.
+    Two columns from here up, which is also where About.jsx starts mounting the lens.
+    Copy takes the free space; the circle's track sizes to the circle itself, so the
+    ratio is never stretched or starved.
   */
   .inner {
     grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2xl);
+  }
+
+  /*
+    Back to source order, which is copy first. Beside each other, the two columns are
+    positioned by the grid and `order` has nothing left to do.
+  */
+  .visual {
+    order: 0;
+    justify-content: flex-end;
+  }
+
+  .circle {
+    /*
+      Capped against the viewport as well as in rem, so the circle cannot outgrow the
+      one-screen section on a short window — the same reasoning the logo panel used
+      before it. The section is min-block-size 100vh, so vh is the unit to measure the
+      cap against.
+    */
+    inline-size: min(100%, 48vh, 21rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .inner {
     gap: var(--space-3xl);
   }
 
-  /* Hard against the section's inline end, mirroring the copy at the start. */
-  .logo-panel {
-    align-items: flex-end;
-  }
-
-  /* Large here, where there is a whole column for it. */
-  .logo-panel img {
-    max-block-size: min(58vh, 28rem);
+  /* Room for it here, where the column is its own half of the section. */
+  .circle {
+    inline-size: min(100%, 58vh, 30rem);
   }
 
   .title {

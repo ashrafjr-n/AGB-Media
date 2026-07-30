@@ -69,12 +69,16 @@
   --color-border: rgba(201, 112, 20, 0.35);   /* gold at low opacity */
 
   /*
-    Translucent surfaces: the header glass, a heavy modal-weight cover, and the
-    light scrim over the hero footage. All three are --color-black at an alpha,
-    written out literally rather than derived — which means they have to be updated
-    by hand whenever that token moves. Nothing anywhere may darken a surface with
-    raw black instead; that is what puts a visible seam between two sections, since
-    pure black is neither as light nor as cool as the ground everything else uses.
+    Translucent surfaces: a dark pane, a heavy modal-weight cover, and the light
+    scrim over the hero footage. All three are --color-black at an alpha, written
+    out literally rather than derived — which means they have to be updated by hand
+    whenever that token moves. Nothing anywhere may darken a surface with raw black
+    instead; that is what puts a visible seam between two sections, since pure
+    black is neither as light nor as cool as the ground everything else uses.
+
+    --color-glass was the site header's fill until the pill went to white glass
+    (--glass-fill-white), and nothing references it now. It is the right token for
+    the next dark translucent pane; delete it if none arrives.
   */
   --color-glass: rgba(1, 1, 1, 0.5);
   --color-border-subtle: rgba(245, 245, 240, 0.08);
@@ -95,10 +99,14 @@
     Contact button. Both sit over the video backdrop, so both are a translucent
     fill plus a backdrop blur plus a slowly drifting warm sheen.
 
-    Blur radii. --header-blur (12px) already covers the header pill and these
-    match its weight deliberately — three glass surfaces reading as one material.
-    The tight one is for the small surface, where 12px over a ~140px box blurs
-    more of the footage than the box can show.
+    Blur radii, and the site's glass now runs entirely off these three rather than
+    off --header-blur, which the pill used before it went to white glass and which
+    nothing references any more. Keep them close to one another: three surfaces at
+    similar blur weights read as one material, and that is most of what makes the
+    glass look deliberate rather than applied twice.
+
+    The tight one is for the small surface, where 12px over a ~140px box blurs more
+    of the footage than the box can show.
   */
   --glass-blur: 12px;
   --glass-blur-tight: 10px;
@@ -140,6 +148,40 @@
   --glass-sheen: rgba(201, 112, 20, 0.14);
   --glass-sheen-strong: rgba(224, 154, 60, 0.4);
   --glass-sheen-deep: rgba(143, 40, 4, 0.32);
+
+  /*
+    White glass — the fixed site header's pill, and the first surface on the site
+    built up from white rather than down from the ground tone.
+
+    These are raw `rgba(255, 255, 255, …)` on purpose and are the one set of
+    surface tokens that does *not* move with --color-black: they are a lift, not a
+    tint, so they read against whatever is behind them. That also makes them the
+    exception to the "never darken with raw black" family above — nothing here
+    darkens anything.
+
+    0.12 over flat --color-black composites to roughly #1f1f1f, which is what
+    keeps --color-text-muted nav links at about 7:1 on the pill. Raising the fill
+    lightens the surface faster than it lightens the label, so this token is the
+    one to check if the nav ever starts looking washed out.
+  */
+  --glass-fill-white: rgba(255, 255, 255, 0.12);
+  --glass-border-white: rgba(255, 255, 255, 0.18);
+
+  /*
+    Wider than --glass-blur, because the pill is the only glass surface that sits
+    over whatever the page happens to be scrolling past rather than over one known
+    backdrop.
+  */
+  --glass-blur-wide: 14px;
+
+  /*
+    The two bands that drift through the white glass: a cool highlight and a warm
+    one, both far weaker than the gold surfaces' sheens. On a light pane the eye
+    picks up a moving band at a much lower alpha than it does on a dark one, and
+    anything stronger here reads as a smear crossing the nav rather than as light.
+  */
+  --glass-sheen-white: rgba(255, 255, 255, 0.07);
+  --glass-sheen-warm: rgba(224, 154, 60, 0.12);
 
   /* --- Typography ------------------------------------------------------- */
 
@@ -222,6 +264,11 @@
   --header-height-docked: 4.25rem; /* 68px */
   --header-dock-inset: 1rem;     /* 16px from each side once floating */
   --header-dock-top: 0.75rem;    /* 12px clear of the top edge */
+  /*
+    Unreferenced since the pill went to white glass — it now blurs at
+    --glass-blur-wide, alongside the other two glass surfaces. Kept because header
+    geometry belongs together in this block; use the glass tokens for new panes.
+  */
   --header-blur: 12px;
 
   /* --- Radius and elevation --------------------------------------------- */
@@ -267,6 +314,8 @@
   */
   --glass-drift: 18s;
   --glass-drift-fast: 12s;
+  /* The site header's pill — the slowest of the three, and the most ambient. */
+  --glass-drift-slow: 20s;
 
   /* --- Layers ----------------------------------------------------------- */
 
