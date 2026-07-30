@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Link } from 'react-router-dom'
 import {
   motion,
@@ -11,9 +19,23 @@ import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
 
 import useMediaQuery from '../../hooks/useMediaQuery'
 import storyVideo from '../../assets/videos/story.webm'
-import FluidLens from '../shared/FluidLens'
 import buttonStyles from '../shared/Button.module.css'
 import styles from './About.module.css'
+
+/*
+  Split out of the main bundle, and it is the single biggest thing that could be.
+
+  FluidLens is the only module on the site that touches three, @react-three/fiber,
+  @react-three/drei or maath — roughly 1.5MB of the ~1.86MB bundle, for a component that
+  never mounts below 48rem and never mounts under reduced motion. A static import put all
+  of it in front of the first paint for every visitor including the ones who would never
+  see it.
+
+  The chunk is still requested straight away on the desktop path — lazy() fetches on first
+  render and About is on the home page — so nothing is *deferred* so much as taken off the
+  critical path: it now downloads and parses alongside the page instead of ahead of it.
+*/
+const FluidLens = lazy(() => import('../shared/FluidLens'))
 
 /* Lets the CTA animate without wrapping the Link in an extra layout box. */
 const MotionLink = motion.create(Link)
@@ -225,7 +247,15 @@ function About() {
 
   const aboutRef = useRef(null)
   const runwayRef = useRef(null)
-  const videoRef = useRef(null)
+
+  /*
+    Two handles rather than one, because during the priming window both videos exist: the
+    one inside the lens canvas and the plain element warming up behind it. The pause gate
+    always wants whichever is on screen, and the fallback outlives the canvas, so it wins
+    wherever both are present.
+  */
+  const lensVideoRef = useRef(null)
+  const fallbackVideoRef = useRef(null)
 
   /*
     0 → 1 across exactly the runway's height.
@@ -421,10 +451,25 @@ function About() {
   const zoomActive = zoomEnabled && target.size > 0
 
   /*
-    State, not a MotionValue, because it decides whether the mesh is in the tree at all.
-    It flips twice per pass, so the re-render it costs is not on the scroll path.
+    State, not MotionValues, because these decide what is in the tree at all. Each flips
+    twice per pass, so the re-renders they cost are not on the scroll path.
+
+    `lensCanvasMounted` now tears down the whole Canvas at LENS_DROP_AT rather than just
+    the lens mesh — the WebGL context, its buffers and the transmission material all go,
+    and stay gone for the rest of the page. That also ends the per-frame buffer realloc
+    the growing frame was forcing on R3F, which is the part that was costing frames.
+
+    `fallbackPrimed` is what makes that survivable. There is no plain <video> sitting
+    under the canvas by default — the lens keeps its footage *inside* the WebGL scene as a
+    VideoTexture, which is the whole reason FluidLens exists — so swapping the canvas out
+    cold would mount an unloaded <video> at the most visible moment of the transition and
+    cut to black. Instead the fallback mounts as soon as the transition starts moving and
+    spends the run up to LENS_DROP_AT hidden behind the canvas (.canvas is --z-base, the
+    fallback is z-index auto), buffering and playing, so by the time the canvas goes it is
+    already warm. Before the transition there is still exactly one video decoding.
   */
-  const [lensMeshMounted, setLensMeshMounted] = useState(true)
+  const [lensCanvasMounted, setLensCanvasMounted] = useState(true)
+  const [fallbackPrimed, setFallbackPrimed] = useState(false)
 
   /* Latches the single re-measurement below. */
   const measuredForRun = useRef(false)
@@ -443,7 +488,8 @@ function About() {
       measureRef.current?.()
     }
 
-    setLensMeshMounted(progress < LENS_DROP_AT)
+    setLensCanvasMounted(progress < LENS_DROP_AT)
+    setFallbackPrimed(progress > 0)
 
     /*
       Playback follows the same value in both directions, so scrolling back up resumes
@@ -451,7 +497,7 @@ function About() {
       mid-call; it is caught and dropped because there is nothing useful to do about it
       and an unhandled rejection in a scroll handler is noise.
     */
-    const video = videoRef.current
+    const video = fallbackVideoRef.current ?? lensVideoRef.current
     if (!video) return
 
     if (progress >= VIDEO_PAUSE_AT) {
@@ -463,16 +509,56 @@ function About() {
   })
 
   /*
-    The lens owns its <video> internally, so FluidLens hands it up through this. The
-    plain path assigns the same ref directly on the element — either way videoRef is the
-    one handle the pause logic needs, and it does not care which path produced it.
+    Handed up from inside FluidLens, which owns its <video> internally rather than
+    rendering one — see the note at the top of that file.
+
+    It resumes on arrival because the swap below pauses it on the way out, and drei caches
+    the texture by src: scrolling back up through LENS_DROP_AT can hand back the very
+    element that was paused, which would otherwise remount the lens over a frozen frame.
   */
-  const handleVideoElement = useCallback((element) => {
-    videoRef.current = element
+  const handleLensVideo = useCallback((element) => {
+    lensVideoRef.current = element
+    if (!element || !element.paused) return
+
+    const played = element.play()
+    if (played) played.catch(() => {})
   }, [])
 
+  const handleFallbackVideo = useCallback((element) => {
+    fallbackVideoRef.current = element
+  }, [])
+
+  /*
+    The handoff, run on the frame the canvas is torn down.
+
+    Both videos have been playing independently, so they are at different points in the
+    same loop; matching them is what keeps the swap from cutting to an unrelated moment of
+    the footage. Setting currentTime before metadata has arrived is not an error — it sets
+    the default playback start position instead — so this needs no readiness guard.
+
+    Pausing the outgoing element matters as much as the seek. useVideoTexture's <video> is
+    not in the document and disposing the texture does not stop it, so without this it
+    would go on decoding a 4K file forever behind a page that has finished with it.
+  */
+  useEffect(() => {
+    if (lensCanvasMounted) return
+
+    const lensVideo = lensVideoRef.current
+    const fallback = fallbackVideoRef.current
+    if (!lensVideo || !fallback) return
+
+    fallback.currentTime = lensVideo.currentTime
+    lensVideo.pause()
+  }, [lensCanvasMounted])
+
   /* Nothing should be left paused behind a torn-down transition. */
-  useEffect(() => () => { videoRef.current = null }, [])
+  useEffect(
+    () => () => {
+      lensVideoRef.current = null
+      fallbackVideoRef.current = null
+    },
+    [],
+  )
 
   const reveal = shouldReduceMotion
     ? {}
@@ -608,50 +694,57 @@ function About() {
                       : undefined
                   }
                 >
-                  {showLens ? (
-                    /*
-                      The footage lives *inside* this canvas as a texture, not as a DOM
-                      element beneath it — MeshTransmissionMaterial can only refract what
-                      is in the WebGL scene. See the note at the top of FluidLens.jsx.
+                  {/*
+                    The two are no longer alternatives — for one stretch of the transition
+                    both are mounted, the canvas over the fallback. See the note on
+                    lensCanvasMounted for why that overlap has to exist.
 
-                      The canvas stays mounted through the whole transition and only the
-                      lens *mesh* is dropped. Unmounting the Canvas instead would destroy
-                      the single decode of story.webm partway through the scroll and force a
-                      swap to a second <video> at the moment the frame is most visible;
-                      the expensive part is the transmission material, and dropping the
-                      mesh sheds all of it.
+                    The footage lives *inside* the canvas as a texture rather than in a DOM
+                    element beneath it, because MeshTransmissionMaterial can only refract
+                    what is in the WebGL scene — the note at the top of FluidLens.jsx has
+                    the full argument, and it is what makes the handoff below necessary.
 
-                      This canvas now *resizes* with the frame rather than being scaled by
-                      it, which is what lets the WebGL path uncrop exactly like the DOM
-                      one: VideoPlane recomputes its cover scale from the R3F viewport, so
-                      a wider canvas shows more of the footage instead of magnifying it.
-                      It is also the reason the resize is not free — see the note on the
-                      width and height transforms above.
-                    */
-                    <FluidLens
-                      videoSrc={storyVideo}
-                      pointer={pointer}
-                      onVideo={handleVideoElement}
-                      showLens={lensMeshMounted}
-                      lensOpacity={lensOpacity}
-                      lensProps={{
-                        scale: 0.25,
-                        ior: 1.15,
-                        thickness: 2,
-                        transmission: 1,
-                        roughness: 0,
-                        chromaticAberration: 0.05,
-                        anisotropy: 0.01,
-                      }}
-                    />
-                  ) : (
+                    The canvas also *resizes* with the frame rather than being scaled by
+                    it, which is what lets it uncrop exactly like the DOM path does:
+                    VideoPlane recomputes its cover scale from the R3F viewport, so a wider
+                    canvas shows more of the footage instead of magnifying it. That resize
+                    is not free, and ending it early is half the point of tearing the
+                    canvas down at LENS_DROP_AT.
+                  */}
+                  {showLens && lensCanvasMounted && (
                     /*
-                      The plain path: the same footage, no lens over it. `muted` is not
-                      optional — an unmuted autoplay is refused by every browser — and it
-                      is what makes this safe to start without a user gesture.
+                      fallback={null} because there is nothing to say: the frame is painted
+                      --color-black underneath, which is the same dark disc the Suspense
+                      boundary inside FluidLens already shows while the model and the video
+                      texture load.
                     */
+                    <Suspense fallback={null}>
+                      <FluidLens
+                        videoSrc={storyVideo}
+                        pointer={pointer}
+                        onVideo={handleLensVideo}
+                        lensOpacity={lensOpacity}
+                        lensProps={{
+                          scale: 0.25,
+                          ior: 1.15,
+                          thickness: 2,
+                          transmission: 1,
+                          roughness: 0,
+                          chromaticAberration: 0.05,
+                          anisotropy: 0.01,
+                        }}
+                      />
+                    </Suspense>
+                  )}
+
+                  {/*
+                    The plain path, and now also the transition's destination on the lens
+                    path. `muted` is not optional — an unmuted autoplay is refused by every
+                    browser — and it is what makes this safe to start without a gesture.
+                  */}
+                  {(!showLens || fallbackPrimed) && (
                     <video
-                      ref={handleVideoElement}
+                      ref={handleFallbackVideo}
                       className={styles.video}
                       src={storyVideo}
                       autoPlay

@@ -281,8 +281,14 @@ function FluidLens({
         opaque rectangle.
       */
       gl={{ alpha: true, antialias: true }}
-      /* Capped at 2: past that this is a lot of transmission sampling per frame. */
-      dpr={[1, 2]}
+      /*
+        Capped at 1.5, down from 2. Transmission samples the whole scene into an offscreen
+        buffer every frame, so cost here goes with pixel count, not area of glass: 1.5
+        against 2 is about 44% fewer pixels on a retina screen for a subject that is a
+        refracting distortion rather than anything with an edge to hold. There is no text
+        and no fine geometry in this canvas for the resolution to serve.
+      */
+      dpr={[1, 1.5]}
       camera={CAMERA}
     >
       {/*
