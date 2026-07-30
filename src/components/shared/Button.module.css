@@ -502,6 +502,22 @@
 }
 
 /*
+  Both passes freeze under the cursor and resume when it leaves, wherever they happened
+  to stop — paused rather than cancelled, so the two layers keep the offset they had
+  against each other and the crossing beat is not resynced by every hover.
+
+  The same gesture .button-featured's travelling edge light already uses, and the two
+  are worth keeping in step: hovering either glass button stills whatever is moving in
+  it. Left on the pseudo-elements for the same reason as everywhere else in this file —
+  both call sites are Framer Motion elements, and nothing that animates here should be
+  declared on the host.
+*/
+.button-glass:hover::before,
+.button-glass:hover::after {
+  animation-play-state: paused;
+}
+
+/*
   One tile of travel, on the compositor. translate3d rather than translateX so it is
   unambiguously a compositor transform.
 
