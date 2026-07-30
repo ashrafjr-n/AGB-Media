@@ -1,3 +1,4 @@
+import { useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
@@ -51,6 +52,47 @@ function About() {
   */
   const showLens = isWideEnoughForLens && !shouldReduceMotion
 
+  /*
+    The lens reads the pointer from the *whole section*, not from the canvas.
+
+    Hovering a 550px circle is a small target on a two-column layout, and R3F's built-in
+    state.pointer only updates while the cursor is over the canvas — so for most of the
+    time the reader spends here, with the cursor on the copy, the lens sat frozen. This
+    listener covers the section, and FluidLens clamps whatever it gets to the circle's
+    interior, so the glass leans toward the cursor without ever escaping the frame.
+
+    A ref rather than state on purpose: mousemove fires per frame at best and there is
+    nothing in the render output that depends on the value — storing it in state would
+    re-render the section, the Canvas and the lens material on every mouse event to
+    feed a number only useFrame ever reads.
+  */
+  const circleRef = useRef(null)
+  const pointer = useRef({ x: 0, y: 0 })
+
+  const handlePointerMove = useCallback((event) => {
+    const circle = circleRef.current
+    if (!circle) return
+
+    /*
+      Read per event rather than cached: the rect moves with every scroll, and this is
+      a single layout read with no writes interleaved, which is the cheap direction.
+    */
+    const rect = circle.getBoundingClientRect()
+    if (!rect.width || !rect.height) return
+
+    /*
+      Normalised against the circle's own radius, so ±1 is its rim and anything beyond
+      is the cursor outside it — the magnitude is meaningful, and FluidLens uses it to
+      decide direction before clamping. Y is negated because the document's Y grows
+      downward and the scene's grows up.
+    */
+    const radiusX = rect.width / 2
+    const radiusY = rect.height / 2
+
+    pointer.current.x = (event.clientX - (rect.left + radiusX)) / radiusX
+    pointer.current.y = -(event.clientY - (rect.top + radiusY)) / radiusY
+  }, [])
+
   const reveal = shouldReduceMotion
     ? {}
     : {
@@ -67,7 +109,12 @@ function About() {
       : { ...reveal, transition: { ...reveal.transition, delay } }
 
   return (
-    <section className={styles.about} id="about">
+    <section
+      className={styles.about}
+      id="about"
+      /* Only attached when there is a lens to drive — nothing listens on the plain path. */
+      onMouseMove={showLens ? handlePointerMove : undefined}
+    >
       <div className={styles.inner}>
         <div className={styles.copy}>
           {/*
@@ -120,7 +167,8 @@ function About() {
           puts the circle on top with `order` instead — see About.module.css.
         */}
         <motion.div className={styles.visual} {...revealAt(0.32)}>
-          <div className={styles.circle}>
+          {/* The ref is the frame of reference the section's pointer coords are measured against. */}
+          <div className={styles.circle} ref={circleRef}>
             {showLens ? (
               /*
                 The footage lives *inside* this canvas as a texture, not as a DOM
@@ -129,6 +177,7 @@ function About() {
               */
               <FluidLens
                 videoSrc={storyVideo}
+                pointer={pointer}
                 lensProps={{
                   scale: 0.25,
                   ior: 1.15,

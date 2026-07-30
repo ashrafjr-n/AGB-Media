@@ -48,6 +48,9 @@ const LENS_Z = 15
 /* Pointer follow, in seconds to catch up. Enough lag to read as weight, not drag. */
 const FOLLOW_DAMPING = 0.15
 
+/* Used when no pointer ref is supplied — the lens simply rests at the centre. */
+const CENTRED_POINTER = { current: { x: 0, y: 0 } }
+
 /*
   The video, in the scene rather than in the document — see the note at the top of
   this file.
@@ -107,10 +110,53 @@ function VideoPlane({ src }) {
   `scale` arrives inside the caller's lensProps alongside the material settings, but
   it is a *mesh* transform rather than a material property, so it is split back out
   here — passing it through to MeshTransmissionMaterial would silently do nothing.
+
+  `pointer` is a ref, not two numbers. The lens is driven from a mousemove listener
+  covering the whole About section (see About.jsx), which fires far more often than
+  this tree should re-render: passing the coordinates as props would re-render the
+  Canvas and rebuild MeshTransmissionMaterial's props on every mouse event, for a
+  value only ever read inside useFrame. A ref is mutated in place and read once a
+  frame, which is where it is actually needed.
 */
-function Lens({ scale = 0.25, ...materialProps }) {
+function Lens({ pointer = CENTRED_POINTER, scale = 0.25, ...materialProps }) {
   const ref = useRef(null)
   const { nodes } = useGLTF(LENS_MODEL)
+
+  /*
+    Guarded rather than assumed: the model is fetched at runtime from /public, so a
+    replaced or re-exported lens.glb with a differently named node would otherwise
+    throw inside the render rather than simply showing no lens.
+  */
+  const lensNode = nodes?.Cylinder
+
+  /*
+    The lens's own radius in the screen plane, in the model's local units — the amount
+    the travel bound below has to be shrunk by so the glass stays wholly inside the
+    circle rather than its centre sitting on the rim.
+
+    Measured from the geometry rather than hardcoded, because lens.glb is fetched at
+    runtime and a re-export could change its dimensions. Taken from the bounding box's
+    largest absolute extent on the two axes that end up in the screen plane: the mesh
+    is rotated a quarter turn about X, so local X stays horizontal and local Z becomes
+    vertical, while local Y (the cylinder's authored axis, and its thickness) turns
+    into depth and cannot widen the silhouette. Absolute values on both ends so a
+    geometry that is not centred on its own origin still yields a bound the mesh's
+    position cannot escape.
+  */
+  const lensRadius = useMemo(() => {
+    const geometry = lensNode?.geometry
+    if (!geometry) return 0
+
+    if (!geometry.boundingBox) geometry.computeBoundingBox()
+    const { min, max } = geometry.boundingBox
+
+    return Math.max(
+      Math.abs(min.x),
+      Math.abs(max.x),
+      Math.abs(min.z),
+      Math.abs(max.z),
+    )
+  }, [lensNode])
 
   useFrame((state, delta) => {
     if (!ref.current) return
@@ -130,20 +176,36 @@ function Lens({ scale = 0.25, ...materialProps }) {
       LENS_Z,
     ])
 
+    /*
+      The canvas fills a 1:1 box that CSS clips to a circle, so the visible area is the
+      disc inscribed in the frustum — its radius is half the *shorter* side. `min` is
+      defensive: the two are equal while .circle keeps `aspect-ratio: 1`, and if that
+      ever changes this stays inside the visible area rather than outside it.
+
+      Shrinking that radius by the lens's own is what keeps the glass from escaping the
+      frame: the centre can reach the rim less one lens radius, and no further.
+    */
+    const travel = Math.max(Math.min(width, height) / 2 - lensRadius * scale, 0)
+
+    /*
+      The pointer arrives normalised against the circle's radius, so it is already past
+      1 whenever the cursor is outside the circle — over the copy column, most of the
+      time. Clamping the *vector* rather than each axis maps everything beyond the rim
+      onto the bound in the direction it came from, which is what makes a cursor parked
+      on the text read as "the lens is leaning that way" instead of pinning to a corner.
+    */
+    const { x, y } = pointer.current
+    const distance = Math.hypot(x, y)
+    const bounded = distance > 1 ? travel / distance : travel
+
     easing.damp3(
       ref.current.position,
-      [(state.pointer.x * width) / 2, (state.pointer.y * height) / 2, LENS_Z],
+      [x * bounded, y * bounded, LENS_Z],
       FOLLOW_DAMPING,
       delta,
     )
   })
 
-  /*
-    Guarded rather than assumed: the model is fetched at runtime from /public, so a
-    replaced or re-exported lens.glb with a differently named node would otherwise
-    throw inside the render rather than simply showing no lens.
-  */
-  const lensNode = nodes?.Cylinder
   if (!lensNode) return null
 
   return (
@@ -160,7 +222,12 @@ function Lens({ scale = 0.25, ...materialProps }) {
   )
 }
 
-function FluidLens({ videoSrc, lensProps }) {
+/*
+  `pointer` is a ref carrying { x, y } normalised against the circle's radius, with
+  +y up. Its owner is About.jsx, which listens across the whole section — see the note
+  on Lens for why this is a ref and not a pair of props.
+*/
+function FluidLens({ videoSrc, lensProps, pointer }) {
   return (
     <Canvas
       className={styles.canvas}
@@ -191,7 +258,7 @@ function FluidLens({ videoSrc, lensProps }) {
       */}
       <Suspense fallback={null}>
         <VideoPlane src={videoSrc} />
-        <Lens {...lensProps} />
+        <Lens pointer={pointer} {...lensProps} />
       </Suspense>
     </Canvas>
   )

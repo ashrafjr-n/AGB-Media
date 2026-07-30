@@ -101,12 +101,18 @@
   border: 1px solid var(--glass-border-white);
 
   /*
-    Substantially wider than the content container. The cap only exists to stop
-    the pill becoming a band on an ultrawide display — .inner fills this box
-    edge to edge (see below), so the logo and nav sit just inside the pill's ends
-    rather than boxed at 1200px with dead space either side of them.
+    Deliberately narrower than the page it floats over — the pill should read as an
+    object sitting on the page, not as a band spanning it. It was
+    `--container-max + 12rem` (1392px), which on a normal desktop reached almost edge
+    to edge and lost that distinction.
+
+    Two caps, whichever is smaller: never wider than the content container, and never
+    more than 85% of the space between the header's own inset edges, so on a narrow
+    window the pill keeps visible ground either side of it instead of only the 1rem
+    --header-dock-inset. .inner still fills this box edge to edge (see below), so the
+    logo and nav sit just inside the pill's ends.
   */
-  max-inline-size: calc(var(--container-max) + 12rem);
+  max-inline-size: min(85%, var(--container-max));
   margin-inline: auto;
   border-radius: var(--radius-full);
   box-shadow: none;

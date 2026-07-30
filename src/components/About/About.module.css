@@ -268,8 +268,13 @@
       one-screen section on a short window — the same reasoning the logo panel used
       before it. The section is min-block-size 100vh, so vh is the unit to measure the
       cap against.
+
+      The vw term is the copy column's protection. This grid track is `auto`, so the
+      circle takes whatever it asks for and the copy gets the remainder; without a cap
+      tied to the window the circle would starve the text at the narrow end of this
+      range, where the container is only ~720px wide.
     */
-    inline-size: min(100%, 48vh, 21rem);
+    inline-size: min(100%, 48vh, 38vw, 24rem);
   }
 }
 
@@ -278,9 +283,15 @@
     gap: var(--space-3xl);
   }
 
-  /* Room for it here, where the column is its own half of the section. */
+  /*
+    Room for it here, where the column is its own half of the section. 34.375rem is
+    550px — the size the circle actually reaches once the window is wide enough for
+    the 40vw term to clear it (~1375px). Below that the vw and vh caps take over, so
+    the circle grows with the window rather than jumping to a fixed 550 and pushing
+    the copy into a narrow strip.
+  */
   .circle {
-    inline-size: min(100%, 58vh, 30rem);
+    inline-size: min(100%, 60vh, 40vw, 34.375rem);
   }
 
   .title {
