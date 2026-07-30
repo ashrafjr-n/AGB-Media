@@ -195,15 +195,28 @@
 .portrait {
   display: block;
   inline-size: 100%;
-  block-size: clamp(6.5rem, 22vh, 18rem);
+  block-size: clamp(8rem, 28vh, 22rem);
   object-fit: cover;
   border-radius: 0.75rem;
 }
 
+/*
+  Dropped down the row rather than starting level with the name.
+
+  The two columns are align-items: start, so by default the eyebrow sits on the name's
+  cap line — which reads as a caption on the heading rather than as its own column. This
+  much offset carries it past the name and lines it up nearer the top of the portrait, so
+  the row reads as two blocks side by side instead of one heading with notes beside it.
+
+  A clamp rather than a flat 2–3rem, like everything else vertical here: it is one of the
+  first things that should give way on a short window, not the portrait.
+*/
 .profile {
   display: flex;
   flex-direction: column;
   gap: clamp(0.5rem, 1.7vh, 1.2rem);
+
+  padding-block-start: clamp(2.5rem, 5vh, 4.5rem);
 
   min-inline-size: 0;
 }
@@ -309,7 +322,7 @@
     without this the two read as one continuous block of small type rather than as the end
     of the profile and the start of something else.
   */
-  margin-block-start: clamp(0.5rem, 1.2vh, 1rem);
+  margin-block-start: clamp(1rem, 2.5vh, 2rem);
 
   inline-size: 100%;
 }
@@ -377,6 +390,12 @@
 .strip {
   flex: 0 0 auto;
 
+  /*
+    Extra air above, on top of the column's own --founder-gap. The career line ends as a
+    centred run of small type and the strip begins as a wall of photographs; without the
+    separation the images read as a caption to it.
+  */
+  margin-block-start: clamp(1rem, 2.5vh, 1.75rem);
   margin-inline: clamp(1rem, 4vw, 3rem);
 
   -webkit-mask-image: linear-gradient(
