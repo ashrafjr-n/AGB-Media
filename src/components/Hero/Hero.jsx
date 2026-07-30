@@ -15,7 +15,7 @@ const tickerItems = [
   { label: 'Company', value: 'AGB Media' },
   { label: 'Founded', value: '2025' },
   { label: 'HQ', value: 'Doha, Qatar' },
-  { label: 'Founder', value: 'Abdullah Ghifan' },
+  { label: 'Founder', value: 'Abdullah Ghyfan' },
   { label: 'CEO', value: 'Nael Al-Jarabah' },
   { label: 'Scope', value: 'Qatar · Gulf · Arab World' },
 ]
