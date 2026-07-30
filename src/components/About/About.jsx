@@ -245,13 +245,16 @@ function About() {
     both measured rather than guessed, because both depend on layout: the circle's size is
     a min() of three terms and its position is wherever the grid puts it.
 
-    Recomputed on resize only. While .about is pinned these numbers cannot change, and the
-    whole transition happens while it is pinned.
-
     `size` doubles as the readiness flag: it is 0 until the first measurement lands, and
     the frame renders unstyled until then rather than starting from a zero-width box.
   */
   const [target, setTarget] = useState({ size: 0, width: 0, height: 0, x: 0, y: 0 })
+
+  /*
+    Kept on a ref so the two places that need a *late* reading can ask for one — the
+    reveal finishing, and the transition starting. See the notes at both call sites.
+  */
+  const measureRef = useRef(null)
 
   useLayoutEffect(() => {
     if (!zoomEnabled) return undefined
@@ -301,10 +304,32 @@ function About() {
       })
     }
 
+    measureRef.current = measure
     measure()
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
+    return () => {
+      measureRef.current = null
+      window.removeEventListener('resize', measure)
+    }
   }, [zoomEnabled])
+
+  /*
+    Re-read the geometry once the reveal has landed, and this is the fix for a gap along
+    the bottom of the finished frame.
+
+    The mount-time reading above is taken while .visual is still holding the reveal's
+    `initial: { y: 24 }`, and getBoundingClientRect() reports that offset — so the circle
+    measured 24px lower than where it settles, the frame was translated 24px too far up,
+    and exactly that much of the section stayed visible under it. Nothing about the height
+    was ever wrong; the anchor was.
+
+    A late reading rather than a corrected early one, because the reveal is not the only
+    thing that moves this. Clash Display swaps in after mount, and .inner centres its two
+    columns against each other, so a reflowed copy column shifts the circle's centre too.
+  */
+  const handleRevealSettled = useCallback(() => {
+    measureRef.current?.()
+  }, [])
 
   /*
     The single clock everything downstream reads.
@@ -401,7 +426,23 @@ function About() {
   */
   const [lensMeshMounted, setLensMeshMounted] = useState(true)
 
+  /* Latches the single re-measurement below. */
+  const measuredForRun = useRef(false)
+
   useMotionValueEvent(easedProgress, 'change', (progress) => {
+    /*
+      The backstop to handleRevealSettled: one more reading the first time the transition
+      actually moves. It catches anything that shifted the row after the reveal finished
+      — a late font swap being the likely one — and it covers the case where a fast scroll
+      reaches the runway before the reveal has completed at all.
+
+      Safe to take at any scroll position: both offsets it reads are scroll-invariant.
+    */
+    if (!measuredForRun.current && progress > 0) {
+      measuredForRun.current = true
+      measureRef.current?.()
+    }
+
     setLensMeshMounted(progress < LENS_DROP_AT)
 
     /*
@@ -517,7 +558,13 @@ function About() {
             order, which keeps the reading and tab order copy-first; the stacked layout
             puts the circle on top with `order` instead — see About.module.css.
           */}
-          <motion.div className={styles.visual} {...revealAt(0.32)}>
+          <motion.div
+            className={styles.visual}
+            {...revealAt(0.32)}
+            /* The reveal's own transform offsets the zoom's measurement — see the note
+               on handleRevealSettled. */
+            onAnimationComplete={zoomEnabled ? handleRevealSettled : undefined}
+          >
             {/*
               Left alone on purpose, and the frame of reference for two things: the
               section's pointer coordinates, and the zoom's measurement of where the circle
