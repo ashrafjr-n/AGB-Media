@@ -1,13 +1,17 @@
 /*
   THE buttons for the site. Every call to action pulls from this file — nothing is
-  restyled inside a section module. There is one shared base plus four variants, and
-  a call site always applies the base *and* exactly one variant:
+  restyled inside a section module. There is one shared base plus two variants, and
+  a call site applies the base *and* exactly one variant:
 
     .button .button-featured  glass, frozen texture, travelling edge light
                                                                    (hero nav "Contact")
     .button .button-glass     glass, drifting gold sheen           (About)
-    .button .button-quiet     gold hairline pill, quiet hover      (unused today)
-    .button .button-reveal    sliding-panel reveal hover           (unused today)
+
+  Both live surfaces are glass. Two earlier variants — .button-quiet (a gold hairline
+  pill) and .button-reveal (a sliding-panel hover) — were deleted in a cleanup pass once
+  the glass pair had replaced them at both call sites; neither had been referenced from
+  any JSX for some time. They are in the git history if a non-glass surface ever needs a
+  starting point.
 
   .button-featured is the site's single high-emphasis button. It was a solid gold fill
   with a near-black label, then glass with liquid gold drifting behind it; it is now glass
@@ -30,11 +34,7 @@
   nothing to soften and the rim does all the work of separating the button from the
   ground.
 
-  .button-quiet and .button-reveal are both unreferenced now — reveal was About's until
-  the glass variant replaced it. Each is still the right answer for the surface it was
-  written for (see their own notes); neither is dead by accident.
-
-  Adding a fifth surface means adding a fifth variant here, not styling a button in a
+  Adding a third surface means adding a third variant here, not styling a button in a
   component.
 
   A module without a .jsx sibling, which is the one deviation from the layout in
@@ -52,8 +52,10 @@
 
 .button {
   /*
-    Border weight as a custom property because .button-reveal keys its panel
-    overhangs to it — the panels have to track the outline they mask.
+    Border weight as a custom property rather than a literal, because other rules have
+    to derive from it: .button-featured::after subtracts it from --radius-md to get the
+    padding-box radius its glow ring needs. Anything keyed to the outline's thickness
+    reads this rather than restating 1px.
   */
   --btn-border: 1px;
 
@@ -85,29 +87,6 @@
     border-color var(--duration-base) var(--ease-out);
 }
 
-/* --- Variant: quiet ------------------------------------------------------- */
-
-/*
-  The understated one, for the hero. A gold hairline pill on transparent, and on
-  hover the interior warms with a weak gold veil while the edge and label step up to
-  --color-gold-light. No panels, no glow, no layers — over video, restraint is what
-  keeps it from competing with the footage.
-
-  The pill shape lives on the variant rather than the base: .button-reveal must stay
-  rectangular, because a sliding rectangular panel cannot mask a rounded outline
-  without clipping.
-*/
-.button-quiet {
-  border-radius: var(--radius-full);
-}
-
-.button-quiet:hover,
-.button-quiet:focus-visible {
-  background-color: var(--color-gold-veil);
-  border-color: var(--color-gold-light);
-  color: var(--color-gold-light);
-}
-
 /* --- Variants: featured and glass ----------------------------------------- */
 
 /*
@@ -133,8 +112,8 @@
   --glass-fill-light is the dial for that, and raising it toward 0.55 (what the ticker
   uses) restores a predictable floor at the cost of some transparency.
 
-  Rounded rather than a full pill, so neither reads as another --radius-full outline
-  like .button-quiet.
+  Rounded rather than a full pill: --radius-full would make these read as capsules
+  next to the header's own pill, which is the one --radius-full surface on the site.
 */
 .button-featured,
 .button-glass {
@@ -151,18 +130,20 @@
 
   /*
     Own stacking context, so the sheen layers below sit at z-index -1: above the
-    button's fill, below its label. That is the mechanism here rather than
-    .button-reveal's `> *` lift, because HeroHeader renders its label as a bare text
+    button's fill, below its label. Lifting the label instead — `> *` with a positive
+    z-index — is not an option here, because HeroHeader renders its label as a bare text
     node with no element to lift, and this rule has to work for both call sites.
   */
   isolation: isolate;
 
   /*
-    Clips the oversized sheen layers to the button's rounded box.
+    Clips the oversized sheen layers to the button's rounded box, and it is what forces
+    .button-featured's glow ring onto the padding box rather than the border box — see
+    the geometry note there.
 
-    Scoped to these variants and never moved up to .button: .button-reveal's panels
-    overhang their box deliberately and clipping them would destroy that effect. Safe
-    here because nothing in either variant paints outside the border box.
+    Left on the variants rather than moved up to .button: the base is the shared
+    contract for any future variant, and one that deliberately paints outside its border
+    box would be broken by inheriting this.
   */
   overflow: hidden;
 }
@@ -533,103 +514,4 @@
   to {
     transform: translate3d(-50%, 0, 0);
   }
-}
-
-/* --- Variant: reveal ------------------------------------------------------ */
-
-/*
-  The sliding panel reveal, for the Story section.
-
-  At rest two panels painted in --color-black cover the button, border included, so
-  all that shows is the gold label sitting on the page. On hover the large panel
-  slides up and collapses to nothing while a thin strip along the top wipes out
-  horizontally a beat later — uncovering the gold outline and leaving the interior
-  transparent. The button is *revealed* rather than filled.
-
-  Because the panels are --color-black they merge into any flat section, which is
-  what makes this work on About: at rest the button is just gold text, and the hover
-  appears to draw a frame around it. Over the hero footage the panels would match
-  nothing and read as a dark block, which is the other half of why the hero uses
-  .button-quiet instead.
-*/
-.button-reveal {
-  /* 2px, keyed through to the panel overhangs below. */
-  --btn-border: 2px;
-  /* The ::before lift, kept at the source design's value. */
-  --btn-slide: 25px;
-  /*
-    The ::after strip. The source design derives this as `calc(100% - 50px)` off a
-    58px-tall button; stated directly instead, because this button uses the project's
-    type scale and that subtraction would collapse to nothing at ~50px tall.
-  */
-  --btn-strip: 0.5rem;
-
-  /*
-    Makes the button a stacking context so the children's z-index below is scoped to
-    it. NOT overflow: hidden — the panels overhang the box and slide beyond it, and
-    clipping would destroy the whole effect.
-  */
-  isolation: isolate;
-}
-
-/*
-  Label and icons ride above the panels. Every direct child, not just the label
-  span: the icons are direct children too and would otherwise be buried at rest.
-*/
-.button-reveal > * {
-  position: relative;
-  z-index: 3;
-}
-
-/*
-  The panels. Percentage sizes on an absolutely positioned box resolve against the
-  containing block's *padding* box, so these overhang the top, inline-start and
-  inline-end borders but stop 2px short of the bottom one — which leaves a gold
-  hairline showing along the bottom edge at rest. That falls straight out of the
-  source design's numbers and is kept: it reads as an underline that grows into a
-  full frame on hover.
-*/
-.button-reveal::before,
-.button-reveal::after {
-  content: '';
-  position: absolute;
-  inset-block-start: calc(var(--btn-border) * -1);
-  inset-inline-start: calc(var(--btn-border) * -1);
-  background-color: var(--color-black);
-  transform: scaleY(1);
-  transition: transform var(--duration-base) ease-out,
-    height var(--duration-base) ease-out;
-}
-
-.button-reveal::before {
-  inline-size: calc(100% + var(--btn-border) * 3);
-  block-size: calc(100% + var(--btn-border));
-}
-
-/* Thin strip along the top edge, the second half of the reveal. */
-.button-reveal::after {
-  inline-size: calc(100% + var(--btn-border) * 2);
-  block-size: var(--btn-strip);
-}
-
-/*
-  Keyboard focus gets the same reveal as hover — the state means the same thing to
-  both, and the global :focus-visible ring in global.css sits on top of it.
-
-  Note these transforms live on the *pseudo-elements*, never on the button itself.
-  That is what makes this design safe here: Framer Motion writes `transform` inline
-  on the anchor, and an inline transform on the host does not reach ::before or
-  ::after, so the entrance animation and this hover coexist untouched.
-*/
-.button-reveal:hover::before,
-.button-reveal:focus-visible::before {
-  transform: translateY(calc(var(--btn-slide) * -1));
-  block-size: 0;
-}
-
-.button-reveal:hover::after,
-.button-reveal:focus-visible::after {
-  transform: scaleX(0);
-  /* Trails the panel it sits on, so the two read as one gesture, not two. */
-  transition-delay: 0.15s;
 }

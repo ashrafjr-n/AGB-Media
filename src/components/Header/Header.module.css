@@ -4,11 +4,15 @@
   at the inline start (left) and the nav at the inline end (right).
 
   The header no longer morphs with scroll — it always renders as the floating
-  pill, inset from all three edges, shadowed. `data-docked` and
-  `data-menu-open` are still set on the root in Header.jsx (menu-open still
-  needs to soften the pill's corners into a rounded rect while the drawer is
-  open), but there is no longer a second, non-docked visual state to transition
-  from, so no morph timing is needed here.
+  pill, inset from all three edges, shadowed. `data-menu-open` is still set on the
+  root in Header.jsx, because the open drawer still has to soften the pill's corners
+  into a rounded rect, but there is no longer a second, non-docked visual state to
+  transition from, so no morph timing is needed here.
+
+  A `data-docked="true"` attribute used to be written alongside it, unconditionally,
+  for a selector that was never actually written this way — the rules below target
+  `[data-menu-open='true'] .bar` alone. It was removed in a cleanup pass; nothing here
+  ever read it.
 
   What is left to time is the menu open/close: the bar's corner radius here, and
   the drawer height and hover underline driven from Header.jsx. All three run at

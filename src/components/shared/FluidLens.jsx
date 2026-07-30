@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { MeshTransmissionMaterial, useGLTF, useVideoTexture } from '@react-three/drei'
 import { easing } from 'maath'
@@ -60,7 +60,7 @@ const CENTRED_POINTER = { current: { x: 0, y: 0 } }
   overflow clip the rest. Fitting instead would letterbox a 16:9 video inside a round
   hole and show the section's ground through two corners of it.
 */
-function VideoPlane({ src }) {
+function VideoPlane({ src, onVideo }) {
   const texture = useVideoTexture(src, {
     muted: true,
     loop: true,
@@ -69,6 +69,18 @@ function VideoPlane({ src }) {
   })
 
   const { viewport } = useThree()
+
+  /*
+    Hands the underlying <video> up to the caller.
+
+    useVideoTexture builds and owns the element internally, so this is the only handle
+    on it — and About needs one, because the scroll-zoom pauses playback partway through
+    the transition. Nothing here mutates the element; the caller only calls play() and
+    pause() on it.
+  */
+  useEffect(() => {
+    if (onVideo) onVideo(texture.image ?? null)
+  }, [texture, onVideo])
 
   const scale = useMemo(() => {
     const frameAspect = viewport.width / viewport.height
@@ -118,8 +130,14 @@ function VideoPlane({ src }) {
   value only ever read inside useFrame. A ref is mutated in place and read once a
   frame, which is where it is actually needed.
 */
-function Lens({ pointer = CENTRED_POINTER, scale = 0.25, ...materialProps }) {
+function Lens({
+  pointer = CENTRED_POINTER,
+  opacity,
+  scale = 0.25,
+  ...materialProps
+}) {
   const ref = useRef(null)
+  const materialRef = useRef(null)
   const { nodes } = useGLTF(LENS_MODEL)
 
   /*
@@ -204,6 +222,19 @@ function Lens({ pointer = CENTRED_POINTER, scale = 0.25, ...materialProps }) {
       FOLLOW_DAMPING,
       delta,
     )
+
+    /*
+      The fade-out as About's scroll-zoom begins, read per frame from a MotionValue
+      rather than taken as a prop — the same reasoning as `pointer` above. It changes on
+      every scroll frame, and threading it through props would re-render the Canvas and
+      rebuild this material's props to feed a number only this loop reads.
+
+      About drops the mesh entirely once the fade completes (see `showLens`); this only
+      covers the ramp down to that point.
+    */
+    if (opacity && materialRef.current) {
+      materialRef.current.opacity = opacity.get()
+    }
   })
 
   if (!lensNode) return null
@@ -217,7 +248,12 @@ function Lens({ pointer = CENTRED_POINTER, scale = 0.25, ...materialProps }) {
       scale={scale}
       position={[0, 0, LENS_Z]}
     >
-      <MeshTransmissionMaterial {...materialProps} />
+      {/*
+        `transparent` so the opacity written each frame above actually composites —
+        without it the material renders opaque whatever its opacity says. It costs
+        nothing while opacity is 1, which is every moment outside the zoom transition.
+      */}
+      <MeshTransmissionMaterial ref={materialRef} transparent {...materialProps} />
     </mesh>
   )
 }
@@ -227,7 +263,14 @@ function Lens({ pointer = CENTRED_POINTER, scale = 0.25, ...materialProps }) {
   +y up. Its owner is About.jsx, which listens across the whole section — see the note
   on Lens for why this is a ref and not a pair of props.
 */
-function FluidLens({ videoSrc, lensProps, pointer }) {
+function FluidLens({
+  videoSrc,
+  lensProps,
+  pointer,
+  onVideo,
+  showLens = true,
+  lensOpacity,
+}) {
   return (
     <Canvas
       className={styles.canvas}
@@ -257,8 +300,22 @@ function FluidLens({ videoSrc, lensProps, pointer }) {
         could be put here.
       */}
       <Suspense fallback={null}>
-        <VideoPlane src={videoSrc} />
-        <Lens pointer={pointer} {...lensProps} />
+        <VideoPlane src={videoSrc} onVideo={onVideo} />
+
+        {/*
+          The lens mesh goes away entirely once About's zoom has faded it out, leaving
+          just the video plane in the scene.
+
+          This is the GPU saving, and it is the mesh rather than the canvas that has to
+          go to get it: MeshTransmissionMaterial re-renders the scene to an offscreen
+          buffer every frame to sample it, and that cost is the whole reason the lens is
+          expensive. A lone textured quad is close to free. Unmounting the Canvas
+          instead would also destroy the only decode of story.mp4 mid-scroll — see the
+          note at About's call site.
+        */}
+        {showLens && (
+          <Lens pointer={pointer} opacity={lensOpacity} {...lensProps} />
+        )}
       </Suspense>
     </Canvas>
   )

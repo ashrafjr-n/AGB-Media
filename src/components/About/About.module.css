@@ -138,20 +138,42 @@
 }
 
 /*
-  The window. `aspect-ratio: 1` with a sized inline axis rather than a fixed height, so
-  the circle scales with the column and stays a circle at every width.
+  The window's *slot*. `aspect-ratio: 1` with a sized inline axis rather than a fixed
+  height, so it scales with the column and stays square at every width.
 
-  It hosts either the lens canvas or a plain <video>, both absolutely filling it, and
-  clips whichever it gets to the round shape.
+  Everything that used to be on this element — the round clip, the rim, the fill, the
+  shadow — moved down to .zoom-layer, and this box is now a bare sizing shell that
+  paints nothing. The split exists because of the scroll-zoom: the layer below carries a
+  transform, and `getBoundingClientRect()` on a transformed element reports the
+  transformed box. Keeping an untransformed parent gives both the pointer handler and
+  the zoom's own geometry a stable frame of reference to measure against, at every point
+  in the transition.
+
+  At rest the two boxes are identical, so nothing about the resting circle changed.
 */
 .circle {
   position: relative;
-  isolation: isolate;
-  overflow: hidden;
 
   aspect-ratio: 1;
   /* ~300px on a phone, per the brief, and never wider than the column. */
   inline-size: min(100%, 18.75rem);
+}
+
+/*
+  The circle as it is actually drawn, and the element the scroll-zoom transforms.
+
+  Absolutely filling .circle rather than being it, for the measurement reason above. It
+  hosts either the lens canvas or a plain <video> — both absolutely filling this box —
+  and clips whichever it gets to the round shape.
+
+  Framer writes `transform` and `border-radius` here inline during the transition, so
+  the border-radius below is the resting value and the starting keyframe both.
+*/
+.zoom-layer {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
 
   border-radius: 50%;
 
@@ -167,8 +189,8 @@
     the lens canvas composites its antialiased edge against and what fills the circle
     until the model and the first video frame arrive, and both want a known surface
     rather than a blurred frame of the *hero's* footage showing through the window onto
-    a different video. The disc now reads a shade darker than the section around it,
-    which is the right way round for a media frame.
+    a different video. The disc reads a shade darker than the section around it, which
+    is the right way round for a media frame.
   */
   background-color: var(--color-black);
 
@@ -179,6 +201,42 @@
     raw-black value, so it needs no glass-side equivalent.
   */
   box-shadow: var(--shadow-soft);
+}
+
+/*
+  Promoted only while the zoom can actually run. `will-change` on a permanently idle
+  element costs a compositor layer for nothing; About sets data-zoom on the stage, so
+  this is scoped to the case where a transform is genuinely coming.
+*/
+.stage[data-zoom='on'] .zoom-layer {
+  will-change: transform;
+}
+
+/*
+  The media wrapper, and the element the blur is applied to rather than .zoom-layer.
+
+  Blurring the layer itself would take its rim and its shadow with it, and the scrim
+  above would be blurred too — the point of the transition is a *sharp* dark veil
+  settling over softened footage.
+*/
+.media {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+  The dark veil that arrives with the blur, painted in the section's own surface token
+  so the finished state is exactly the ground the copy sat on — the footage does not
+  fade to some new colour, it fades to the Story section's own glass.
+
+  Opacity is animated 0 → 1 rather than 0 → 0.75, because --section-glass-fill already
+  carries the 0.75 alpha. Animating both would compound to 0.56.
+*/
+.scrim {
+  position: absolute;
+  inset: 0;
+  background-color: var(--section-glass-fill);
+  pointer-events: none;
 }
 
 /*
@@ -494,4 +552,55 @@
   .cta {
     margin-inline-start: var(--space-lg);
   }
+}
+
+/* --- Scroll-zoom stage ---------------------------------------------------- */
+
+/*
+  The runway the zoom plays out over.
+
+  `.about` is pinned with `position: sticky` while the stage scrolls past it, so the
+  section stays exactly where it is on screen and the scroll distance becomes animation
+  time instead of movement. The circle inside it grows to cover the viewport over the
+  first screen of that, then holds.
+
+  Sticky is what makes this work without touching the section's own layout: About keeps
+  its grid, its padding and its 100vh floor, and gains only a paint position. Before the
+  stage is reached it behaves exactly as it did — sticky elements are in normal flow
+  until their threshold is crossed.
+
+  data-zoom is off under prefers-reduced-motion, and About renders neither of the two
+  spacers in that case, so the stage collapses to the section's own height and there is
+  no dead scroll to fall through. It cannot be a media query: the spacers have to not
+  *exist*, not merely have no height, or the page keeps their 200vh of scroll.
+*/
+.stage {
+  position: relative;
+}
+
+.stage[data-zoom='on'] .about {
+  position: sticky;
+  inset-block-start: 0;
+}
+
+/*
+  The animated stretch. One viewport of scroll maps to the whole 0 → 1 of the
+  transition; About tracks this element specifically, so its height *is* the timing.
+*/
+.runway {
+  block-size: 100vh;
+  pointer-events: none;
+}
+
+/*
+  The finished state, held. A second viewport where About is still pinned, the zoom is
+  complete and the frozen blurred frame simply sits there.
+
+  This is the slot the Founder section goes in: its content belongs *inside* this
+  element, over the backdrop the transition just built. Until then it is deliberately
+  empty, which is what the brief asked for.
+*/
+.hold {
+  block-size: 100vh;
+  pointer-events: none;
 }

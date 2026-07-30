@@ -29,6 +29,21 @@ import styles from './FluidBar.module.css'
 /*
   The turbulence, and the reason this reads as water rather than as three moving blobs.
 
+  NOT SHARED WITH THE OTHER TWO, deliberately. Three of these filters exist — this one,
+  #hero-cta-turbulence in HeroHeader.jsx and #site-header-turbulence in Header.jsx — and
+  they are structurally near-identical while every number in them differs. That is not
+  duplication waiting to be factored out: feTurbulence's baseFrequency is in user-space
+  units rather than units of the element, so one field tuned for a given box produces a
+  visibly different texture on another. What reads as water across this ~1500px strip is
+  sandpaper on a 140px button. numOctaves and the displacement scale follow from the same
+  fact — detail finer than a pixel only costs time, and a scale that flows a wide bar
+  tears a short one apart.
+
+  Nor would sharing buy anything at render time: a filter is evaluated per element it is
+  applied to, so two elements pointing at one id still pay for it twice. Consolidating
+  these would mean one definition plus three sets of overrides, which is what the three
+  already are. Keep them separate, and keep each one's numbers commented.
+
   Notable: the seed is static, where the brief animated it from 1 to 100 over 20s. Three
   reasons it is not animated. Implementations truncate the seed to an integer, so an
   animated seed re-randomises the field in discrete steps and pops rather than flows.

@@ -6,6 +6,12 @@
 
   `100svh` rather than `100vh` — on mobile, `vh` measures against the *largest*
   viewport, so the browser's address bar would push the ticker off-screen.
+
+  NAMING. The section below this one is referred to as "About" throughout this file,
+  and that is the same thing as "the Story section": the component is components/About/,
+  its id is `about`, and its visible title is "Our Story". Both names appear across the
+  codebase and mean one component — About is used here because it is what the import and
+  the directory are called.
 */
 
 .hero {
@@ -76,8 +82,7 @@
   without hiding the footage.
 
   --color-scrim, not raw black, so the hero darkens toward exactly the tone the body
-  and the Story section are painted in rather than toward something cooler and
-  deeper. At the current ground the two are within a hair of each other and the
+  and About are painted in rather than toward something cooler and deeper. At the current ground the two are within a hair of each other and the
   distinction no longer shows, but the rule holds for whatever the ground becomes:
   raw black is what puts a visible step at a section boundary.
 */

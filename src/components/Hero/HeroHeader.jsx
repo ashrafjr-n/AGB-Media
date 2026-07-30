@@ -100,11 +100,12 @@ function HeroHeader() {
         `filter: url(#hero-cta-turbulence)` on .button-featured in shared/Button.module.css.
 
         It lives here, at that variant's only call site, rather than being shared with the
-        ticker's filter or the site header's. Sharing one definition would save nothing at
-        render time — a filter is evaluated per element it is applied to, so two elements
-        pointing at one id still pay twice — and it cannot be shared anyway: baseFrequency
-        is in user-space pixels, so the value that gives this ~140px button visible
-        structure would be a near-uniform push across a 1500px strip.
+        ticker's filter (FluidBar.jsx) or the site header's (Header.jsx). Those three are
+        the complete set, and they stay separate on purpose. Sharing one definition would
+        save nothing at render time — a filter is evaluated per element it is applied to,
+        so two elements pointing at one id still pay twice — and it cannot be shared
+        anyway: baseFrequency is in user-space pixels, so the value that gives this ~140px
+        button visible structure would be a near-uniform push across a 1500px strip.
 
         Static seed, no <animate>: this texture is frozen by design. See FluidBar.jsx for
         why an animated seed would pop rather than flow even where motion is wanted.

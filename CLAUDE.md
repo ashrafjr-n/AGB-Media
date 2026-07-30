@@ -22,7 +22,7 @@ Single source of truth for every task in this repository. Read this before writi
 | Routing | React Router 7 (`BrowserRouter`) | one route today; see below |
 | Styling | **CSS Modules only** | tokens in `variables.css`, base in `global.css` |
 | DOM motion | **Framer Motion 12 — the only animation library** | every animation gates on `useReducedMotion()` |
-| WebGL | `ogl` 1.0 | one unused component; see §7 |
+| WebGL | `three` + `@react-three/fiber` + `@react-three/drei` + `maath` | **one component only** — `shared/FluidLens.jsx`. `ogl` is still installed and now used by nothing; §6 |
 | Icons | `react-icons` (Heroicons `hi` outline set) | never hand-build an SVG — §5 |
 | Type | Clash Display via Fontshare | sole typeface, §3 |
 | Lint | `oxlint` (`npm run lint`) | `.oxlintrc.json`: react hooks rules only |
@@ -42,9 +42,11 @@ Single source of truth for every task in this repository. Read this before writi
 | `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden for the whole hero via `data-hidden` + `inert`. See §4 "The two headers". |
 | `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`. |
 | `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
-| `components/About/About.jsx` | The "Our Story" section — gold eyebrow, `h2`, two paragraphs held in a local `paragraphs` array, `.button-reveal` CTA to `/about`, and a large logo panel. The reference implementation for `whileInView` reveals. |
-| `components/shared/Button.module.css` | **The** button definition — base + three variants. A module with no `.jsx` sibling, on purpose. |
-| `components/shared/Grainient.jsx` | OGL/WebGL animated gradient shader. **Imported by nothing** — see §7 before touching it. |
+| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. The reference implementation for `whileInView` reveals. |
+| `components/shared/Button.module.css` | **The** button definition — base + **two** glass variants. A module with no `.jsx` sibling, on purpose. |
+| `components/shared/FluidBar.jsx` | The hero ticker's water — three drifting gradient masses under an SVG turbulence displacement. **Pure markup + CSS: no canvas, no WebGL, no JS.** The only genuinely moving surface on the site. |
+| `components/shared/FluidLens.jsx` | The Story circle's glass lens — R3F `<Canvas>` with the story video as a `VideoTexture` on a frustum-filling plane and a `MeshTransmissionMaterial` lens in front of it. The video is **inside the scene** because transmission can only refract what is in the WebGL buffer. Takes a `pointer` ref (not props) so mousemove does not re-render the canvas. |
+| `hooks/useMediaQuery.js` | Subscribes to a media query from JS, for the case a CSS breakpoint cannot reach: deciding whether to **mount** at all. Exists for the lens — `display: none` would still build the WebGL context, fetch the model and decode a video texture. |
 | `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. `viewportProgress` is 0→1 over the first viewport, which is what both the header handoff and the video gate compare against. |
 | `data/navLinks.js` | The nav model, shared by both headers. `Contact` carries `featured: true`. |
 | `styles/variables.css` | Design tokens **only** — no selectors beyond `:root`. |
@@ -56,12 +58,14 @@ Single source of truth for every task in this repository. Read this before writi
 | --- | --- | --- |
 | `public/assets/images/agb-logo.png` | 360×672 **portrait** mark, 256 KB. Referenced as `/assets/images/agb-logo.png` from `Header`, `HeroHeader` and `About`. | in use |
 | `src/assets/videos/hero.mp4` | 3840×2160, 20 s, **23 MB**. Vite-imported, so it is bundled and hashed rather than served from `public/`. | in use (Hero backdrop) |
-| `src/assets/images/story.png` | 2310×1226, 3.1 MB | **unreferenced** |
-| `src/assets/images/zero.png` | 2126×1216, 4.1 MB | **unreferenced** |
+| `src/assets/videos/story.mp4` | **75 MB.** Also Vite-imported and bundled. | in use (Story circle, via `FluidLens` or the plain `<video>` fallback) |
+| `public/assets/3d/lens.glb` | The lens mesh, fetched at runtime from `public/` rather than bundled. `FluidLens` reads node `Cylinder` and **guards for its absence** — a re-export under a different node name renders no lens rather than throwing. | in use |
 
-Because the logo is portrait, **anything sizing it must drive `block-size` and leave `inline-size: auto`** — width has to derive from the capped height, not the reverse. `About`'s `.logo-panel` is a column flex container for exactly this reason. There are no 3D models and no icon sprites.
+Because the logo is portrait, **anything sizing it must drive `block-size` and leave `inline-size: auto`** — width has to derive from the capped height, not the reverse. There are no icon sprites; the one 3D model is `lens.glb`.
 
-The hero video is the site's whole weight budget: 23 MB of 4K for a 20-second loop, decoded on the first screen. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, should account for that.
+**Video is the site's entire weight budget, and it is now ~100 MB.** `hero.mp4` is 23 MB of 4K decoded on the first screen; `story.mp4` is **75 MB** on top of it, and both are Vite-imported, so both land in the bundle rather than being streamed from `public/`. A production build emits them as two hashed assets totalling ~100 MB. That is far past what a portfolio site should ship, and compressing `story.mp4` is the single highest-value optimisation available — it is a small circular window that never displays more than ~600 px of the frame. Any request that adds another video, or that removes the playback gate in `Hero.jsx`, has to account for this.
+
+The JS bundle is ~1.86 MB (540 KB gzipped), essentially all of it `three` + `@react-three/*` for the lens. `About.jsx` already gates the lens behind `useMediaQuery` so phones never mount it, but the library is still in the main chunk — a `React.lazy` split is the obvious next step if that matters.
 
 ---
 
@@ -69,13 +73,25 @@ The hero video is the site's whole weight budget: 23 MB of 4K for a 20-second lo
 
 ### Direction
 
-**Today: dark cinematic.** A flat `#010101` ground end to end, a single gold/amber accent sampled from the logo, Clash Display for everything, film grain over the whole viewport, and 4K footage carrying the first screen. Restraint is the through-line — one filled button on the site, no gradient bands at section joins, one typeface, one background colour.
+**Dark cinematic, in glass and water.** The fluid/gold direction that was "in flight" has landed; it is the current direction, not a pending one.
 
-**In flight: a shift toward a fluid / water + gold aesthetic.** The user has flagged this and **more detail is still to come.** Until that detail arrives:
+The ground is still a flat `#010101`, the accent is still the one gold sampled from the logo, Clash Display is still the only typeface, and film grain still covers the viewport. What changed is the surfaces on top of it: nothing that sits above the page is a flat fill any more. Every raised surface is **glass** — a `--color-black` alpha, a `backdrop-filter` blur, a lit rim — and the material is given structure by **SVG turbulence displacement** rather than by gradients alone.
 
-- **Do not pre-emptively rewrite the palette, the grain, or the section boundaries toward it.** The rules below describe what is on screen now and are what current work is judged against.
-- Read the "settled" language below as settled *for the dark-cinematic direction*. `--color-black` takes no further tuning **within** that direction; a deliberate move to a new one is a different decision, made with the user, and it would have to carry all six copies of the ground tone together (see the translucent-surfaces note).
-- `components/shared/Grainient.jsx` (§7) is the most likely home for a fluid/water treatment — it is an unused WebGL gradient-warp shader already in the repo, with warp, flow-speed and three colour uniforms. Look there before adding a new dependency for liquid motion.
+Four surfaces carry it, and they are meant to read as one material at different scales:
+
+| Surface | Where | Treatment |
+| --- | --- | --- |
+| Hero metadata ticker | `shared/FluidBar.jsx` | Three drifting gradient masses under a turbulence displacement. **The only thing on the site that genuinely flows.** |
+| Hero nav "Contact" | `.button-featured` | The same material held still — a *frozen* turbulence texture — plus a gold light travelling the rim. |
+| Site header pill | `Header.module.css` | Frozen turbulence again, lighter, built up from white rather than down from the ground. |
+| Story section ground | `About.module.css` | Viewport-wide frosted glass: `--section-glass-fill` over a `backdrop-filter` that blurs the hero's fixed footage through it. |
+
+Two rules hold this together, and both are load-bearing:
+
+- **Only the ticker flows.** Everything else is the same material caught still. The one deliberate exception is `.button-featured`'s travelling edge light, where the *texture* stays frozen and a light crosses it — argued at the rule itself. Do not add a third moving surface without making that call explicitly.
+- **Restraint elsewhere is what makes the glass read.** One emphatic button, one typeface, one accent, one ground colour, no gradient bands at section joins. The material does the work; nothing else competes with it.
+
+`--color-black` is settled and takes no further tuning. Moving it means carrying every copy of the ground tone together — see the translucent-surfaces note below.
 
 ### Colors
 
@@ -84,11 +100,9 @@ All colors live as CSS custom properties in `src/styles/variables.css`. **Never 
 | Token | Value | Role |
 | --- | --- | --- |
 | `--color-black` | `#010101` | Near-true-black, exactly neutral — all three channels equal, no steel, slate, or blue lean. **The one and only background colour on the site**, for every section. The lineage runs `#0C0F14` → `#1B1D20` → `#131315` → `#070708` → `#0B0B0C` → `#050505` → `#030303` → here; the early values were set while the grain overlay was still adding luminance on top of them, so the page rendered lighter than its token. The grain has blended in soft-light since `#131315`, so this value is what reaches the screen. **This is the final ground tone — the token is settled and takes no further adjustment.** |
-| `--color-raised` | `#090909` | The ground lifted just enough to separate a surface from it — an 8-point step, same neutral hue. **Retune this whenever `--color-black` moves**, so the lift stays deliberate and never drifts far enough to read as grey. Currently unreferenced — the reveal button paints its panels in `--color-black` on purpose. |
 | `--color-gold` | `#C97014` | **Signature accent**, sampled from the logo's midtone. Headings, highlights, borders, interactive states. |
 | `--color-gold-light` | `#E09A3C` | Hover / focus / raised state of the accent. |
 | `--color-gold-deep` | `#8F2804` | Rust from the logo's lower band. Gradient endpoint only. |
-| `--color-navy` | `#0A0E1A` | Very dark navy. **Unused, and out of step with the palette** — lighter than `--color-black` and distinctly bluer, where everything else has settled on neutral. Retune or delete it before using it; `--color-raised` is the neutral lift to reach for instead. |
 | `--color-text` | `#F5F5F0` | Warm off-white. Body text. |
 | `--color-text-muted` | `rgba(245,245,240,0.65)` | De-emphasized text. |
 
@@ -96,7 +110,7 @@ The gold was sampled directly from `/public/assets/images/agb-logo.png`. Do not 
 
 ### Translucent surfaces — one tone, no seams
 
-`--color-glass` (0.5), `--color-overlay` (0.72), and `--color-scrim` (0.25) are all `--color-black` at an alpha, written out as literal `rgba(1, 1, 1, …)` because CSS cannot derive an alpha from a hex token. **They must be edited by hand whenever `--color-black` changes** — all four values move together, `theme-color` in `index.html` is a fifth copy, and `--color-raised` needs retuning as a sixth.
+`--color-glass` (0.5), `--color-overlay` (0.72), `--color-scrim` (0.25), `--glass-fill` (0.55), `--glass-fill-light` (0.3) and `--section-glass-fill` (0.75) are all `--color-black` at an alpha, written out as literal `rgba(1, 1, 1, …)` because CSS cannot derive an alpha from a hex token. **They must all be edited by hand whenever `--color-black` changes**, and `theme-color` in `index.html` is a further copy. That is seven places holding one value — the cost of the glass system, and the reason `--color-black` is treated as settled.
 
 **Never darken a surface with raw black** (`#000`, `rgba(0,0,0,…)`) — reach for one of these three, or add a fourth at the alpha you need. Pure black is both deeper and less cool than the ground tone, so a raw-black tint over one section leaves a visible step where it meets the next. The site is one tone end to end.
 
@@ -104,9 +118,14 @@ Shadows are the exception: `--shadow-soft` is legitimately black-based, because 
 
 ### Section boundaries over the hero backdrop
 
-The hero's video backdrop is `position: fixed`, so every section below it scrolls *over* the footage. Sections meet that footage **directly** — flat colour against video, with no gradient band, shadow, or any other treatment easing the join. An earlier pass faded the `About` edge with a gradient band and it was removed deliberately; **do not reintroduce one.**
+The hero's video backdrop is `position: fixed`, so every section below it scrolls *over* the footage. Sections meet that footage **directly**, with no gradient band, shadow, or any other treatment easing the join. An earlier pass faded the `About` edge with a gradient band and it was removed deliberately; **do not reintroduce one.**
 
-The hero's own metadata ticker is part of that flat surface, not part of the footage: `.ticker` is painted in **fully opaque `--color-black`** and extends its fill through `.hero`'s block-end padding (`padding-block-end` plus an equal negative `margin-block-end`), so the strip runs to the section's bottom edge and meets `About` directly. **Keep those two values equal** — they cancel, which is what leaves the metadata sitting where it would without them. Never give the ticker an alpha: a translucent strip shows footage through it and puts a different tone under the metadata than under the copy below.
+What changed is what "directly" means. `About` no longer *covers* the footage — it filters it. `--section-glass-fill` (0.75) plus a viewport-wide `backdrop-filter` blur makes the section frosted glass with the hero's frozen frame visible through it. Two consequences worth knowing before touching either end:
+
+- **The opacity is still load-bearing, for a different reason.** `Hero.jsx` pauses the video at `viewportProgress >= 1` because it treats one scrolled viewport as "covered". That gate is untouched and still correct — it now stops work on something visible but frozen behind glass rather than on something hidden.
+- **The blur only reaches the video while nothing between `.about` and the document root establishes a backdrop root.** No ancestor may take `filter`, `opacity < 1`, `mask`, `contain`, or `isolation` — adding `isolation: isolate` to `<main>` would silently flatten the glass to a plain dark panel. `.backdrop` sits at `z-index: 0` and `.about` at `z-index: auto`, so tree order puts the footage underneath; giving `About` a z-index below the backdrop's would break it the same way.
+
+**There is a known seam at the hero's bottom edge.** `.ticker` is painted in **fully opaque `--color-black`** and extends its fill through `.hero`'s block-end padding (`padding-block-end` plus an equal negative `margin-block-end`) specifically so the strip met `About`'s identical opaque black invisibly. That premise is gone — an opaque strip now runs into translucent glass, leaving a step in tone. Closing it means giving the ticker the same glass treatment; it is a Hero decision and has not been made. **Keep the two padding values equal** regardless — they cancel, which is what leaves the metadata sitting where it would without them.
 
 ### Background noise
 
@@ -122,24 +141,26 @@ A call site applies the base **and exactly one variant**, plus a local class car
 
 | Classes | Look | Used by |
 | --- | --- | --- |
-| `.button .button-featured` | **Solid `--color-gold` fill**, `--radius-md` corners, near-black label; hover brightens to `--color-gold-light` | Hero header — the nav's own "Contact" entry |
-| `.button .button-quiet` | Gold hairline pill, transparent; hover warms the interior with `--color-gold-veil` and steps edge + label to `--color-gold-light` | *unused today* |
-| `.button .button-reveal` | Rectangular; sliding-panel reveal hover | About — "Discover Our Story" |
+| `.button .button-featured` | Glass over a **frozen turbulence texture**, `--radius-md` corners, `--color-text` label, faint rim; a gold light travels the inside of the rim and pauses on hover | Hero header — the nav's own "Contact" entry |
+| `.button .button-glass` | The same glass body with a **drifting two-layer gold sheen** instead of the texture, and a brighter rim; the sheen pauses on hover | About — "Discover Our Story" |
+
+There are **two** variants, and both are glass. `.button-quiet` (a gold hairline pill) and `.button-reveal` (a sliding-panel hover) were deleted once the glass pair had replaced them at both call sites — they are in git history if a non-glass surface ever needs a starting point.
 
 ```jsx
 className={`${buttonStyles.button} ${buttonStyles['button-featured']} ${styles.cta}`}
 ```
 
-**`.button-featured` is the site's one filled button** — every other button is an outline on transparent, and that contrast is the entire point of it. **Never add a second filled call to action**; a second one cancels the emphasis. Reach for `.button-quiet` or `.button-reveal` instead.
+**`.button-featured` is the site's one high-emphasis button**, and that holds only while it stays the only one — a second emphatic call to action anywhere cancels the distinction. It was a solid gold fill with a near-black label before it became glass.
 
-Its label is `--color-black` rather than white on purpose: near-black on this gold is 5.8:1 at rest and 9.3:1 on hover, both clearing WCAG AA for normal text, where white would be about 3.6:1 and fail. Its hover is a colour change only, never a lift — see the transform note below.
+**Contrast is worth stating, because the two variants diverge on it.** Both label in `--color-text` over `--glass-fill-light` (0.3 alpha). On About the backdrop is known, so the composite is fixed and the label sits near 11:1 — safely AA. Over the hero's footage there is *no* fixed ratio: a dark frame is comfortable, a bright one can fall below AA. `--glass-fill-light` is the dial for that, and raising it toward 0.55 restores a predictable floor at the cost of transparency.
 
-**The two outlined variants differ because the surfaces do.** An outline over moving footage must stay understated rather than compete with it; the flat, quiet Story section can carry the louder mechanic. A new surface means a new variant here, not a button styled in a component.
+**The two variants differ because the surfaces do.** Featured sits over moving footage, where a backdrop blur has real detail to work with and a faint rim is enough to find the edge; glass sits on About's own frosted ground, where the rim does more of the work. A new surface means a new variant here, not a button styled in a component.
 
 - **Layout is not the button's business.** Nothing in this file sets a margin — where a button sits is the calling section's decision.
-- **`.button-reveal`'s mechanic:** at rest two `--color-black` panels (`::before`, `::after`) cover the button *including its border*, so only the gold label shows. On hover the large panel slides up (`translateY(-25px)`) and collapses its height to `0`, while the thin top strip wipes out with `scaleX(0)` on a `0.15s` delay — uncovering the gold outline and leaving the interior transparent. Revealed, not filled. Because the panels are `--color-black` they merge into a flat section; over footage they would read as a dark block, which is the other half of why the hero uses `.button-quiet`.
-- **Transforms belong on the pseudo-elements, never on the button element.** Both call sites are `motion.create(Link)` and Framer writes `transform` inline on the anchor; an inline transform on the host does not reach `::before`/`::after`, which is exactly why the reveal is safe here. For the same reason `.button`'s `transition` is scoped to colour properties and must never be `transform` or `all` — that would smooth over Framer's own per-frame animation and make the entrance drag.
-- **No `overflow: hidden` on `.button-reveal`.** The panels overhang the box and slide beyond it; clipping destroys the effect. `isolation: isolate` provides the stacking context so `.button-reveal > *` (label *and* icons) rides above the panels at `z-index: 3`. It is rectangular for the same reason — a sliding rectangular panel cannot mask a rounded outline without clipping, which is why the pill radius lives on `.button-quiet` rather than the base.
+- **Everything that animates lives on a pseudo-element, never on the button.** Both call sites are `motion.create(Link)` and Framer writes `transform` inline on the anchor; an inline transform on the host does not reach `::before`/`::after`, which is what lets the entrance and the surface effects coexist. For the same reason `.button`'s `transition` is scoped to colour properties and must never be `transform` or `all` — that would smooth over Framer's own per-frame animation and make the entrance drag.
+- **`isolation: isolate` + `z-index: -1`, not a lifted label.** The sheen layers sit above the button's fill and below its label by living at `z-index: -1` inside the variant's own stacking context. Lifting the label instead is not an option: `HeroHeader` renders it as a bare text node with no element to lift.
+- **`overflow: hidden` is on the variants, not the base.** It clips the oversized sheen layers to the rounded box, and it is what forces `.button-featured`'s glow ring onto the *padding* box — overflow clips at the padding edge, so a ring pushed out to the border box loses its outer edge. The base stays unclipped so a future variant may deliberately paint outside its border box.
+- **Both variants pause their motion on hover** (`animation-play-state: paused`), freezing wherever they are rather than resetting. Keep that consistent if a third variant ever animates.
 - It is a module with no `.jsx` sibling, the one deviation from §4's file layout. Both call sites need to *be* the animated element, so a wrapper component would sit between Framer Motion and the DOM node for no gain. A `Button.jsx` rendering these classes is a few lines to add when a plain unanimated button appears.
 
 ### Spacing, radius, layout
@@ -199,19 +220,27 @@ src/
       Hero.module.css
       HeroHeader.jsx        # the hero's own in-flow header (see "The two headers")
       HeroHeader.module.css
-    shared/           # reusable primitives (Button, Section, Container…)
-  pages/              # route-level components
+    About/
+      About.jsx
+      About.module.css
+    shared/                 # reusable primitives
+      Button.module.css     # THE button definition — no .jsx sibling, on purpose
+      FluidBar.jsx          # the ticker's water: markup + CSS, no canvas
+      FluidLens.jsx         # the story circle's R3F lens — the only WebGL on the site
+  pages/                    # route-level components
   styles/
-    variables.css     # design tokens ONLY
-    global.css        # reset, base element styles, noise overlay
+    variables.css           # design tokens ONLY
+    global.css              # reset, base element styles, noise overlay
   hooks/
-  data/               # static content (copy, project lists)
-    navLinks.js       # the nav model, shared by BOTH headers
+    useMediaQuery.js        # for mount/skip decisions a CSS breakpoint cannot make
+    useScrollPosition.js
+  data/                     # static content (copy, project lists)
+    navLinks.js             # the nav model, shared by BOTH headers
   assets/
-    images/
-    videos/
+    videos/                 # hero.mp4, story.mp4 — bundled, ~100 MB together
 public/
   assets/images/agb-logo.png
+  assets/3d/lens.glb        # fetched at runtime, not bundled
 ```
 
 - **One component per file.** The file name matches the component name.
@@ -294,9 +323,13 @@ Comment the *why*, not the *what*. This project grows incrementally across many 
 
 Already installed — do not reinstall:
 
-`react` · `react-dom` · `react-router-dom` · `framer-motion` · `react-icons` · `ogl`
+`react` · `react-dom` · `react-router-dom` · `framer-motion` · `react-icons` · `three` · `@react-three/fiber` · `@react-three/drei` · `maath`
 
-`ogl` is the WebGL layer behind `components/shared/Grainient.jsx` and is used for nothing else. **Grainient is not currently rendered anywhere** — the hero's backdrop is `hero.mp4`, not a shader (see §7). Framer Motion remains the only animation library for anything in the DOM — see §4 Motion.
+**The WebGL stack is `three` + `@react-three/fiber` + `@react-three/drei` + `maath`, and it exists for exactly one component: `shared/FluidLens.jsx`.** drei supplies `MeshTransmissionMaterial`, `useGLTF` and `useVideoTexture`; `maath` supplies `easing.damp3`, which is what makes the lens follow the pointer with weight. Nothing else in the project touches three.js — the hero backdrop is a plain `<video>`, and the ticker and both frosted headers are CSS plus SVG filters with no canvas at all.
+
+**Framer Motion remains the only animation library for anything in the DOM** — see §4 Motion. R3F drives its own render loop inside the lens canvas and does not overlap with it.
+
+**`ogl` is now fully unused.** It was the WebGL layer behind `shared/Grainient.jsx`, which was deleted; R3F replaced it. The package is still in `package.json` and can be uninstalled.
 
 `tailwindcss` and `@tailwindcss/vite` remain in `package.json` but are **disconnected from the build**. They can be uninstalled by the user at any time.
 
@@ -306,24 +339,15 @@ Already installed — do not reinstall:
 
 ## 7. Unused, and stale — as of 2026-07-30
 
-Things in the tree that look load-bearing and are not. Check this list before assuming something is wired up.
+A cleanup pass on 2026-07-30 cleared this section. Everything it used to list — `Grainient.jsx` and its stylesheet, `story.png`, `zero.png`, the `.button-quiet` and `.button-reveal` variants, the `--color-raised` / `--color-navy` / `--color-surface` / `--text-5xl` / `--duration-morph` / `--shadow-gold` / `--z-modal` tokens, the vestigial `data-docked` attribute, and four stale comments — has been deleted or fixed. Lint is clean and the build passes.
 
-**`components/shared/Grainient.jsx` is imported by nothing.** It is a ~290-line vendored WebGL component: an OGL renderer over a fullscreen triangle running a gradient-warp fragment shader with 22 uniforms, RAF-driven, correctly paused by both an `IntersectionObserver` and `visibilitychange`. Three things to know before using it:
+**`--shadow-soft` was on that list and is NOT unused** — `About.module.css` applies it to the story circle, where it registers properly now that the section is glass rather than flat black. It was kept.
 
-- Its default `color1`/`color2`/`color3` are still the **vendor's purples** (`#FF9FFC`, `#5227FF`, `#B497CF`) — nothing in this palette. Pass gold/ground colours explicitly; it takes hex strings.
-- It **does not follow this project's conventions**: semicolons, an arrow-function component with props destructured in the signature, and a `WeakMap` keyed on the container element to keep the renderer alive across re-renders. That is vendored code, not the house style — do not copy its shape into new components, and do not reformat it purely for consistency either.
-- It has no `useReducedMotion()` gate. §4 requires one for Framer animations; a continuously animating shader needs the same consideration before it ships.
+Two things that look like duplication and are deliberately not:
 
-**Unreferenced assets:** `src/assets/images/story.png` (3.1 MB) and `zero.png` (4.1 MB). Neither is imported. Do not delete them without asking — they read as material staged for upcoming work.
+- **Three SVG turbulence filters** — `FluidBar.jsx`, `HeroHeader.jsx` (`#hero-cta-turbulence`) and `Header.jsx` (`#site-header-turbulence`). Structurally near-identical, every number different. `feTurbulence`'s `baseFrequency` is in **user-space units, not units of the element**, so a field tuned for one box size produces a visibly different texture on another — what reads as water across a 1500px strip is sandpaper on a 140px button. Sharing also saves nothing at render time, since a filter is evaluated per element it is applied to. Each carries a comment saying so; keep them separate.
+- **Two `@keyframes` per animated module** — `fluid-drift` / `fluid-drift-bob` in `FluidBar.module.css`, `sheen-flow` / `edge-travel` in `Button.module.css`. All four names and bodies are distinct, and CSS Modules scopes `@keyframes` per file anyway. Nothing to hoist into `global.css`.
 
-**Unreferenced tokens:** `--color-raised`, `--color-navy`, `--color-surface` (an alias of `--color-navy`, so it inherits that token's drift), `--text-5xl`, `--duration-morph`, `--shadow-soft`, `--shadow-gold`, `--z-modal`, and the `.button-quiet` variant. Each is documented where it is defined; read the note there before reaching for one.
+**Naming:** "About" and "the Story section" mean the same component throughout the codebase — the directory is `components/About/`, the `id` is `about`, and the visible title is "Our **Story**". Both names appear in comments; neither is wrong.
 
-**Vestigial:** `Header.jsx` sets `data-docked="true"` unconditionally. Its comment says the menu-open styling targets `[data-docked='true'][data-menu-open='true']`, but `Header.module.css` actually targets `[data-menu-open='true'] .bar` alone — the attribute is doing nothing. Harmless; worth knowing before trusting that comment.
-
-**Comments that have gone stale as the code moved around them:**
-
-- `About.module.css` — `.about`'s `padding-block-start` says it clears the fixed header "the same way `.hero` does". `.hero` no longer reserves `--header-height` (the site header is hidden for the hero's whole height), so only About does this now.
-- `About.jsx` — the icon import comment says the outline set matches "the hero CTA's `HiOutlineMail`". The hero CTA has no icon anymore; `HiOutlineArrowNarrowRight` in About is the only icon outside `Header`'s hamburger.
-- `Hero.module.css` — `.backdrop-overlay` refers to "the Story section", as do several notes elsewhere. The component is `About/`; its `id` is `about` and its visible title is "Our **Story**". **"About" and "the Story section" mean the same component** throughout this file and the codebase.
-
-Fix any of these in passing if you are editing the file anyway. Do not make a separate pass just to correct comments.
+Keep this section honest. If something becomes unreferenced, list it here rather than deleting it silently, and note whether it is dead by accident or held on purpose.

@@ -68,12 +68,6 @@ function Header() {
   }, [isPastHero])
 
   /*
-    The header no longer morphs with scroll — it always renders in the floating
-    pill state (previously the "docked" look). Kept as a data attribute purely
-    so the menu-open styling in Header.module.css (which targets
-    [data-docked='true'][data-menu-open='true']) still applies.
-  */
-  /*
     0.18s is --duration-fast, the timing the bar's corner radius now runs at —
     the drawer, the corners, and the hover underline are one gesture, and any
     slower here makes the drawer trail the pill it opens out of.
@@ -96,7 +90,6 @@ function Header() {
     */
     <header
       className={styles.header}
-      data-docked="true"
       data-hidden={isPastHero ? 'false' : 'true'}
       data-menu-open={isMenuOpen ? 'true' : 'false'}
       inert={!isPastHero}
@@ -109,7 +102,9 @@ function Header() {
           Its own definition rather than a shared one, for the same reason the hero's CTA
           has its own: baseFrequency is in user-space pixels, so a wide pill and a small
           button need different values, and a shared id would save nothing at render time
-          — filters are evaluated per element, not per definition.
+          — filters are evaluated per element, not per definition. This is one of exactly
+          three (the others in HeroHeader.jsx and FluidBar.jsx); they are meant to stay
+          separate, and each one's numbers are commented where they differ.
 
           Static seed, no <animate>: this texture is frozen by design.
         */}

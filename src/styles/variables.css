@@ -31,32 +31,12 @@
   --color-black: #010101;
 
   /*
-    The ground lifted just enough to separate a surface from the page — an 8-point
-    step, same neutral hue, luminance only. Retuned alongside the ground each time
-    it moves: the point is a lift that stays deliberate and never drifts far enough
-    to read as grey. For cards or controls that must sit *on* the page.
-
-    Currently unreferenced: the reveal button paints its panels in --color-black on
-    purpose, so that at rest they merge into the page (see Button.module.css).
-  */
-  --color-raised: #090909;
-
-  /*
     Signature accent, sampled from the midtone band of the logo
     (/public/assets/images/agb-logo.png) — a dark gold leaning orange.
   */
   --color-gold: #c97014;
   --color-gold-light: #e09a3c; /* hover / focus / raised state */
   --color-gold-deep: #8f2804;  /* rust from the logo's lower band; gradients only */
-
-  /*
-    Very dark navy. Secondary surfaces only — never a dominant background.
-    Nothing uses it, and it has drifted out of step with the palette: now that the
-    ground is #010101 this is clearly *lighter* than it, and distinctly bluer,
-    where the rest of the palette has settled on neutral. Retune or delete it before
-    using it for anything; --color-raised is the neutral lift to reach for instead.
-  */
-  --color-navy: #0a0e1a;
 
   /* Warm off-white so body text never reads as clinical pure white. */
   --color-text: #f5f5f0;
@@ -65,7 +45,6 @@
 
   /* --- Color: derived surfaces and lines -------------------------------- */
 
-  --color-surface: var(--color-navy);
   --color-border: rgba(201, 112, 20, 0.35);   /* gold at low opacity */
 
   /*
@@ -271,11 +250,6 @@
   --text-2xl: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
   --text-3xl: clamp(2rem, 1.5rem + 2.4vw, 3rem);
   --text-4xl: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
-  /*
-    Top of the scale, currently unused — the hero sets its brand with the logo
-    rather than a wordmark, so nothing needs type this large yet.
-  */
-  --text-5xl: clamp(3rem, 1.7rem + 6.5vw, 7rem);
 
   --leading-tight: 1.15;
   --leading-normal: 1.6;
@@ -341,18 +315,11 @@
   --radius-full: 999px;
 
   --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.55);
-  --shadow-gold: 0 0 24px rgba(201, 112, 20, 0.25);
 
   /* --- Motion ----------------------------------------------------------- */
 
   --duration-fast: 180ms;
   --duration-base: 300ms;
-  /*
-    Reserved for the header's dock morph. Currently referenced by nothing — the
-    header no longer has a second, non-docked state to transition from. Held at
-    a snappier 320ms than the original 450ms, which read sluggish.
-  */
-  --duration-morph: 320ms;
   --duration-slow: 600ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -383,7 +350,6 @@
 
   --z-base: 1;
   --z-header: 50;
-  --z-modal: 100;
   --z-noise: 9999;
 
   /* --- Texture ---------------------------------------------------------- */
