@@ -166,12 +166,28 @@
   hosts either the lens canvas or a plain <video> — both absolutely filling this box —
   and clips whichever it gets to the round shape.
 
-  Framer writes `transform` and `border-radius` here inline during the transition, so
-  the border-radius below is the resting value and the starting keyframe both.
+  Framer writes `width`, `height`, `border-radius` and a translate here during the
+  transition, and this element is the only thing that changes: the frame genuinely
+  reshapes from a circle to a screen-sized rectangle while everything inside it is left
+  alone. Nothing is scaled, which is why the footage uncrops instead of magnifying — see
+  the note on .video.
+
+  `width`/`height` rather than the logical `inline-size`/`block-size` this project
+  otherwise prefers, and deliberately: Framer writes the physical properties inline, and
+  a stylesheet declaring the logical twin of a property being set inline is a cascade
+  question nobody should have to think about at a glance. Same property in both places.
+
+  The values below are the resting state and the transition's first keyframe both — 100%
+  of the square .circle, with a 50% radius that is exactly the half-width the JS hands
+  over at progress 0. They are also what renders whole under reduced motion, and in the
+  frame before the first measurement lands.
 */
 .zoom-layer {
   position: absolute;
-  inset: 0;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 100%;
   isolation: isolate;
   overflow: hidden;
 
@@ -207,6 +223,11 @@
   Promoted only while the zoom can actually run. `will-change` on a permanently idle
   element costs a compositor layer for nothing; About sets data-zoom on the stage, so
   this is scoped to the case where a transform is genuinely coming.
+
+  Only `transform` is listed, and it is the only thing worth listing. The width and
+  height animating alongside it are layout properties: a hint cannot move them off the
+  main thread, and naming them here would promise the compositor something it cannot
+  deliver. The translate is genuinely compositable and this is what keeps it that way.
 */
 .stage[data-zoom='on'] .zoom-layer {
   will-change: transform;
@@ -243,6 +264,14 @@
   The no-lens path's video. Absolute rather than in flow so it fills the circle
   identically to the canvas that replaces it, and `object-fit: cover` so a 16:9 source
   fills a 1:1 hole instead of letterboxing inside it.
+
+  `cover` is also the entire mechanism of the zoom, so nothing here may become a fixed
+  size or a transform. As .zoom-layer reshapes from a circle to the screen, this box
+  reshapes with it and cover re-solves against each new aspect: at rest it crops the
+  source to its middle square, and by the end it is showing the frame whole. The footage
+  is never scaled by the transition — it is *uncropped* by it, which is why nothing
+  stretches. A transform: scale() anywhere on this element or .media would replace that
+  reveal with a magnification and undo the whole effect.
 */
 .video {
   position: absolute;
@@ -362,7 +391,7 @@
   /*
     52ch, down from 65. Still inside a comfortable reading measure — the low end of it
     rather than the high — and it is the cap that keeps the copy from spreading back
-    out on an ultrawide window, where the circle stops growing at 38rem and the free
+    out on an ultrawide window, where the circle stops growing at 27rem and the free
     space would otherwise all land in this column.
   */
   max-inline-size: 52ch;
@@ -436,9 +465,10 @@
     space is what separates it, instead of a rule or a container.
 
     The column now runs 4.5rem under the title and 7rem under the paragraph, against a
-    circle that is ~608px tall beside it. There is room: even with these, the copy
-    column comes to roughly 430px, so the circle still sets the section's height and the
-    100vh floor is nowhere near threatened. That headroom is what to check first if the
+    circle that is 432px tall beside it. That headroom is thinner than it was: the copy
+    column comes to roughly 430px, so the two are now near enough level and it is the
+    copy, not the circle, that is likely to set the section's height from here. The 100vh
+    floor still clears both comfortably — but this is the first thing to check if the
     copy ever grows back past one paragraph.
   */
   margin-block-start: var(--space-3xl);
@@ -495,16 +525,21 @@
       range, where the container is only ~720px wide.
     */
     /*
-      100% is the 4fr track, and on this band that is what actually decides the size —
-      it runs from ~384px at the 48rem floor to ~530px just under 64rem. The other two
-      terms are ceilings that only bite in the corners: 66vh stops the circle
-      overflowing a short landscape window, and 28rem is the absolute cap.
+      21rem is 336px, down from 28rem — the same ~25% cut the desktop cap takes, so the
+      two bands stay in proportion to each other.
 
-      No vw term any more. It was a third ceiling doing the same job as the track, only
-      lower — with the row on an fr ratio the track already scales with the viewport, so
-      a vw cap could only ever hold the circle *below* its share.
+      The balance of the three terms has changed with that cut. The 4fr track used to
+      lead across most of this band (~384px at the 48rem floor, ~530px just under 64rem)
+      and the caps only bit in the corners; now the rem cap is what holds the size from
+      roughly 800px of window up, and the track only leads at the very bottom of the
+      band. That is the point — the circle is meant to be a window in the row, not the
+      row itself.
+
+      50vh is still the short-landscape guard, and there is still no vw term: with the
+      row on an fr ratio the track already scales with the viewport, so a vw cap could
+      only ever hold the circle below its share.
     */
-    inline-size: min(100%, 66vh, 28rem);
+    inline-size: min(100%, 50vh, 21rem);
   }
 }
 
@@ -524,21 +559,28 @@
   }
 
   /*
-    38rem is 608px, and unlike the previous 40rem this one is actually reached: the 4fr
-    track is ~645px once the row hits its --container-max of 1200px, so from about a
-    1250px window up this cap is what holds the circle, not the track.
+    27rem is 432px, down from 38rem (608px) — a ~29% cut, and the circle is now a
+    deliberate window in the row rather than the thing the row is built around.
 
-    Below that the track leads — ~517px at 1024px, rising with the window — so the
-    circle grows smoothly into the cap instead of jumping to it.
+    The consequence worth knowing: this cap is no longer something the circle grows
+    *into*. The 4fr track is ~517px at 1024px and ~645px at --container-max, both well
+    past 432px, so from the moment this breakpoint is crossed the cap is what decides the
+    size and the circle is a fixed 432px across the whole desktop range. It used to track
+    the window up to ~1250px. Flat is the right trade at this size — a circle this much
+    smaller than its column reads as inconsistent if it also drifts.
 
-    78vh, up from 70, is the short-window guard and the only term that can pull the
-    circle back down: on a 1280×720 window it holds it to ~562px. The section is
-    min-block-size 100vh with ~5.75rem of block padding, so 78vh still clears the
-    padding with room over. As at 48rem, there is no vw term — the track is the
-    viewport-relative control now.
+    That does leave a step at the 64rem line, where the tablet cap's 336px becomes 432px.
+    There was one before too (448px → 517px); it is larger now because both bands are
+    cap-held rather than track-led. Closing it would mean giving up the flat desktop
+    size, which is the more valuable half.
+
+    60vh is the short-window guard and the only term that can pull the circle back below
+    the cap: on a 1280×720 window it holds it to 432px exactly, and below that it leads.
+    The section is min-block-size 100vh with ~5.75rem of block padding, so 60vh clears it
+    with room over. As at 48rem, there is no vw term.
   */
   .circle {
-    inline-size: min(100%, 78vh, 38rem);
+    inline-size: min(100%, 60vh, 27rem);
   }
 
   .title {
@@ -569,10 +611,10 @@
   stage is reached it behaves exactly as it did — sticky elements are in normal flow
   until their threshold is crossed.
 
-  data-zoom is off under prefers-reduced-motion, and About renders neither of the two
+  data-zoom is off under prefers-reduced-motion, and About renders none of the three
   spacers in that case, so the stage collapses to the section's own height and there is
   no dead scroll to fall through. It cannot be a media query: the spacers have to not
-  *exist*, not merely have no height, or the page keeps their 200vh of scroll.
+  *exist*, not merely have no height, or the page keeps their 240vh of scroll.
 */
 .stage {
   position: relative;
@@ -584,8 +626,31 @@
 }
 
 /*
+  The wait before the zoom begins, and the whole of the delay.
+
+  About tracks .runway, whose progress is 0 until its top edge reaches the bottom of the
+  viewport. This box sits between the section and that runway, so it pushes the runway
+  40vh further down the document and nothing else: the section arrives, finishes its
+  reveal, and is simply *there*, pinned and still, for 40vh of scrolling before the first
+  frame of the transition. Without it the zoom started the instant the copy settled,
+  which never let the section be a section.
+
+  Retime the wait here rather than in About.jsx — the runway is still exactly 0 → 1
+  across its own height, and keeping the delay out of the offsets is what leaves the
+  progress constants readable as fractions of the transition itself.
+*/
+.lead {
+  block-size: 40vh;
+  pointer-events: none;
+}
+
+/*
   The animated stretch. One viewport of scroll maps to the whole 0 → 1 of the
   transition; About tracks this element specifically, so its height *is* the timing.
+
+  Note the mapping through it is not linear: About squares the progress before anything
+  reads it, so this screen of scroll is front-loaded with very little visual change and
+  back-loaded with most of it. Lengthening this box stretches the slow part hardest.
 */
 .runway {
   block-size: 100vh;

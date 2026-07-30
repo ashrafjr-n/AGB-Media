@@ -51,21 +51,77 @@ const LENS_MIN_WIDTH = '(min-width: 48rem)'
   The transition runs over one viewport of scroll (.runway in About.module.css) and is
   expressed entirely as fractions of that, so retiming it means moving these and nothing
   else.
-*/
 
-/* Where the blur lands, measured on screen rather than in the layer's local space. */
-const ZOOM_BLUR_PX = 25
+  The *delay* before it starts is not a number here: .lead sits between the section and
+  the runway, so the pinned section simply holds, fully formed, for that much scroll
+  before progress leaves 0. Retiming the wait means moving .lead's height, not a
+  constant — the runway is still exactly 0 → 1 across its own height.
+
+  Every fraction below is read against the EASED progress, not raw scroll, so they all
+  land later in the scroll than their number suggests. That is deliberate: the blur, the
+  scrim, the lens fade and the video gate all have to stay on one clock, and the eased
+  value is the one the eye is actually reading.
+*/
 
 /*
-  A little past `cover`, so the square's edges are safely outside the viewport once the
-  radius has squared off and no sliver of the section shows along an edge.
+  Where the blur lands.
+
+  13px, down from 25. That is a smaller cut than it looks: the frame is no longer
+  scaled, so this is a true screen-space blur and every pixel of it is what the eye
+  gets. The old 25 was a local-space figure being divided back down by a live scale
+  factor, and it had to be that large because it was fighting a 4× magnified layer.
+  The frame is meant to soften here, not dissolve — the footage stays legible to the
+  end, which is the point of uncropping it.
 */
-const ZOOM_OVERSHOOT = 1.04
+const ZOOM_BLUR_PX = 13
+
+/*
+  The blur is the one property that does not run the full length of the transition. It
+  holds off while the frame is still recognisably a circle and is fully in by the time
+  the corners go sharp, so it reads as the frame settling rather than as a fade.
+*/
+const BLUR_START_AT = 0.2
+const BLUR_FULL_AT = 0.7
+
+/*
+  The shape, in two legs.
+
+  Leg one relaxes the circle into a rounded rectangle: the radius falls from half the
+  circle's own width to FRAME_RADIUS_PX while the box is growing, so the corners tighten
+  from both directions at once. Leg two takes that last 24px out and the frame is a plain
+  rectangle well before it reaches the edges of the screen.
+
+  Radius is carried in pixels rather than percentages throughout, because a percentage
+  radius on a box that is becoming wider than it is tall resolves to an *ellipse* — the
+  exact shape this replaced. At rest the box is square, so half its width is precisely
+  the 50% the stylesheet holds, and the two agree on the first frame.
+*/
+const FRAME_RADIUS_PX = 24
+const RADIUS_ROUNDED_AT = 0.3
+const RADIUS_SHARP_AT = 0.7
+
+/*
+  A couple of pixels past the viewport on every side, so subpixel rounding cannot leave a
+  hairline of the section down an edge — and so the frame's own 1px rim ends up just off
+  screen instead of drawing a box around the finished state.
+*/
+const FRAME_BLEED_PX = 2
+
+/*
+  Scroll → progress is raised to this power before anything reads it: slow start, fast
+  finish. At 2 the first half of the runway produces a quarter of the visual change and
+  the second half produces the other three quarters, which is what keeps the section
+  legible while it is still recognisably a section.
+*/
+const ZOOM_EASE_POWER = 2
 
 /*
   The lens fades out over the first 12% and its mesh is dropped at 15%. Early, because a
-  refracting disc makes no sense once the circle stops being a circle — and because the
-  cost it carries is the one worth shedding before the layer gets large.
+  refracting disc makes no sense once the circle starts relaxing out of round — and
+  because the cost it carries is the one worth shedding before the layer gets large.
+
+  These are eased fractions, so 0.15 is reached around a third of the way down the
+  runway — later in scroll than it was under a linear map, which suits the slower start.
 */
 const LENS_FADE_END = 0.12
 const LENS_DROP_AT = 0.15
@@ -76,10 +132,6 @@ const LENS_DROP_AT = 0.15
   resumes.
 */
 const VIDEO_PAUSE_AT = 0.85
-
-/* The circle squares off slightly before the zoom finishes, so it reaches the viewport
-   edges as a rectangle rather than squaring off after it has already covered them. */
-const RADIUS_DONE_AT = 0.8
 
 function About() {
   /*
@@ -99,8 +151,9 @@ function About() {
 
   /*
     The zoom is scroll-driven transform and blur — motion with no still equivalent — so
-    reduced motion drops it whole rather than shortening it. About then renders neither
-    spacer, the stage collapses to the section, and the page below follows immediately.
+    reduced motion drops it whole rather than shortening it. About then renders none of
+    the spacers, the stage collapses to the section, and the page below follows
+    immediately.
   */
   const zoomEnabled = !shouldReduceMotion
 
@@ -165,14 +218,17 @@ function About() {
   })
 
   /*
-    Where the circle has to travel to, in pixels, and how far it has to grow.
+    Where the frame has to travel to, and what size it has to end up — both in pixels,
+    both measured rather than guessed, because both depend on layout: the circle's size is
+    a min() of three terms and its position is wherever the grid puts it.
 
-    Measured rather than guessed because both depend on layout: the circle's size is a
-    min() of four terms, and its position is wherever the grid puts it. Recomputed on
-    resize only — while .about is pinned the numbers cannot change, and the whole
-    transition happens while it is pinned.
+    Recomputed on resize only. While .about is pinned these numbers cannot change, and the
+    whole transition happens while it is pinned.
+
+    `size` doubles as the readiness flag: it is 0 until the first measurement lands, and
+    the frame renders unstyled until then rather than starting from a zero-width box.
   */
-  const [target, setTarget] = useState({ scale: 1, x: 0, y: 0 })
+  const [target, setTarget] = useState({ size: 0, width: 0, height: 0, x: 0, y: 0 })
 
   useLayoutEffect(() => {
     if (!zoomEnabled) return undefined
@@ -188,22 +244,33 @@ function About() {
       if (!size) return
 
       /*
-        The circle's centre *as it will sit once .about is pinned at inset-block-start:
-        0*, which is not where it is right now. Taking the offset within the section and
-        dropping the section's own viewport position gives the pinned coordinates from
-        any scroll position, so this does not have to be re-measured mid-transition.
+        clientWidth rather than innerWidth: innerWidth counts a classic scrollbar, and the
+        frame's edge has to land on the visible edge of the page rather than underneath
+        the gutter. Height is innerHeight, which is the screen actually on show — on a
+        phone with the toolbars out that is less than 100vh, and it is the smaller of the
+        two the frame has to cover.
       */
-      const centreX = c.left - a.left + size / 2
-      const centreY = c.top - a.top + size / 2
-
-      const vw = window.innerWidth
+      const vw = document.documentElement.clientWidth
       const vh = window.innerHeight
 
+      /*
+        The frame does not need to be told to centre itself. It only needs to end up as a
+        box the size of the screen with its top-left corner on the screen's top-left, and
+        interpolating linearly toward that from its resting box carries its centre along a
+        straight line to the centre of the viewport for free — the algebra cancels.
+
+        Both offsets are the *pinned* position, not the current one. X is scroll-invariant
+        so the live rect is already correct; Y is not, but .about pins at
+        inset-block-start: 0, so the circle's offset within the section is exactly where
+        it will sit once pinned. That is what lets this be measured once rather than
+        re-read mid-transition.
+      */
       setTarget({
-        /* Cover, not fit: the larger viewport axis is what the square has to span. */
-        scale: (Math.max(vw, vh) / size) * ZOOM_OVERSHOOT,
-        x: vw / 2 - centreX,
-        y: vh / 2 - centreY,
+        size,
+        width: vw + FRAME_BLEED_PX * 2,
+        height: vh + FRAME_BLEED_PX * 2,
+        x: -c.left - FRAME_BLEED_PX,
+        y: -(c.top - a.top) - FRAME_BLEED_PX,
       })
     }
 
@@ -213,37 +280,81 @@ function About() {
   }, [zoomEnabled])
 
   /*
-    Translate first, then scale about the element's own centre — so the circle slides to
-    the middle of the viewport and grows from there, rather than growing from where it
-    sits on the inline end and spilling off one side.
+    The single clock everything downstream reads.
+
+    Raw scroll is linear; this is it raised to ZOOM_EASE_POWER, so the transition creeps
+    away from rest and then accelerates into the finish. It is derived once here rather
+    than eased per property, because the properties only hold together — the blur
+    arriving with the scale, the scrim arriving with both — while they share one curve.
   */
-  const zoomScale = useTransform(scrollYProgress, [0, 1], [1, target.scale])
-  const zoomX = useTransform(scrollYProgress, [0, 1], [0, target.x])
-  const zoomY = useTransform(scrollYProgress, [0, 1], [0, target.y])
-
-  const zoomRadius = useTransform(
-    scrollYProgress,
-    [0, RADIUS_DONE_AT],
-    ['50%', '0%'],
+  const easedProgress = useTransform(scrollYProgress, (progress) =>
+    Math.pow(progress, ZOOM_EASE_POWER),
   )
-
-  const scrimOpacity = useTransform(scrollYProgress, [0.1, 0.95], [0, 1])
 
   /*
-    Divided by the live scale, and that division is the whole trick.
+    The frame's *box*, not a scale on it, and that substitution is the whole point of
+    this transition.
 
-    `filter` applies in the element's local coordinate space and is then scaled with it,
-    so a flat 25px blur would arrive on screen as 25px × the scale — around 75px at the
-    end, and ramping non-linearly the whole way. Dividing it back out makes the *rendered*
-    blur exactly ZOOM_BLUR_PX × progress, which is what the eye is being promised.
+    Nothing is magnified. The element genuinely becomes wider and taller, and the video
+    inside it is left entirely alone — no transform of its own, just object-fit: cover
+    against a box that is changing shape. Cover always fills the box from the centre out,
+    so widening the box does not stretch the footage, it *uncrops* it: the circle shows
+    the middle square of a 16:9 frame, and by the end the same frame is being shown whole.
+    The reveal comes from the aperture opening rather than from anything moving.
+
+    What it costs, and it is the one real cost here: `width` and `height` are layout
+    properties, so this cannot ride the compositor the way a scale did. The layer is
+    absolutely positioned and everything under it is `inset: 0`, so no ancestor or sibling
+    reflows — but on the lens path the R3F canvas resizes with it, and R3F answers a
+    resize by reallocating its drawing buffer. That runs once a frame while the frame is
+    growing. The lens *mesh* is already dropped by 0.15, which sheds the expensive half of
+    it; if the rest ever needs shedding, capping the canvas's dpr is the dial.
+
+    The translate is still a transform, because moving the frame does not have to be a
+    layout operation and there is no reason to make it one.
   */
-  const mediaFilter = useTransform(
-    [scrollYProgress, zoomScale],
-    ([progress, scale]) =>
-      `blur(${((progress * ZOOM_BLUR_PX) / (scale || 1)).toFixed(3)}px)`,
+  const zoomWidth = useTransform(easedProgress, [0, 1], [target.size, target.width])
+  const zoomHeight = useTransform(easedProgress, [0, 1], [target.size, target.height])
+  const zoomX = useTransform(easedProgress, [0, 1], [0, target.x])
+  const zoomY = useTransform(easedProgress, [0, 1], [0, target.y])
+
+  /*
+    Circle → rounded rectangle → rectangle. Half the resting width is the same shape the
+    stylesheet's 50% draws while the box is still square, so the handover on the first
+    frame is exact; see the note on FRAME_RADIUS_PX for why this is carried in pixels.
+  */
+  const zoomRadius = useTransform(
+    easedProgress,
+    [0, RADIUS_ROUNDED_AT, RADIUS_SHARP_AT],
+    [target.size / 2, FRAME_RADIUS_PX, 0],
   )
 
-  const lensOpacity = useTransform(scrollYProgress, [0, LENS_FADE_END], [1, 0])
+  const scrimOpacity = useTransform(easedProgress, [0.1, 0.95], [0, 1])
+
+  /*
+    A plain screen-space blur now, with no correction term.
+
+    It used to be divided by the live scale, because `filter` applies in an element's
+    local coordinate space and was then magnified along with it — a flat 25px arrived on
+    screen as 25px × the scale. Nothing is scaled any more, so the number here is the
+    number that lands, and the division that used to be the whole trick is gone.
+  */
+  const mediaFilter = useTransform(
+    easedProgress,
+    [BLUR_START_AT, BLUR_FULL_AT],
+    ['blur(0px)', `blur(${ZOOM_BLUR_PX}px)`],
+  )
+
+  const lensOpacity = useTransform(easedProgress, [0, LENS_FADE_END], [1, 0])
+
+  /*
+    The frame is only driven once it has been measured. Before that every target is 0, and
+    writing them would collapse the circle to a zero-width box for as long as it took to
+    measure — so it renders on its stylesheet values instead and the transition takes over
+    on the next render. useLayoutEffect does the measuring, so that render lands before
+    the browser paints and the unmeasured state is never seen.
+  */
+  const zoomActive = zoomEnabled && target.size > 0
 
   /*
     State, not a MotionValue, because it decides whether the mesh is in the tree at all.
@@ -251,7 +362,7 @@ function About() {
   */
   const [lensMeshMounted, setLensMeshMounted] = useState(true)
 
-  useMotionValueEvent(scrollYProgress, 'change', (progress) => {
+  useMotionValueEvent(easedProgress, 'change', (progress) => {
     setLensMeshMounted(progress < LENS_DROP_AT)
 
     /*
@@ -300,9 +411,10 @@ function About() {
 
   return (
     /*
-      The stage is scroll runway, not layout: .about is pinned inside it and the two
-      spacers below it give the zoom scroll distance to consume. With the zoom off it
-      holds a single child and collapses to exactly the section's own height.
+      The stage is scroll runway, not layout: .about is pinned inside it and the three
+      spacers below it give the zoom scroll distance to consume — a lead-in that delays
+      it, the runway it plays over, and a hold at the end. With the zoom off it holds a
+      single child and collapses to exactly the section's own height.
     */
     <div className={styles.stage} data-zoom={zoomEnabled ? 'on' : 'off'}>
       <section
@@ -368,20 +480,22 @@ function About() {
           */}
           <motion.div className={styles.visual} {...revealAt(0.32)}>
             {/*
-              Untransformed on purpose, and the frame of reference for two things: the
+              Left alone on purpose, and the frame of reference for two things: the
               section's pointer coordinates, and the zoom's measurement of where the circle
-              sits and how large it is. getBoundingClientRect() on the transformed layer
-              inside it would report the zoomed box instead of the resting one.
+              sits and how large it is. The layer inside it is both resized and translated
+              during the transition, so getBoundingClientRect() on that would report a box
+              on its way to filling the screen rather than the resting one.
             */}
             <div className={styles.circle} ref={circleRef}>
               <motion.div
                 className={styles['zoom-layer']}
                 style={
-                  zoomEnabled
+                  zoomActive
                     ? {
                         x: zoomX,
                         y: zoomY,
-                        scale: zoomScale,
+                        width: zoomWidth,
+                        height: zoomHeight,
                         borderRadius: zoomRadius,
                       }
                     : undefined
@@ -406,9 +520,14 @@ function About() {
                       the single decode of story.webm partway through the scroll and force a
                       swap to a second <video> at the moment the frame is most visible;
                       the expensive part is the transmission material, and dropping the
-                      mesh sheds all of it. Scaling a canvas with CSS costs nothing extra
-                      either — the backing store stays the circle's size, and the
-                      upsampling that causes is hidden under the blur.
+                      mesh sheds all of it.
+
+                      This canvas now *resizes* with the frame rather than being scaled by
+                      it, which is what lets the WebGL path uncrop exactly like the DOM
+                      one: VideoPlane recomputes its cover scale from the R3F viewport, so
+                      a wider canvas shows more of the footage instead of magnifying it.
+                      It is also the reason the resize is not free — see the note on the
+                      width and height transforms above.
                     */
                     <FluidLens
                       videoSrc={storyVideo}
@@ -464,11 +583,18 @@ function About() {
 
       {/*
         Rendered only when the zoom is on. Under reduced motion they must not exist at
-        all rather than merely be zero-height, or the page keeps 200vh of scroll leading
+        all rather than merely be zero-height, or the page keeps 240vh of scroll leading
         nowhere.
       */}
       {zoomEnabled && (
         <>
+          {/*
+            The wait. It carries no animation at all — it exists so that the section is
+            pinned and complete for a beat before the runway below it starts feeding
+            progress, and it delays the whole transition purely by pushing the runway
+            further down the document.
+          */}
+          <div className={styles.lead} aria-hidden="true" />
           <div className={styles.runway} ref={runwayRef} aria-hidden="true" />
           {/* Where the Founder section's content will go, over the frozen frame. */}
           <div className={styles.hold} aria-hidden="true" />
