@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { HiOutlineArrowNarrowRight } from 'react-icons/hi'
@@ -13,16 +13,19 @@ import styles from './About.module.css'
 const MotionLink = motion.create(Link)
 
 /*
-  The short home-page blurb. The long-form version lives on /about — keep this
-  to two paragraphs so the section holds its single-screen height.
+  The short home-page blurb — one paragraph, where it was two. The long-form version
+  lives on /about; keep this to a single paragraph so the section holds its
+  single-screen height beside a circle that is now most of the row.
+
+  A bare string rather than the array it used to be: with one entry, mapping was
+  ceremony around a single <p>. Restoring the array is the move if a second paragraph
+  ever comes back.
 
   Copy lives here as data so it can move to /src/data or a CMS later without
   touching the layout.
 */
-const paragraphs = [
-  'AGB Media is a Doha-based arts and media production house specialising in theatre, television, film, and visual content. Built on decades of creative experience, we bring together carefully selected teams to transform ideas into high-quality productions from concept to final delivery.',
-  'Led by veteran Qatari artist Abdullah Ghayfan and writer-director Nael Al-Jarabah, AGB Media combines artistic leadership with a strong regional network to deliver productions that meet international standards while staying true to Gulf culture.',
-]
+const storyParagraph =
+  'AGB Media is a Doha-based production house crafting stories across theatre, film, television, and digital media. Combining artistic leadership with modern production, we deliver work that reflects the culture of Qatar and the Gulf with international quality.'
 
 /*
   The width at which the lens is allowed to mount, matching the breakpoint where this
@@ -118,9 +121,9 @@ function About() {
       <div className={styles.inner}>
         <div className={styles.copy}>
           {/*
-            Two-part opening: a tracked label, then the section title. Both are plain
-            --color-text now — the gold that used to carry this column moved into the
-            glass button's sheen and the two hairlines, so the type itself is white.
+            Two-part opening: a tiny tracked label, then the section title at the top of
+            the type scale. Neither carries the accent — the only gold on this side is
+            the dot before the label and the hairline down the paragraph.
           */}
           <motion.p className={styles.eyebrow} {...reveal}>
             Who We Are
@@ -137,21 +140,12 @@ function About() {
           </motion.h2>
 
           {/*
-            The mark sits *between* the paragraphs rather than after them, so it is
-            rendered from inside the map on the second pass rather than as a sibling
-            after it — which keeps the copy driven by the `paragraphs` array instead of
-            being unrolled into two hardcoded blocks around it.
-
-            "2025" is the founding year the hero's ticker already states; it is repeated
-            here, not introduced. Keep the two in step.
+            Still a wrapper around a single <p> rather than a styled paragraph: .body
+            owns the measure, the inline-start inset and the gold hairline that runs
+            down it, and it is also the reveal step in the stagger ladder.
           */}
           <motion.div className={styles.body} {...revealAt(0.16)}>
-            {paragraphs.map((text, index) => (
-              <Fragment key={text.slice(0, 32)}>
-                {index === 1 && <span className={styles.marker}>Est. 2025</span>}
-                <p>{text}</p>
-              </Fragment>
-            ))}
+            <p>{storyParagraph}</p>
           </motion.div>
 
           {/*

@@ -12,10 +12,18 @@
   "fully covered". Any transparency here — a gradient that fades out, an rgba()
   alpha — would leave the footage showing through a paused frame. Do not soften it.
 
-  The boundary with the hero is deliberately untreated: this section's top edge
-  meets the footage directly, flat colour against video, with no gradient band or
-  shadow easing the join. A previous pass faded it and it was removed on purpose —
-  do not reintroduce one.
+  This section was briefly tried on an off-white ground and is back on --color-black.
+  What settled it was the top edge: the boundary with the hero is deliberately
+  untreated — flat colour meeting video with no gradient band or shadow easing the join
+  — and against dark footage an off-white section put a hard bright line across the
+  viewport, where the ground tone is nearly seamless. An earlier pass faded that edge
+  with a gradient and it was removed on purpose; do not reintroduce one, and note that
+  the fade is not what would have rescued the light surface either.
+
+  Nothing of the test is left in the tree: the --light-* tokens are out of
+  variables.css, .button-glass-light is out of Button.module.css, and the colours below
+  reference the shared tokens directly again rather than going through a local
+  indirection layer that existed only to make the swap reversible.
 
   It paints over the backdrop without needing a z-index: `.backdrop` sits at
   z-index 0 in the root stacking context, this section is positioned with
@@ -133,7 +141,8 @@
   /*
     Painted, and not only for depth: this is what the lens canvas composites its
     antialiased edge against, and it is what fills the circle for the moment before the
-    model and the first video frame arrive.
+    model and the first video frame arrive. The footage is dark, so a dark disc is also
+    the honest placeholder.
   */
   background-color: var(--color-black);
 
@@ -169,8 +178,8 @@
 
   0.65rem sits below --text-xs (0.75rem), which is the floor of the shared scale. It is
   written literally rather than added to the scale because it is a label at a size no
-  running text should ever take — the same reasoning applies to .marker below, and
-  those two are the only places on the site that go under the scale.
+  running text should ever take, and it is the only place on the site that goes under
+  the scale.
 
   0.28em of tracking, well past --tracking-widest (0.16em). At this size the letters
   need the extra air or the word closes up into a smudge; the tracking is what makes it
@@ -187,11 +196,9 @@
   margin-block-end: var(--space-2xs);
 
   /*
-    --color-text-subtle is the scale's dimmest text token (0.4). The brief asked for
-    0.5; this is the existing rung nearest it and keeps the column on a three-step
-    ladder — subtle label, muted body, full-strength title — rather than introducing a
-    fourth near-identical alpha. It is also the warm off-white the whole site uses
-    rather than pure white, which would read cool against the gold.
+    The dimmest of the three type steps in this column — subtle label, muted body,
+    full-strength title. --color-text-subtle is the warm off-white at 0.4, so the label
+    recedes without going a different colour from everything around it.
   */
   color: var(--color-text-subtle);
   font-size: 0.65rem;
@@ -241,10 +248,13 @@
 */
 .title {
   /*
-    Tight under the eyebrow — label and title are one unit, and the air belongs below
-    this pair rather than inside it.
+    --space-2xl, up from --space-lg — 4.5rem where it was 2rem.
+
+    The eyebrow's own --space-2xs above the title is untouched, and the contrast between
+    the two is the point: label and title are one unit held tight, and all the air in
+    the column sits *below* that pair rather than anywhere inside it.
   */
-  margin-block-end: var(--space-lg);
+  margin-block-end: var(--space-2xl);
 
   font-size: var(--text-4xl);
   /* Under 1 so a two-line wrap on a narrow column stays a block, not a ladder. */
@@ -284,16 +294,14 @@
   border-color. This is the standard substitute — a 1px absolutely positioned strip
   painted with a linear-gradient.
 
-  `inset-block: 0` spans the full paragraph block including the marker between the two
-  paragraphs, which is the point: the line is what groups them into one body, and a
-  gradient that runs the whole height reads as the column's spine rather than as a
-  rule beside the first paragraph.
+  `inset-block: 0` spans the full block, so the line is the copy's spine rather than a
+  rule beside part of it.
 
   Full --color-gold at the top rather than the --color-border (gold at 0.35) the flat
-  border used. It is brighter where it starts and gone by the bottom, so the average
-  weight is close to what it replaced while the top end gains an anchor point that
-  lines up with the eyebrow's dot. The stop at 85% rather than 100% keeps the last
-  stretch genuinely invisible instead of ending on a faint smudge.
+  border used, fading out by 85% — stopping short of 100% keeps the last stretch
+  genuinely invisible instead of ending on a faint smudge. It is brighter where it
+  starts and gone by the bottom, so the average weight is close to what it replaced
+  while the top end gains an anchor point that lines up with the eyebrow's dot.
 */
 .body::before {
   content: '';
@@ -310,9 +318,15 @@
 }
 
 /*
-  Quiet body text. Both paragraphs now sit at --color-text-muted rather than full
-  --color-text — with the title this large, the contrast between them is the hierarchy,
-  and body copy at full strength was competing with it.
+  Quiet body text — a step down from the title rather than a match for it, which with a
+  --text-4xl heading above is where the hierarchy actually comes from.
+
+  Back to --font-weight-light (300), which is where it sat before the light-surface
+  test moved it to 400. Pale 300 on a dark ground blooms slightly and reads fine; it
+  was only in dark ink on off-white that it rendered thin enough to look faint.
+
+  There is one paragraph now, so the :first-child rule that used to give the opener a
+  little more weight is gone: it had nothing to distinguish it from.
 
   --leading-relaxed is 1.85, already inside the range the brief asked for.
 */
@@ -323,40 +337,6 @@
   color: var(--color-text-muted);
 }
 
-/*
-  The opening paragraph keeps a whisper of precedence — weight only. It used to also
-  step up to --text-lg; that size jump was carrying hierarchy the title now carries by
-  itself, and two different body sizes inside one 52ch measure read as a mistake once
-  the surrounding type got quieter.
-*/
-.body p:first-child {
-  font-weight: var(--font-weight-regular);
-}
-
-/*
-  The "Est. 2025" mark between the paragraphs — a beat in the middle of the body, not a
-  heading of any kind. The year is the one the hero's metadata ticker already states
-  ("Founded — 2025"); it is not new information and the two must not drift apart.
-
-  Same sub-scale treatment as .eyebrow, one step smaller and gold rather than dimmed,
-  so the pair bracket the body: a dim label above it, a warm one inside it.
-
-  `align-self: center` centres it in the column while leaving the paragraphs full
-  width — the flex container stretches its items by default, so without this the span
-  would fill the measure and the centring would be invisible.
-*/
-.marker {
-  align-self: center;
-
-  /* Cancels the trailing space that letter-spacing adds after the final character. */
-  padding-inline-start: 0.5em;
-
-  color: var(--color-gold);
-  font-size: 0.6rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-}
 
 /* --- CTA ----------------------------------------------------------------- */
 
@@ -368,11 +348,17 @@
 */
 .cta {
   /*
-    Back up to --space-xl, and deliberately the largest gap in the column now. The
-    button is the one thing here that is not type, and the space above it is what
-    separates it from the body instead of a rule or a container.
+    --space-3xl, up from --space-xl — 7rem where it was 3rem, and the largest gap in the
+    column by some way. The button is the one thing here that is not type, and this
+    space is what separates it, instead of a rule or a container.
+
+    The column now runs 4.5rem under the title and 7rem under the paragraph, against a
+    circle that is ~608px tall beside it. There is room: even with these, the copy
+    column comes to roughly 430px, so the circle still sets the section's height and the
+    100vh floor is nowhere near threatened. That headroom is what to check first if the
+    copy ever grows back past one paragraph.
   */
-  margin-block-start: var(--space-xl);
+  margin-block-start: var(--space-3xl);
   /* Matches .body's hairline indent so the button lines up under the copy. */
   margin-inline-start: var(--space-md);
 }

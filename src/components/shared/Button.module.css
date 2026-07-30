@@ -3,7 +3,8 @@
   restyled inside a section module. There is one shared base plus four variants, and
   a call site always applies the base *and* exactly one variant:
 
-    .button .button-featured  glass, frozen fluid texture          (hero nav "Contact")
+    .button .button-featured  glass, frozen texture, travelling edge light
+                                                                   (hero nav "Contact")
     .button .button-glass     glass, drifting gold sheen           (About)
     .button .button-quiet     gold hairline pill, quiet hover      (unused today)
     .button .button-reveal    sliding-panel reveal hover           (unused today)
@@ -16,9 +17,12 @@
 
   .button-glass shares the glass body but not what happens inside it. Both take the same
   fill, blur and label from the rule below; featured carries a frozen turbulence texture
-  and glass carries the drifting gold sheen, and the site's whole motion budget for
-  frozen-versus-moving is settled that way — the hero ticker is the only thing that
-  actually flows, and everything else is the same material held still.
+  plus a gold light travelling its rim, and glass carries the drifting gold sheen.
+
+  Note what that does to the "only the hero ticker moves" rule the rest of the site holds
+  to: featured's *texture* is still frozen, and what animates is a light crossing it. The
+  distinction is deliberate and is argued where the ring is defined, but it does mean this
+  file now has two variants with motion in them rather than one.
 
   Their rims also differ, and for a reason the surfaces force: featured sits over the
   hero's footage, where a backdrop blur has detail to work with and a faint rim is enough
@@ -178,11 +182,21 @@
 */
 .button-featured {
   border-color: var(--glass-border-bright);
+
+  /*
+    Declared as an ordinary custom property as well as registered via @property below,
+    and that redundancy is the fallback. Where @property is unsupported the registration
+    is dropped, and without this line `var(--edge-angle)` would resolve to nothing —
+    invalidating the whole conic-gradient at computed-value time and leaving no ring at
+    all. With it, the arc simply renders parked at 0deg.
+  */
+  --edge-angle: 0deg;
 }
 
 .button-glass {
   border-color: var(--glass-border-white);
 }
+
 
 /*
   Neither has a hover state, deliberately — but a gap rather than a finished decision.
@@ -255,8 +269,135 @@
 
   filter: url(#hero-cta-turbulence);
 
-  /* No animation, and no will-change: nothing here ever moves. */
+  /* No animation, and no will-change: the texture itself never moves. */
   pointer-events: none;
+}
+
+/* --- The featured button's travelling edge light -------------------------- */
+
+/*
+  A soft gold light that circles the button's rim.
+
+  Worth being explicit that this is a deliberate exception to the rule stated at the top
+  of this file and in CLAUDE.md — that the hero ticker is the only thing on the site that
+  moves and every other surface is the same material held still. The button's *texture*
+  is still frozen (::before above); what moves is a light travelling over it, which is a
+  different claim about the surface than making the surface itself flow. If the frozen
+  rule is ever restated as absolute, this is the rule that goes.
+
+  Registered rather than a plain custom property: an unregistered --edge-angle has no
+  type, so `animation` cannot interpolate it and the gradient would jump 0deg → 360deg in
+  one discrete step. @property gives it <angle> so the browser tweens it smoothly.
+
+  Degrades cleanly where @property is unsupported: the declaration on .button-featured
+  below still substitutes into the gradient, so the arc renders parked at 0deg — a static
+  warm spot on the rim rather than a broken background or a missing button.
+*/
+@property --edge-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/*
+  The ring itself.
+
+  Painted with the standard two-mask ring trick, because there is no way to put a
+  gradient on a `border`: the element is filled edge to edge with the conic gradient,
+  then masked by two copies of itself — one clipped to the content box, one to the whole
+  border box — composited so only the difference survives. `padding` is what sets the gap
+  between those two boxes, and therefore the ring's thickness.
+
+  z-index -1 puts it exactly where ::before already sits: above the button's own
+  background and border, below the label. That matters — the label in HeroHeader is a
+  bare text node with no element to lift above a positive-z-index sibling, which is the
+  same constraint that made the grouped rule reach for `isolation: isolate`. Because it
+  paints over the button's 1px --glass-border-bright rim, the light reads as the existing
+  edge catching light rather than as a second outline outside it.
+
+  `inset: 0` rather than the negative inset an overhanging ring would want, and this is
+  forced rather than chosen. .button-featured is `overflow: hidden` for ::before's sake,
+  and overflow clips descendants at the *padding* box — so a ring pushed out onto the
+  border box would have its outer edge trimmed away and leave a fraction of a pixel
+  behind. At `inset: 0` the pseudo-element exactly fills the clip region, nothing is
+  lost, and the light rides immediately inside the button's own rim, which is the
+  intended read anyway: the edge catching light rather than a second outline around it.
+
+  The radius therefore has to be the button's less its border width, not `inherit` —
+  this box is the padding box, one border inside --radius-md, and inheriting the outer
+  radius would leave the ring cutting the corners slightly wide.
+*/
+.button-featured::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+
+  inset: 0;
+  border-radius: calc(var(--radius-md) - var(--btn-border));
+
+  /* The ring's thickness — the gap between the two mask boxes, nothing else. */
+  padding: 1.5px;
+
+  /*
+    An 80° arc out of 360, ramping up through --color-gold-veil and back down, so the
+    light arrives and leaves rather than switching on. --color-gold-light only at the
+    very peak: on a 1.5px ring an opaque stop reads as a soft point of light, where the
+    same value across a wider band would read as neon.
+  */
+  background-image: conic-gradient(
+    from var(--edge-angle),
+    transparent 0deg,
+    var(--color-gold-veil) 20deg,
+    var(--color-gold-light) 42deg,
+    var(--color-gold-veil) 64deg,
+    transparent 80deg,
+    transparent 360deg
+  );
+
+  -webkit-mask: linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  /* xor is the Safari spelling of the same operation; both are needed. */
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  /*
+    Linear, so the light travels at a constant rate — any easing would make it hesitate
+    at the same corner every lap, which reads as a stutter rather than as a cycle.
+
+    No will-change: this animates a registered custom property feeding a gradient, so
+    every frame is a repaint of the ring and there is no transform for the compositor to
+    hoist. On a box this size that is cheap; it would not be on a large surface.
+  */
+  animation: edge-travel 4.5s linear infinite;
+
+  pointer-events: none;
+}
+
+/*
+  Frozen under the cursor. The light stops wherever it happens to be rather than
+  resetting, which is the whole point of pausing rather than cancelling — it makes the
+  hover feel like catching something in motion.
+
+  On the pseudo-element, not the button: `animation` on the host would be a third thing
+  writing to a Framer Motion element (see the transition note on .button). Nothing here
+  touches transform either way, but keeping every animation in this variant on its
+  pseudo-elements is what makes that safe to reason about.
+*/
+.button-featured:hover::after {
+  animation-play-state: paused;
+}
+
+/*
+  prefers-reduced-motion is already handled: the block in global.css governs CSS
+  animations site-wide, and this is a CSS animation rather than one Framer Motion drives
+  inline — so unlike every motion.* element in the project, it needs no JS gate. Reduced,
+  the ring renders parked at its initial angle, which is a static warm spot on the rim.
+*/
+@keyframes edge-travel {
+  to {
+    --edge-angle: 360deg;
+  }
 }
 
 /* --- The glass button's sheen --------------------------------------------- */
