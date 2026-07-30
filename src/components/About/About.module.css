@@ -79,9 +79,10 @@
 */
 .copy {
   /*
-    `minmax(0, …)` behaviour for a grid item: without it a grid child's minimum size
-    is its content, and the body copy's 65ch measure could push the track wider than
-    its share and squeeze the logo.
+    A grid child's automatic minimum size is its content, so without this the copy's
+    own measure would push its track past the 3fr share and take width off the circle.
+    The track's `minmax(0, …)` says the same thing from the grid's side; both are kept
+    because this also holds for the single-column layout below 48rem.
   */
   min-inline-size: 0;
 }
@@ -269,20 +270,26 @@
 @media (min-width: 48rem) {
   /*
     Two columns from here up, which is also where About.jsx starts mounting the lens.
-    Copy takes the free space; the circle's track sizes to the circle itself, so the
-    ratio is never stretched or starved.
+    The circle takes the larger share — 4/7 of the row against the copy's 3/7 — because
+    it is the subject of this section and the copy is a caption to it.
 
-    Deliberately not an fr ratio like `5fr 4fr`. An fr track would make the circle a
-    fixed fraction of the container and cap it there — 4fr of a 1200px container is
-    484px, which is *smaller* than it is today, so stating the split that way would
-    fight the size the circle is asked to be. Keeping the circle's track `auto` lets
-    its own `min()` cap decide how much it takes and hands the copy the remainder,
-    which is the same split expressed from the other end. Widen the circle to narrow
-    the text.
+    An earlier pass sized the circle's track `auto` and gave the copy `1fr`, which is
+    the same statement inverted: the circle claimed its cap and the copy absorbed every
+    pixel left over. That is why the circle never looked dominant however high its cap
+    went — on a wide window the leftover all landed in the text. An explicit ratio holds
+    the split instead of leaking it, and it is now the *primary* control on how big the
+    circle is. The min() caps on .circle are ceilings, not the size.
+
+    Both tracks take minmax(0, …) so neither can be forced past its share by its own
+    content — the copy's min-content width would otherwise push back against the ratio.
+
+    The gap is deliberately tighter here than the --space-2xl the stacked layout uses:
+    every pixel in it comes out of the two tracks, and 3rem is enough to separate a
+    column of text from a circle.
   */
   .inner {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-2xl);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr);
+    gap: var(--space-xl);
   }
 
   /*
@@ -306,31 +313,51 @@
       tied to the window the circle would starve the text at the narrow end of this
       range, where the container is only ~720px wide.
     */
-    inline-size: min(100%, 56vh, 40vw, 28rem);
+    /*
+      100% is the 4fr track, and on this band that is what actually decides the size —
+      it runs from ~384px at the 48rem floor to ~530px just under 64rem. The other two
+      terms are ceilings that only bite in the corners: 66vh stops the circle
+      overflowing a short landscape window, and 28rem is the absolute cap.
+
+      No vw term any more. It was a third ceiling doing the same job as the track, only
+      lower — with the row on an fr ratio the track already scales with the viewport, so
+      a vw cap could only ever hold the circle *below* its share.
+    */
+    inline-size: min(100%, 66vh, 28rem);
   }
 }
 
 @media (min-width: 64rem) {
+  /*
+    The 3fr/4fr ratio carries up from 48rem unchanged — only the gap opens out.
+
+    --space-2xl rather than the --space-3xl this used to be. 7rem between the columns
+    came straight out of both tracks, and on the 1200px row that was 112px of nothing
+    spent where the circle wanted it. It is also what keeps the circle from *shrinking*
+    as the window crosses 64rem: at 1024px the tablet rules give it ~530px, and a jump
+    to a 7rem gap here would hand back ~494px. At 4.5rem it holds ~517px, which is
+    within a few pixels rather than a visible step backwards.
+  */
   .inner {
-    gap: var(--space-3xl);
+    gap: var(--space-2xl);
   }
 
   /*
-    The circle is now the larger of the two columns, not the smaller. 40rem is 640px —
-    the size it reaches once the window is wide enough for the 44vw term to clear it
-    (~1455px). Below that the vw and vh caps take over, so it grows with the window
-    rather than jumping to a fixed 640 and starving the copy on a 1024px laptop.
+    38rem is 608px, and unlike the previous 40rem this one is actually reached: the 4fr
+    track is ~645px once the row hits its --container-max of 1200px, so from about a
+    1250px window up this cap is what holds the circle, not the track.
 
-    This track is `auto` (see .inner), so this cap is also what decides the split
-    between the two columns: whatever the circle takes, the copy gets the rest. Raising
-    these numbers is how the circle gains ground on the text, and it is why the grid
-    is not written as an fr ratio — see the note on .inner.
+    Below that the track leads — ~517px at 1024px, rising with the window — so the
+    circle grows smoothly into the cap instead of jumping to it.
 
-    70vh, up from 58: the section is min-block-size 100vh and its block padding is now
-    ~5.75rem, so a 70vh circle still clears the padding on a short laptop window.
+    78vh, up from 70, is the short-window guard and the only term that can pull the
+    circle back down: on a 1280×720 window it holds it to ~562px. The section is
+    min-block-size 100vh with ~5.75rem of block padding, so 78vh still clears the
+    padding with room over. As at 48rem, there is no vw term — the track is the
+    viewport-relative control now.
   */
   .circle {
-    inline-size: min(100%, 70vh, 44vw, 40rem);
+    inline-size: min(100%, 78vh, 38rem);
   }
 
   .title {
