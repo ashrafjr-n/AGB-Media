@@ -1,0 +1,182 @@
+/*
+  The Story circle's contents: the looping video, and the glass disc that follows the
+  pointer over it. See CssLens.jsx for what this effect is and — more usefully — what it
+  deliberately is not.
+
+  Everything here is a colour token. The disc's values were specified as literal rgba()s
+  and are in variables.css instead, per CLAUDE.md §2: this is a surface in the site's
+  glass system, not a one-off, and the next person tuning the glass should find it where
+  the rest of it lives.
+*/
+
+/*
+  The frame of reference for the disc's travel, and the box the ResizeObserver in
+  CssLens.jsx watches. It fills .media, which at rest is exactly the circle.
+*/
+.area {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+  The footage. Moved here from About.module.css when the video stopped being a fallback
+  for a WebGL path and became the only way this circle is ever drawn.
+
+  Absolute rather than in flow so it fills the circle exactly, and `object-fit: cover` so
+  a 16:9 source fills a 1:1 hole instead of letterboxing inside it.
+
+  COVER IS ALSO THE ENTIRE MECHANISM OF THE ZOOM, so nothing here may become a fixed size
+  or a transform. As .zoom-layer reshapes from a circle to the screen, this box reshapes
+  with it and cover re-solves against each new aspect: at rest it crops the source to its
+  middle square, and by the end it is showing the frame whole. The footage is never scaled
+  by the transition — it is *uncropped* by it, which is why nothing stretches. A
+  transform: scale() anywhere on this element or on .media would replace that reveal with
+  a magnification and undo the whole effect.
+*/
+.video {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+  The filter definition's host. Zero-sized and out of flow so it can sit inside the circle
+  without taking part in its layout — the <svg> exists only so the filter has somewhere to
+  live in the document. Same arrangement as FluidBar.module.css's .defs.
+*/
+.defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
+
+/*
+  Undoes the scroll-zoom's magnification for the disc alone, so the glass stays the size
+  it is at rest while the frame behind it grows. See the note at its call site in
+  CssLens.jsx for why this has to wrap the follow rather than sit inside it.
+
+  It fills .area so that .follow's 50%/50% anchor still resolves to the circle's centre,
+  and it scales about that same centre — so countering the parent leaves the disc exactly
+  where it was, at the size it was.
+
+  Inert when About passes no counter (reduced motion, where there is no zoom at all): the
+  element is then a plain untransformed box and costs nothing.
+*/
+.lens-counter {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+  The disc's position, and nothing else.
+
+  Anchored at the circle's centre and moved from there by a translate the loop in
+  CssLens.jsx writes each frame — so the offsets it computes are measured from the middle
+  of the circle, which is what makes the clamp arithmetic there read as "distance from the
+  centre" rather than as a corner offset.
+
+  --lens-size is set inline from the JS constant, because the travel bound has to subtract
+  the disc's own radius and the two must agree.
+
+  `will-change: transform` is honest here in a way CLAUDE.md §7's audit would otherwise
+  object to: this is a 140px box that moves under the cursor on demand, which is exactly
+  what the hint is for, and the layer it costs is trivial next to the WebGL context this
+  replaced.
+*/
+.follow {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+
+  inline-size: var(--lens-size);
+  block-size: var(--lens-size);
+  margin-block-start: calc(var(--lens-size) / -2);
+  margin-inline-start: calc(var(--lens-size) / -2);
+
+  /* Never intercepts the pointer — the section-wide listener has to keep seeing it. */
+  pointer-events: none;
+  will-change: transform;
+}
+
+/*
+  The glass itself.
+
+  Four things stacked, and each is doing a distinct job:
+
+  - `backdrop-filter: blur()` is the only part of this that touches the footage. It is
+    deliberately tiny — --lens-blur is 1px — because the disc is meant to read as a clean
+    pane over the picture rather than as a smudge on it. This is also the whole per-frame
+    cost of the effect: one small blurred region, against the full-scene offscreen render
+    pass MeshTransmissionMaterial ran for the same circle.
+  - the radial highlight is the light sitting *on* the glass, brightest at the centre and
+    gone by 70% so the disc has no hard edge of its own.
+  - the SVG displacement warps all of that into something irregular. The gradient is a
+    perfect radial and the rim is a perfect circle; pushed through two octaves of
+    turbulence they stop being, which is most of what makes this read as a material rather
+    than as a drawn circle.
+  - the outer glow and inner shadow give it depth — the outer one lifts it off the
+    footage, the inset one suggests thickness at the rim.
+
+  Note the filter applies to this element's own painting, not to what is behind it. That
+  is a property of CSS `filter` and it is why the video does not warp; the argument is at
+  the top of CssLens.jsx and it is the one real difference from the WebGL lens.
+*/
+.lens {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+
+  border: 1px solid var(--glass-border);
+
+  background-image: radial-gradient(
+    circle,
+    var(--lens-highlight) 0%,
+    var(--lens-highlight-soft) 50%,
+    transparent 70%
+  );
+
+  -webkit-backdrop-filter: blur(var(--lens-blur));
+  backdrop-filter: blur(var(--lens-blur));
+
+  filter: url(#css-lens-distortion);
+
+  box-shadow: 0 0 20px var(--lens-glow), inset 0 0 10px var(--lens-glow);
+}
+
+/*
+  The colour fringing, standing in for the per-channel dispersion the transmission
+  material did for free.
+
+  Two copies of the disc offset a pixel and a half in opposite directions, one warm and
+  one cool, so the rim splits into a faint red edge on one side and a faint cyan one on
+  the other. At these alphas neither is visible as a colour — what registers is that the
+  edge is not a single clean line, which is what the eye reads as glass.
+
+  NO backdrop-filter of their own, and that is a correction to the obvious reading rather
+  than a saving: these are children of .lens, so their backdrop is .lens's own composited
+  output, not the video. A blur here would soften the highlight above them and never touch
+  the footage, while charging for a third backdrop-filter pass over the same 140px.
+
+  They inherit .lens's `filter` along with everything else in it, so the fringe is warped
+  by the same turbulence field and stays registered with the rim it belongs to.
+*/
+.lens::before,
+.lens::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.lens::before {
+  transform: translate(-1.5px, -1.5px);
+  background-color: var(--lens-fringe-warm);
+}
+
+.lens::after {
+  transform: translate(1.5px, 1.5px);
+  background-color: var(--lens-fringe-cool);
+}

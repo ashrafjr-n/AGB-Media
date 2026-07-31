@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react'
 import useScrollPosition, {
   isPastFirstViewport,
 } from '../../hooks/useScrollPosition'
-import heroVideo from '../../assets/videos/hero.webm'
 import FluidBar from '../shared/FluidBar'
 import HeroHeader from './HeroHeader'
 import styles from './Hero.module.css'
@@ -13,6 +12,24 @@ import styles from './Hero.module.css'
   Separators are drawn in CSS (a gold dot before every item but the first), so
   this array stays pure data — add or reorder entries freely.
 */
+/*
+  A literal path into public/, not a Vite import, and it is deliberately the only asset
+  on the site treated this way.
+
+  index.html carries `<link rel="preload" as="video" fetchpriority="high">` for exactly
+  this URL, which is what starts the fetch during HTML parse instead of after the JS
+  bundle has downloaded, parsed and mounted React. That preload cannot name a bundled
+  asset, because a bundled asset's URL is a content hash that does not exist until the
+  build has run — so the file has to be served from a stable path for the hint to be
+  writable at all. Keep the two in step by hand; there is no import to fail loudly if
+  they drift.
+
+  story.webm stays a Vite import. It is not on the first screen, it must not compete for
+  the first screen's bandwidth, and it therefore wants the opposite treatment (see the
+  preload note in CssLens.jsx).
+*/
+const HERO_VIDEO = '/assets/videos/hero.webm'
+
 const tickerItems = [
   { label: 'Company', value: 'AGB Media' },
   { label: 'Founded', value: '2025' },
@@ -61,13 +78,46 @@ function Hero() {
     }
 
     /*
-      play() returns a promise that rejects when the browser refuses playback —
-      which this video invites, being unmuted (see the backdrop comment below).
-      There is nothing to recover from, so the rejection is swallowed rather than
-      left to surface as an unhandled promise error.
+      play() returns a promise that rejects if the element is torn down or the call
+      is interrupted. It no longer rejects for the reason it used to — this video
+      starts muted now, so the browser permits it (see the backdrop note below) —
+      but the catch stays, because an unhandled rejection here would be noise.
     */
     video.play()?.catch(() => {})
   }, [isHeroCovered])
+
+  /*
+    Sound, on the first real interaction — which is what makes starting muted a
+    delay rather than a loss.
+
+    Autoplay policies gate *unmuted* playback on user activation, not playback
+    itself, so the fix for the frozen first frame is to start muted and unmute once
+    the visitor has given the page a gesture. Nothing needs restarting: changing
+    `muted` on an element that is already playing simply turns the audio on.
+
+    `once` on each listener, plus an explicit removal in the cleanup, because only
+    one of the three will fire and the other two have to come off with it. Scroll is
+    deliberately not among them — a wheel or trackpad scroll is not user activation
+    in Chrome, so unmuting on it would be refused and would burn the one shot.
+  */
+  useEffect(() => {
+    const events = ['pointerdown', 'keydown', 'touchstart']
+
+    const unmute = () => {
+      const video = videoRef.current
+      if (video) video.muted = false
+
+      events.forEach((event) => window.removeEventListener(event, unmute))
+    }
+
+    events.forEach((event) =>
+      window.addEventListener(event, unmute, { passive: true, once: true }),
+    )
+
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, unmute))
+    }
+  }, [])
 
   return (
     /*
@@ -98,20 +148,35 @@ function Hero() {
         Full-viewport, fixed video backdrop with a light scrim on top — tinted to
         --color-black, not raw black — to keep the foreground text legible.
 
-        Note: browsers block autoplay-with-sound unless the user has already
-        interacted with the page (or the site), so on first load most browsers
-        will still start this muted regardless of the `muted={false}` below.
-        Sound will play once the visitor interacts with the tab/page.
+        IT STARTS MUTED, AND THAT IS NOT OPTIONAL. This element carried
+        `muted={false}`, under a comment claiming browsers "will still start this
+        muted regardless". They do not: an unmuted autoplay without prior user
+        activation is REFUSED outright — the play() promise rejects and the video
+        sits on its first frame. The rejection was being caught and dropped a few
+        lines up, so it failed silently, and the long load time hid it: a video that
+        had not arrived yet and a video frozen on frame one look identical.
+
+        Sound is restored on the first real interaction instead — see the effect
+        above, which is what the old comment described but nothing implemented.
       */}
       <div className={styles.backdrop} aria-hidden="true">
+        {/*
+          `preload="auto"` states outright what the browser is otherwise left to guess.
+          It is the default for a <video> with a src on desktop, but not on every mobile
+          engine, and it is the one hint that says "fetch the whole thing" rather than
+          "fetch enough to know what it is" — which for the section that IS the first
+          screen is what we mean. It pairs with the preload link in index.html: the link
+          starts the request early, this keeps it going.
+        */}
         <video
           ref={videoRef}
           className={styles['backdrop-video']}
-          src={heroVideo}
+          src={HERO_VIDEO}
           autoPlay
           loop
-          muted={false}
+          muted
           playsInline
+          preload="auto"
         />
         <div className={styles['backdrop-overlay']} />
       </div>

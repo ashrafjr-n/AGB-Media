@@ -1,6 +1,4 @@
 import {
-  Suspense,
-  lazy,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -10,6 +8,7 @@ import {
 import { Link } from 'react-router-dom'
 import {
   motion,
+  useMotionTemplate,
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
@@ -23,23 +22,21 @@ import useScrollPosition, {
 } from '../../hooks/useScrollPosition'
 import storyVideo from '../../assets/videos/story.webm'
 import Founder from '../Founder/Founder'
+import CssLens from '../shared/CssLens'
 import buttonStyles from '../shared/Button.module.css'
 import styles from './About.module.css'
 
 /*
-  Split out of the main bundle, and it is the single biggest thing that could be.
+  A plain import, where this was `lazy(() => import('../shared/FluidLens'))` behind a
+  Suspense boundary.
 
-  FluidLens is the only module on the site that touches three, @react-three/fiber,
-  @react-three/drei or maath — roughly 1.5MB of the ~1.86MB bundle, for a component that
-  never mounts below 48rem and never mounts under reduced motion. A static import put all
-  of it in front of the first paint for every visitor including the ones who would never
-  see it.
-
-  The chunk is still requested straight away on the desktop path — lazy() fetches on first
-  render and About is on the home page — so nothing is *deferred* so much as taken off the
-  critical path: it now downloads and parses alongside the page instead of ahead of it.
-*/
-const FluidLens = lazy(() => import('../shared/FluidLens'))
+  The split existed for one reason: FluidLens was the only module on the site that touched
+  three, @react-three/fiber, @react-three/drei or maath — about 1.5MB of a 1.86MB bundle —
+  and a static import put all of it in front of first paint for every visitor, including
+  the ones below 48rem who would never mount it. CssLens is a few hundred lines with no
+  dependencies beyond React and Framer Motion, both of which are in the main chunk
+  already, so a separate chunk for it would be a second network round trip to save
+  nothing.
 
 /* Lets the CTA animate without wrapping the Link in an extra layout box. */
 const MotionLink = motion.create(Link)
@@ -207,37 +204,34 @@ function About() {
   const zoomEnabled = !shouldReduceMotion
 
   /*
-    The lens reads the pointer from the *whole section*, not from the canvas.
+    The lens reads the pointer from the *whole section*, not from the circle.
 
-    Hovering a 550px circle is a small target on a two-column layout, and R3F's built-in
-    state.pointer only updates while the cursor is over the canvas — so for most of the
-    time the reader spends here, with the cursor on the copy, the lens sat frozen. This
-    listener covers the section, and FluidLens clamps whatever it gets to the circle's
-    interior, so the glass leans toward the cursor without ever escaping the frame.
+    Hovering a 432px circle is a small target on a two-column layout, so a listener scoped
+    to the disc itself would leave it frozen for most of the time the reader spends here,
+    with the cursor on the copy. This covers the section, and CssLens clamps whatever it
+    gets to the circle's interior, so the glass leans toward the cursor without ever
+    escaping the frame.
 
-    A ref rather than state on purpose: mousemove fires per frame at best and there is
-    nothing in the render output that depends on the value — storing it in state would
-    re-render the section, the Canvas and the lens material on every mouse event to
-    feed a number only useFrame ever reads.
+    A ref rather than state on purpose: mousemove fires above the display's refresh rate
+    and nothing in the render output depends on the value — storing it in state would
+    re-render the section and everything in it on every mouse event to feed a number only
+    the follow loop ever reads.
   */
   const circleRef = useRef(null)
   const pointer = useRef({ x: 0, y: 0 })
 
   /*
-    A handle on the lens canvas's `invalidate`, filled in by FluidLens.
+    A handle on CssLens's follow loop, filled in by CssLens.
 
-    The canvas renders on demand, and moving the pointer is one of the things that has
-    to wake it — the others (a decoded video frame, a lens still travelling) live inside
-    FluidLens and can ask for themselves. This one cannot: the listener that drives the
-    lens is here, on the whole section, so the request has to come from here too. It
-    matters most while the story video is paused, which is now most of the time the
-    section is on screen at all — with no video frames arriving there is nothing else
-    left to keep the loop alive.
+    That loop stops the moment the disc arrives at the pointer, which is the whole point
+    of it — a lens resting under a still cursor should cost nothing. Something therefore
+    has to restart it, and the only thing that knows the target has moved is the listener
+    that moved it, which is here.
 
-    A ref rather than a prop or state, for the same reason `pointer` is one: it is read
+    A ref rather than a prop or state, for the same reason `pointer` is one: it is called
     from a mousemove handler and must not re-render anything.
   */
-  const lensInvalidate = useRef(null)
+  const lensWake = useRef(null)
 
   /*
     The circle's box, cached — and this was a forced synchronous layout on every single
@@ -294,9 +288,9 @@ function About() {
 
     /*
       Normalised against the circle's own radius, so ±1 is its rim and anything beyond
-      is the cursor outside it — the magnitude is meaningful, and FluidLens uses it to
-      decide direction before clamping. Y is negated because the document's Y grows
-      downward and the scene's grows up.
+      is the cursor outside it — the magnitude is meaningful, and CssLens uses it to
+      decide direction before clamping. Y is negated so +y is up, which is the convention
+      the clamp arithmetic there is written in.
     */
     const radiusX = rect.width / 2
     const radiusY = rect.height / 2
@@ -304,8 +298,8 @@ function About() {
     pointer.current.x = (event.clientX - (rect.left + radiusX)) / radiusX
     pointer.current.y = -(event.clientY - (rect.top + radiusY)) / radiusY
 
-    /* Wakes the on-demand canvas — see the note on lensInvalidate. */
-    lensInvalidate.current?.()
+    /* Restarts the follow loop — see the note on lensWake. */
+    lensWake.current?.()
   }, [])
 
   /* --- Scroll-zoom ------------------------------------------------------- */
@@ -314,13 +308,15 @@ function About() {
   const runwayRef = useRef(null)
 
   /*
-    Two handles rather than one, because during the priming window both videos exist: the
-    one inside the lens canvas and the plain element warming up behind it. The pause gate
-    always wants whichever is on screen, and the fallback outlives the canvas, so it wins
-    wherever both are present.
+    One handle, where this used to be two.
+
+    While the lens was WebGL its footage lived *inside* the scene as a VideoTexture — the
+    only way MeshTransmissionMaterial could refract it — so tearing the canvas down
+    mid-transition meant swapping to a second, separately warmed <video> and matching
+    their playheads at the swap. CssLens renders the one element the whole way through, so
+    the priming window, the handoff seek and the pair of refs are all gone with it.
   */
-  const lensVideoRef = useRef(null)
-  const fallbackVideoRef = useRef(null)
+  const videoRef = useRef(null)
 
   /*
     Whether the hero has finished — and therefore whether the hero's own video has been
@@ -376,6 +372,38 @@ function About() {
   const [target, setTarget] = useState({ size: 0, width: 0, height: 0, x: 0, y: 0 })
 
   /*
+    The footage's own aspect ratio, and the one thing the frame's geometry cannot be
+    derived without.
+
+    `object-fit: cover` used to answer this implicitly — it knew the intrinsic size and
+    re-solved against every box the transition gave it. Reproducing that with a transform
+    means computing the same answer here, and which axis covers depends on the video's
+    aspect against the frame's. See `coverScale`.
+
+    State rather than a ref because the transforms below are built from it, and it is
+    written exactly once per page — `loadedmetadata` fires when the browser learns the
+    dimensions, which `preload="metadata"` in CssLens is there to make happen early.
+  */
+  const [videoAspect, setVideoAspect] = useState(null)
+
+  const readVideoAspect = useCallback((element) => {
+    if (!element?.videoWidth || !element?.videoHeight) return
+
+    setVideoAspect(element.videoWidth / element.videoHeight)
+  }, [])
+
+  /*
+    Both entry points, because either can be the one that fires. A video served from
+    cache can already have its dimensions by the time the ref callback runs, and a cold
+    one will not — so the ref reads whatever is there and the event catches the rest.
+    Setting the same number twice is a no-op; React bails on an unchanged state value.
+  */
+  const handleVideoMetadata = useCallback(
+    (event) => readVideoAspect(event.currentTarget),
+    [readVideoAspect],
+  )
+
+  /*
     Kept on a ref so the two places that need a *late* reading can ask for one — the
     reveal finishing, and the transition starting. See the notes at both call sites.
   */
@@ -409,10 +437,18 @@ function About() {
       const vh = window.innerHeight
 
       /*
-        The frame does not need to be told to centre itself. It only needs to end up as a
-        box the size of the screen with its top-left corner on the screen's top-left, and
-        interpolating linearly toward that from its resting box carries its centre along a
-        straight line to the centre of the viewport for free — the algebra cancels.
+        The translation that carries the frame's CENTRE to the viewport's centre.
+
+        This used to be the offset that put the frame's top-left corner on the screen's
+        top-left, which was the right statement while the box was growing from its own
+        top-left. The box no longer grows — it is scaled about its own centre — so the
+        target is the centre rather than the corner.
+
+        The two are the same movement. Interpolating centre → centre linearly while the
+        scale runs 1 → sx traces exactly the path the old corner-anchored growth traced:
+        at progress p the old centre was `(left + size/2)(1-p) + p·vw/2`, and the new one
+        is `left + size/2 + p·(vw/2 - left - size/2)`, which is the same expression. The
+        intermediate frames are identical, not merely similar.
 
         Both offsets are the *pinned* position, not the current one. X is scroll-invariant
         so the live rect is already correct; Y is not, but .about pins at
@@ -424,8 +460,8 @@ function About() {
         size,
         width: vw,
         height: vh,
-        x: -c.left,
-        y: -(c.top - a.top),
+        x: vw / 2 - (c.left + size / 2),
+        y: vh / 2 - (c.top - a.top + size / 2),
       })
     }
 
@@ -469,37 +505,92 @@ function About() {
   )
 
   /*
-    The frame's *box*, not a scale on it, and that substitution is the whole point of
-    this transition.
+    --- The frame: a transform, not a box ------------------------------------
 
-    Nothing is magnified. The element genuinely becomes wider and taller, and the video
-    inside it is left entirely alone — no transform of its own, just object-fit: cover
-    against a box that is changing shape. Cover always fills the box from the centre out,
-    so widening the box does not stretch the footage, it *uncrops* it: the circle shows
-    the middle square of a 16:9 frame, and by the end the same frame is being shown whole.
-    The reveal comes from the aperture opening rather than from anything moving.
+    .zoom-layer keeps its resting size for the whole transition and is *scaled* to the
+    viewport. It used to genuinely become wider and taller — `width` and `height` written
+    inline every frame — and the reason for the change is that those are layout
+    properties: every frame dirtied layout for the subtree and, worse, resized a filtered,
+    eventually viewport-sized layer, so the compositor could never keep a raster of it.
+    `transform` is one of the two properties a browser can animate without laying out or
+    repainting anything; the layer is rasterised once and the GPU moves it.
 
-    What it costs, and it is the one real cost here: `width` and `height` are layout
-    properties, so this cannot ride the compositor the way a scale did. The layer is
-    absolutely positioned and everything under it is `inset: 0`, so no ancestor or sibling
-    reflows — but on the lens path the R3F canvas resizes with it, and R3F answers a
-    resize by reallocating its drawing buffer. That runs once a frame while the frame is
-    growing. The lens *mesh* is already dropped by 0.15, which sheds the expensive half of
-    it; if the rest ever needs shedding, capping the canvas's dpr is the dial.
-
-    The translate is still a transform, because moving the frame does not have to be a
-    layout operation and there is no reason to make it one.
+    THE SCALE IS NON-UNIFORM, because the frame is going from a square to the shape of the
+    screen. Everything below is a consequence of that, and each piece exists to undo the
+    distortion somewhere it would otherwise show.
   */
-  const zoomWidth = useTransform(easedProgress, [0, 1], [target.size, target.width])
-  const zoomHeight = useTransform(easedProgress, [0, 1], [target.size, target.height])
+  const zoomScaleX = useTransform(
+    easedProgress,
+    [0, 1],
+    [1, target.size ? target.width / target.size : 1],
+  )
+  const zoomScaleY = useTransform(
+    easedProgress,
+    [0, 1],
+    [1, target.size ? target.height / target.size : 1],
+  )
+
+  /* Framer writes translate before scale, so this moves the frame unscaled. */
   const zoomX = useTransform(easedProgress, [0, 1], [0, target.x])
   const zoomY = useTransform(easedProgress, [0, 1], [0, target.y])
 
   /*
-    Circle → rounded rectangle, and then held there for the rest of the transition — the
-    clamp past RADIUS_ROUNDED_AT is useTransform's own, not a stop. Half the resting width
-    is the same shape the stylesheet's 50% draws while the box is still square, so the
-    handover on the first frame is exact; see the note on FRAME_RADIUS_PX for the rest.
+    The footage's own scale, and the number that makes the uncrop survive the rewrite.
+
+    `object-fit: cover` used to do this work: as the box reshaped, cover re-solved against
+    each new aspect and the footage was *uncropped* rather than magnified — the circle
+    showed the middle square of a 16:9 frame, and by the end the whole frame. The box no
+    longer reshapes, so cover is frozen on the resting square and has to be reproduced.
+
+    This is the factor cover would have applied. It is the ratio by which the rendered
+    footage grows, and it is UNIFORM at every point in the transition — cover never
+    stretches, it only picks which axis fills and centres the rest. Which axis that is
+    depends on the frame's aspect against the video's:
+
+      height-driven while the frame is narrower than the footage   ->  scaleY
+      width-driven once it is wider                                ->  scaleX / aspect
+
+    and cover always takes whichever covers, hence the max. The two branches cross exactly
+    where cover's own driver flips, so the curve here is continuous and has the same kink
+    in the same place the old one did.
+
+    The aspect is read off the element once its metadata lands (see handleVideoMetadata).
+    Until then it falls back to the frame's final aspect, which makes the expression
+    collapse to the height-driven branch — correct for any window narrower than the
+    footage, and moot in practice: the transition cannot begin until the visitor has
+    scrolled a viewport and a half, by which point the metadata is long since in.
+  */
+  const coverScale = useTransform(
+    [zoomScaleX, zoomScaleY],
+    ([scaleX, scaleY]) => {
+      const aspect =
+        videoAspect ?? (target.height ? target.width / target.height : 1)
+
+      return Math.max(scaleY, aspect ? scaleX / aspect : scaleY)
+    },
+  )
+
+  /*
+    The counter-scale that turns the frame's non-uniform scale into the footage's uniform
+    one. The media layer's net scale is `zoomScale * counter` on each axis — which is
+    `coverScale` on both, by construction.
+
+    So the footage is never stretched, exactly as it never was: what reaches the screen is
+    the same rendered rectangle cover produced, at the same size, in the same place.
+  */
+  const mediaScaleX = useTransform(
+    [coverScale, zoomScaleX],
+    ([cover, scaleX]) => cover / scaleX,
+  )
+  const mediaScaleY = useTransform(
+    [coverScale, zoomScaleY],
+    ([cover, scaleY]) => cover / scaleY,
+  )
+
+  /*
+    Circle → rounded rectangle, and then held there — the clamp past RADIUS_ROUNDED_AT is
+    useTransform's own, not a stop. This is the radius as it should APPEAR on screen, and
+    it is unchanged: half the resting width while the box is square, FRAME_RADIUS_PX after.
   */
   const zoomRadius = useTransform(
     easedProgress,
@@ -507,34 +598,85 @@ function About() {
     [target.size / 2, FRAME_RADIUS_PX],
   )
 
+  /*
+    ...divided back out per axis, because a radius is drawn in the element's own
+    coordinates and then scaled with it. A single value under a non-uniform scale renders
+    as an ellipse, so the corners are declared elliptically — `border-radius: Xpx / Ypx`,
+    horizontal radius over vertical — with each half pre-divided by the scale on its own
+    axis. What lands on screen is a circular corner of exactly `zoomRadius`.
+
+    At rest both scales are 1 and this is `size/2 / size/2` on a square box: the same
+    circle the stylesheet's 50% draws, so the handover on the first frame is still exact.
+  */
+  const zoomRadiusX = useTransform(
+    [zoomRadius, zoomScaleX],
+    ([radius, scaleX]) => radius / scaleX,
+  )
+  const zoomRadiusY = useTransform(
+    [zoomRadius, zoomScaleY],
+    ([radius, scaleY]) => radius / scaleY,
+  )
+  const zoomBorderRadius = useMotionTemplate`${zoomRadiusX}px / ${zoomRadiusY}px`
+
   const scrimOpacity = useTransform(easedProgress, [0.1, 0.95], [0, 1])
 
   /*
-    A plain screen-space blur now, with no correction term.
+    The blur, divided by the scale again — the correction that was here before the frame
+    stopped being scaled, back for the same reason it left.
 
-    It used to be divided by the live scale, because `filter` applies in an element's
-    local coordinate space and was then magnified along with it — a flat 25px arrived on
-    screen as 25px × the scale. Nothing is scaled any more, so the number here is the
-    number that lands, and the division that used to be the whole trick is gone.
+    `filter` applies in an element's local coordinate space and is then scaled with it, so
+    a flat 13px would arrive on screen as 13px × the scale. It is divided by `coverScale`
+    rather than by either axis because the media layer's net scale is uniform — which is
+    the whole point of the counter-scale above, and is also what makes an isotropic
+    `blur()` the right shape here at all. A blur under a non-uniform scale would arrive as
+    an ellipse, and there is no CSS blur that can be pre-squashed to compensate.
   */
-  const mediaFilter = useTransform(
+  const blurPx = useTransform(
     easedProgress,
     [BLUR_START_AT, BLUR_FULL_AT],
-    ['blur(0px)', `blur(${ZOOM_BLUR_PX}px)`],
+    [0, ZOOM_BLUR_PX],
   )
+  const mediaBlurPx = useTransform(
+    [blurPx, coverScale],
+    ([blur, cover]) => blur / cover,
+  )
+  const mediaFilter = useMotionTemplate`blur(${mediaBlurPx}px)`
 
   /*
     The blur's own margin, on exactly the blur's ramp so the two can never fall out of
-    step — a negative inset applied to all four sides, pushing .media's faded edges out
-    beyond the frame that clips it. See MEDIA_BLEED_PX for why the fade exists at all.
+    step — a negative inset pushing .media's faded edges out beyond the frame that clips
+    them. See MEDIA_BLEED_PX for why the fade exists at all.
+
+    Divided by the same scale as the blur is, so the bleed lands at a constant 48px on
+    screen rather than growing to four times that. Because the inset is uniform and the
+    layer is square, the box it makes stays square — so cover's driver cannot flip because
+    of the bleed, only because of the frame's own aspect.
   */
-  const mediaBleed = useTransform(
+  const bleedPx = useTransform(
     easedProgress,
     [BLUR_START_AT, BLUR_FULL_AT],
     [0, -MEDIA_BLEED_PX],
   )
+  const mediaBleed = useTransform(
+    [bleedPx, coverScale],
+    ([bleed, cover]) => bleed / cover,
+  )
 
   const lensOpacity = useTransform(easedProgress, [0, LENS_FADE_END], [1, 0])
+
+  /*
+    The lens disc's own counter-scale, undoing the media layer's uniform `coverScale` so
+    the glass stays exactly the size it is at rest.
+
+    It wraps the disc rather than sitting on it, so the follow loop's translate is applied
+    *inside* the counter and comes back out at its natural magnitude — a disc that is the
+    right size but drifting at four times the distance would be no better than one that
+    grew. See the note at CssLens's `counterScale` prop.
+
+    Only ~12% of the transition can see this: the disc is fully faded by LENS_FADE_END and
+    dropped from the DOM at LENS_DROP_AT.
+  */
+  const lensCounterScale = useTransform(coverScale, (cover) => 1 / cover)
 
   /*
     The frame is only driven once it has been measured. Before that every target is 0, and
@@ -546,31 +688,26 @@ function About() {
   const zoomActive = zoomEnabled && target.size > 0
 
   /*
-    State, not MotionValues, because these decide what is in the tree at all. Each flips
-    twice per pass, so the re-renders they cost are not on the scroll path.
+    State, not a MotionValue, because it decides what is in the tree at all. It flips
+    twice per pass, so the re-renders it costs are not on the scroll path.
 
-    `lensCanvasMounted` now tears down the whole Canvas at LENS_DROP_AT rather than just
-    the lens mesh — the WebGL context, its buffers and the transmission material all go,
-    and stay gone for the rest of the page. That also ends the per-frame buffer realloc
-    the growing frame was forcing on R3F, which is the part that was costing frames.
+    The disc is dropped from the DOM once its fade has finished, and stays gone for the
+    rest of the page. That is a much smaller saving than it was when this tore down a
+    whole WebGL context — what goes now is one small `backdrop-filter` element and its
+    ResizeObserver — but it is the right moment to shed it either way: the frame is about
+    to start growing toward the full viewport, and a refracting disc makes no sense once
+    the circle stops being round.
 
-    `fallbackPrimed` is what makes that survivable. There is no plain <video> sitting
-    under the canvas by default — the lens keeps its footage *inside* the WebGL scene as a
-    VideoTexture, which is the whole reason FluidLens exists — so swapping the canvas out
-    cold would mount an unloaded <video> at the most visible moment of the transition and
-    cut to black. Instead the fallback mounts as soon as the transition starts moving and
-    spends the run up to LENS_DROP_AT hidden behind the canvas (.canvas is --z-base, the
-    fallback is z-index auto), buffering and playing, so by the time the canvas goes it is
-    already warm. Before the transition there is still exactly one video decoding.
+    The video is untouched by this. It is a sibling of the disc inside CssLens, not a
+    child of it, and it plays straight through the transition.
   */
-  const [lensCanvasMounted, setLensCanvasMounted] = useState(true)
-  const [fallbackPrimed, setFallbackPrimed] = useState(false)
+  const [lensMounted, setLensMounted] = useState(true)
 
   /* Latches the single re-measurement below. */
   const measuredForRun = useRef(false)
 
   /*
-    The single place playback is decided, for whichever element is currently on screen.
+    The single place playback is decided.
 
     Both gates in one expression, because they are one question — "should the story
     video be running right now?" — and splitting them across a scroll handler and an
@@ -578,9 +715,9 @@ function About() {
     the transition's own, where the blur is deep enough that the last moving frame and a
     frozen one are indistinguishable.
 
-    Stable (`easedProgress` is a MotionValue and never changes identity), so the two ref
-    callbacks that call it are stable too, and it can be invoked from anywhere that
-    learns something new: the scroll handler, the effect on the hero gate, or an element
+    Stable (`easedProgress` is a MotionValue and never changes identity), so the ref
+    callback that calls it is stable too, and it can be invoked from anywhere that learns
+    something new: the scroll handler, the effect on the hero gate, or the element
     arriving.
 
     play() returns a promise that rejects if the element is torn down or interrupted
@@ -588,11 +725,7 @@ function About() {
     and an unhandled rejection in a scroll handler is noise.
   */
   const syncPlayback = useCallback(() => {
-    /*
-      During the priming window both elements exist. The one on screen wins, and the
-      fallback outlives the canvas, so it takes precedence wherever both are present.
-    */
-    const video = fallbackVideoRef.current ?? lensVideoRef.current
+    const video = videoRef.current
     if (!video) return
 
     const shouldPlay =
@@ -628,69 +761,28 @@ function About() {
       measureRef.current?.()
     }
 
-    setLensCanvasMounted(progress < LENS_DROP_AT)
-    setFallbackPrimed(progress > 0)
+    setLensMounted(progress < LENS_DROP_AT)
 
     /* Follows the value in both directions, so scrolling back up resumes playback. */
     syncPlayback()
   })
 
   /*
-    Handed up from inside FluidLens, which owns its <video> internally rather than
-    rendering one — see the note at the top of that file. FluidLens no longer autoplays
-    it either (`start: false` there), so this is the only thing that ever starts it.
+    The one video element, handed up by CssLens.
 
-    Syncing on arrival covers two cases at once: the element turning up for the first
-    time already past the hero gate, and the swap below having paused it on the way out —
-    drei caches the texture by src, so scrolling back up through LENS_DROP_AT hands back
-    the very element that was paused.
+    CssLens renders it without `autoPlay`, so this is the only thing that ever starts it —
+    and it will not, until the hero's own video has stopped. Syncing on arrival is what
+    covers the element turning up when the page is already past that gate.
   */
-  const handleLensVideo = useCallback(
+  const handleVideo = useCallback(
     (element) => {
-      lensVideoRef.current = element
-      if (element) syncPlayback()
+      videoRef.current = element
+      if (!element) return
+
+      syncPlayback()
+      readVideoAspect(element)
     },
-    [syncPlayback],
-  )
-
-  const handleFallbackVideo = useCallback(
-    (element) => {
-      fallbackVideoRef.current = element
-      if (element) syncPlayback()
-    },
-    [syncPlayback],
-  )
-
-  /*
-    The handoff, run on the frame the canvas is torn down.
-
-    Both videos have been playing independently, so they are at different points in the
-    same loop; matching them is what keeps the swap from cutting to an unrelated moment of
-    the footage. Setting currentTime before metadata has arrived is not an error — it sets
-    the default playback start position instead — so this needs no readiness guard.
-
-    Pausing the outgoing element matters as much as the seek. useVideoTexture's <video> is
-    not in the document and disposing the texture does not stop it, so without this it
-    would go on decoding a 4K file forever behind a page that has finished with it.
-  */
-  useEffect(() => {
-    if (lensCanvasMounted) return
-
-    const lensVideo = lensVideoRef.current
-    const fallback = fallbackVideoRef.current
-    if (!lensVideo || !fallback) return
-
-    fallback.currentTime = lensVideo.currentTime
-    lensVideo.pause()
-  }, [lensCanvasMounted])
-
-  /* Nothing should be left paused behind a torn-down transition. */
-  useEffect(
-    () => () => {
-      lensVideoRef.current = null
-      fallbackVideoRef.current = null
-    },
-    [],
+    [syncPlayback, readVideoAspect],
   )
 
   const reveal = shouldReduceMotion
@@ -797,11 +889,23 @@ function About() {
                 style={
                   zoomActive
                     ? {
+                        /*
+                          Framer composes translate before scale, so the frame is moved
+                          at its natural size and then scaled about its own centre —
+                          which is why the measured target is a centre offset. Nothing
+                          here touches layout.
+                        */
                         x: zoomX,
                         y: zoomY,
-                        width: zoomWidth,
-                        height: zoomHeight,
-                        borderRadius: zoomRadius,
+                        scaleX: zoomScaleX,
+                        scaleY: zoomScaleY,
+                        borderRadius: zoomBorderRadius,
+                        /*
+                          Read by the box-shadow in About.module.css, which has to divide
+                          its lengths back out — a shadow is drawn in the element's own
+                          coordinates and scaled with it. The argument is at the rule.
+                        */
+                        '--frame-scale': zoomScaleY,
                       }
                     : undefined
                 }
@@ -809,6 +913,12 @@ function About() {
                 {/*
                   The blur rides on this wrapper rather than on the layer above it, which
                   keeps the rim, the shadow and the scrim sharp while the footage softens.
+
+                  It also carries the counter-scale that undoes the frame's non-uniform
+                  stretch, so everything inside it is drawn at a uniform `coverScale` —
+                  the footage at exactly the size and crop `object-fit: cover` used to
+                  give it, and the blur isotropic. See the notes on coverScale and
+                  mediaScaleX above; the two are one mechanism.
 
                   The four insets are one motion value, not four — they are always equal,
                   and writing them separately would only invite them to drift apart.
@@ -818,6 +928,8 @@ function About() {
                   style={
                     zoomEnabled
                       ? {
+                          scaleX: mediaScaleX,
+                          scaleY: mediaScaleY,
                           filter: mediaFilter,
                           top: mediaBleed,
                           right: mediaBleed,
@@ -828,72 +940,35 @@ function About() {
                   }
                 >
                   {/*
-                    The two are no longer alternatives — for one stretch of the transition
-                    both are mounted, the canvas over the fallback. See the note on
-                    lensCanvasMounted for why that overlap has to exist.
+                    One component, on every path.
 
-                    The footage lives *inside* the canvas as a texture rather than in a DOM
-                    element beneath it, because MeshTransmissionMaterial can only refract
-                    what is in the WebGL scene — the note at the top of FluidLens.jsx has
-                    the full argument, and it is what makes the handoff below necessary.
+                    It renders the <video> unconditionally and the glass disc only when
+                    told to, so the phone and reduced-motion paths are the same element
+                    with the disc left off rather than a separate branch. They used to be
+                    genuinely separate: the WebGL lens kept its footage *inside* the scene
+                    as a texture, because MeshTransmissionMaterial can only refract what is
+                    in the WebGL buffer, so every path without a canvas needed a <video> of
+                    its own and the transition needed a warmed handoff between the two.
 
-                    The canvas also *resizes* with the frame rather than being scaled by
-                    it, which is what lets it uncrop exactly like the DOM path does:
-                    VideoPlane recomputes its cover scale from the R3F viewport, so a wider
-                    canvas shows more of the footage instead of magnifying it. That resize
-                    is not free, and ending it early is half the point of tearing the
-                    canvas down at LENS_DROP_AT.
+                    `showLens` folds the two reasons the disc might be absent — the
+                    section-level one (wide enough, and motion allowed) and the
+                    transition's, which drops it once the fade has finished.
+
+                    The footage still *uncrops* rather than magnifying as the frame grows:
+                    the <video> is `object-fit: cover` against a box that is changing shape,
+                    exactly as it was on the old plain path. Nothing here is scaled.
                   */}
-                  {showLens && lensCanvasMounted && (
-                    /*
-                      fallback={null} because there is nothing to say: the frame is painted
-                      --color-black underneath, which is the same dark disc the Suspense
-                      boundary inside FluidLens already shows while the model and the video
-                      texture load.
-                    */
-                    <Suspense fallback={null}>
-                      <FluidLens
-                        videoSrc={storyVideo}
-                        pointer={pointer}
-                        onVideo={handleLensVideo}
-                        invalidateRef={lensInvalidate}
-                        lensOpacity={lensOpacity}
-                        lensProps={{
-                          scale: 0.25,
-                          ior: 1.15,
-                          thickness: 2,
-                          transmission: 1,
-                          roughness: 0,
-                          chromaticAberration: 0.05,
-                          anisotropy: 0.01,
-                        }}
-                      />
-                    </Suspense>
-                  )}
+                  <CssLens
+                    videoSrc={storyVideo}
+                    onVideo={handleVideo}
+                    onMetadata={handleVideoMetadata}
+                    pointer={pointer}
+                    showLens={showLens && lensMounted}
+                    lensOpacity={lensOpacity}
+                    lensCounterScale={zoomEnabled ? lensCounterScale : undefined}
+                    wakeRef={lensWake}
+                  />
 
-                  {/*
-                    The plain path, and now also the transition's destination on the lens
-                    path. `muted` is not optional — an unmuted play() is refused by every
-                    browser — and it is what makes this safe to start without a gesture.
-
-                    No `autoPlay`: playback is decided by syncPlayback, which will not
-                    start this while the hero's own video is still running. The ref
-                    callback calls it on mount, so an element arriving past the gate
-                    starts immediately. `preload` is left at the browser's default so the
-                    file is still buffered and the first frame decoded while it waits —
-                    what is deferred is playback, not loading.
-                  */}
-                  {(!showLens || fallbackPrimed) && (
-                    <video
-                      ref={handleFallbackVideo}
-                      className={styles.video}
-                      src={storyVideo}
-                      loop
-                      muted
-                      playsInline
-                      aria-hidden="true"
-                    />
-                  )}
                 </motion.div>
 
                 {/*

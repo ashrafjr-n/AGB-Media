@@ -166,25 +166,31 @@
   hosts either the lens canvas or a plain <video> — both absolutely filling this box —
   and clips whichever it gets to the round shape.
 
-  Framer writes `width`, `height`, `border-radius` and a translate here during the
-  transition: the frame genuinely reshapes from a circle to a screen-sized rounded
-  rectangle while the footage inside it is left alone. Nothing is scaled, which is why it
-  uncrops instead of magnifying — see the note on .video.
+  Framer writes a translate, a non-uniform SCALE and an elliptical border-radius here
+  during the transition — never `width` or `height`. This box keeps its resting size for
+  the whole run, which is what keeps the transition off the layout and paint paths
+  entirely: transform is one of the two properties a browser can animate by moving an
+  already-rasterised layer.
+
+  The frame still *reshapes* rather than magnifying, and the footage still uncrops rather
+  than stretching — but that is now built rather than free. .media carries a counter-scale
+  that turns this box's non-uniform stretch back into the uniform one `object-fit: cover`
+  used to produce. The two are one mechanism; see `coverScale` in About.jsx before
+  touching either.
 
   `overflow: hidden` is load-bearing in both directions now. It clips the footage to the
   round shape, and it is also what crops .media's blurred edges back off screen while
   they are bled outside this box — remove it and a dark band appears around the frame.
   The clip follows border-radius, so the corners stay clean at every size.
 
-  `width`/`height` rather than the logical `inline-size`/`block-size` this project
-  otherwise prefers, and deliberately: Framer writes the physical properties inline, and
-  a stylesheet declaring the logical twin of a property being set inline is a cascade
-  question nobody should have to think about at a glance. Same property in both places.
+  `width`/`height` are now the whole story rather than a first keyframe: 100% of the
+  square .circle, for the entire transition, never written to. They stay physical rather
+  than logical only because the `border-radius` beside them is still driven inline and the
+  two read better as a pair.
 
-  The values below are the resting state and the transition's first keyframe both — 100%
-  of the square .circle, with a 50% radius that is exactly the half-width the JS hands
-  over at progress 0. They are also what renders whole under reduced motion, and in the
-  frame before the first measurement lands.
+  The 50% radius is exactly the half-width the JS hands over at progress 0, so the
+  handover on the first frame is exact. These values are also what renders whole under
+  reduced motion, and in the frame before the first measurement lands.
 */
 .zoom-layer {
   position: absolute;
@@ -215,12 +221,29 @@
   background-color: var(--color-black);
 
   /*
-    This registers properly now. --shadow-soft was very nearly invisible while the
-    section was flat --color-black; against the lighter, footage-lit glass it actually
-    lifts the disc off the surface. --shadow-soft is also the project's one legitimate
-    raw-black value, so it needs no glass-side equivalent.
+    --shadow-soft, written out rather than used as the token, and DIVIDED BY THE FRAME'S
+    SCALE. This is the one place in the project that duplicates a token's numbers, so it
+    needs the argument.
+
+    A box-shadow is drawn in the element's own coordinates and then transformed with it.
+    Once the transition became a scale rather than a growing box, the shadow scaled too —
+    a 40px blur arriving on screen at up to 178px, ballooning into a dark halo around the
+    frame at exactly the point the frame is largest. Dividing by the live scale is the
+    same correction the blur in About.jsx makes, for the same reason.
+
+    --frame-scale is written inline by About (it is `zoomScaleY`) and defaults to 1, so at
+    rest and under reduced motion this is exactly `--shadow-soft` and nothing has changed.
+    The vertical axis is the one corrected exactly, because the offset is vertical-only;
+    the horizontal blur ends up a little wide late in the run, where the frame is near
+    enough the viewport that the shadow is off screen. box-shadow has one blur radius and
+    the scale has two, so there is no version of this that is exact on both axes.
+
+    KEEP THESE THREE VALUES IN STEP WITH --shadow-soft in variables.css. They are its
+    numbers; only the two lengths are scaled.
   */
-  box-shadow: var(--shadow-soft);
+  --frame-scale: 1;
+  box-shadow: 0 calc(10px / var(--frame-scale)) calc(40px / var(--frame-scale))
+    rgba(0, 0, 0, 0.55);
 }
 
 /*
@@ -235,6 +258,33 @@
 */
 .stage[data-zoom='on'] .zoom-layer {
   will-change: transform;
+}
+
+/*
+  Promoted for the same reason and on the same condition, and it is what makes the frame's
+  promotion actually pay.
+
+  .media carries its own per-frame transform now (the counter-scale). Without a layer of
+  its own it is drawn *into* .zoom-layer's layer, so transforming it would dirty that
+  layer's raster on every frame — the promotion above would buy nothing, because the thing
+  moving would be inside the thing that was supposed to be held still. With one, .zoom-layer
+  rasterises once and the compositor moves two layers against each other.
+
+  The blur is the one thing here the compositor cannot absorb: a changing filter radius has
+  to be re-rastered whatever layer it is on. It is at least being re-rastered at a constant
+  size now, which it was not while this box was growing.
+*/
+.stage[data-zoom='on'] .media {
+  will-change: transform;
+}
+
+/*
+  Opacity is the other property that composites, and this one animates across almost the
+  whole transition. Inside a promoted parent an unpromoted child still forces that parent's
+  raster to be redrawn every time its opacity moves, which is the same trap as .media above.
+*/
+.stage[data-zoom='on'] .scrim {
+  will-change: opacity;
 }
 
 /*
@@ -271,25 +321,15 @@
 }
 
 /*
-  The no-lens path's video. Absolute rather than in flow so it fills the circle
-  identically to the canvas that replaces it, and `object-fit: cover` so a 16:9 source
-  fills a 1:1 hole instead of letterboxing inside it.
+  THE VIDEO'S RULE LIVES IN shared/CssLens.module.css, not here.
 
-  `cover` is also the entire mechanism of the zoom, so nothing here may become a fixed
-  size or a transform. As .zoom-layer reshapes from a circle to the screen, this box
-  reshapes with it and cover re-solves against each new aspect: at rest it crops the
-  source to its middle square, and by the end it is showing the frame whole. The footage
-  is never scaled by the transition — it is *uncropped* by it, which is why nothing
-  stretches. A transform: scale() anywhere on this element or .media would replace that
-  reveal with a magnification and undo the whole effect.
+  It moved there when CssLens became the only thing that ever draws this circle — the
+  element is rendered by that component now, so its stylesheet owns it. What is worth
+  knowing from this side is unchanged and is repeated at the rule: `object-fit: cover`
+  against a box that reshapes is the entire mechanism of the zoom, so a `transform:
+  scale()` on the video or on .media would replace the uncrop with a magnification and
+  undo the effect. See the note on .zoom-layer above.
 */
-.video {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-}
 
 /* --- Opening ------------------------------------------------------------- */
 

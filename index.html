@@ -20,6 +20,31 @@
     <link rel="preconnect" href="https://api.fontshare.com" />
     <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 
+    <!--
+      The hero's footage, requested during HTML parse.
+
+      This is the whole reason hero.webm lives in public/ rather than being
+      Vite-imported like story.webm. A bundled asset gets a content hash, so its URL
+      does not exist until the JS chunk has been downloaded, parsed and executed and
+      React has mounted Hero — which put the first frame of the site's first screen
+      behind the entire critical path. From public/ the path is stable, so it can be
+      named here and the fetch starts in parallel with the bundle instead of after it.
+
+      fetchpriority="high" because this IS the first screen. Without it a preloaded
+      video sits at the low priority the browser gives media by default, which is the
+      right default for a video that is not the page.
+
+      The trade: no content hash, so a replacement uploaded under the same name can be
+      served from cache. Rename the file (and this line) when the footage changes.
+    -->
+    <link
+      rel="preload"
+      as="video"
+      href="/assets/videos/hero.webm"
+      type="video/webm"
+      fetchpriority="high"
+    />
+
     <title>AGB Media</title>
   </head>
   <body>

@@ -180,10 +180,21 @@ function Founder({ progress, pinned = false }) {
             </span>
           </h2>
 
+          {/*
+            Lazy and async-decoded. This section is pinned across About's stage, so on
+            the desktop path it is technically in the viewport from scroll 0 — at opacity
+            0, several viewports before anyone sees it. `loading="lazy"` will therefore
+            not defer it there, and that is fine: what it does buy is the phone and
+            reduced-motion paths, where the section is in normal flow well below the fold.
+            `decoding="async"` always applies, and keeps a 205KB decode off the frame it
+            lands on.
+          */}
           <img
             className={styles.portrait}
             src={portrait}
             alt="Abdullah Ghayfan"
+            loading="lazy"
+            decoding="async"
           />
         </div>
 

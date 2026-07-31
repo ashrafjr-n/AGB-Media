@@ -170,6 +170,31 @@
   --glass-blur-wide: 14px;
 
   /*
+    The Story circle's glass disc (shared/CssLens.jsx) — the pointer-following lens.
+
+    Built up from white like the header's pill rather than down from the ground tone, for
+    the same reason: it is a lift, not a tint, and it has to read against whatever frame
+    of the footage happens to be under it. The rim is --glass-border rather than a value
+    of its own, which is the same call About.module.css makes for the circle itself.
+
+    The two fringe tints are the one place on the site with a saturated colour outside the
+    gold, and they are meant to stay invisible *as colours*: at 0.015 what registers is
+    that the disc's edge is not a single clean line. Anything higher stops reading as
+    dispersion and starts reading as two coloured rings.
+
+    --lens-blur is deliberately tiny. It is the only part of the effect that touches the
+    footage, and the disc is meant to be a clean pane over the picture rather than a
+    smudge on it; it is also the whole per-frame cost of the lens, so raising it is the
+    one change here that is not free.
+  */
+  --lens-highlight: rgba(255, 255, 255, 0.08);
+  --lens-highlight-soft: rgba(255, 255, 255, 0.02);
+  --lens-glow: rgba(255, 255, 255, 0.05);
+  --lens-fringe-warm: rgba(255, 0, 0, 0.015);
+  --lens-fringe-cool: rgba(0, 255, 255, 0.015);
+  --lens-blur: 1px;
+
+  /*
     The Story section's blur, and the one that deliberately breaks the "keep the blur
     radii close to one another" rule above.
 

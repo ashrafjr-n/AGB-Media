@@ -138,9 +138,16 @@ function LogoLoop({
         <li className={styles.item} key={`${copyIndex}-${logo.src ?? index}`}>
           {/*
             `decoding="async"` so a photograph arriving mid-scroll is decoded off the
-            main thread rather than blocking the frame it lands on. Every copy points
-            at the same handful of files, so the decode happens once per image however
-            many copies the track ends up holding.
+            main thread rather than blocking the frame it lands on. Every copy points at
+            the same handful of files, so the decode happens once per image however many
+            copies the track ends up holding.
+
+            `loading="lazy"` on the copies only. The first sequence carries the real alt
+            text and is the one that has to be measured — the ResizeObserver above reads
+            its width to compute the loop's shift, and a lazy image has no width until it
+            loads, so deferring it would leave the strip motionless behind a measurement
+            that never arrives. The copies exist purely to fill the track and can turn up
+            whenever they turn up.
           */}
           <img
             className={styles.image}
@@ -148,6 +155,7 @@ function LogoLoop({
             alt={copyIndex === 0 ? (logo.alt ?? '') : ''}
             draggable="false"
             decoding="async"
+            loading={copyIndex === 0 ? undefined : 'lazy'}
           />
         </li>
       ))}
