@@ -1,0 +1,65 @@
+/*
+  THE STAGE — the hero and the Story section, held in one box so the footage behind them
+  can be scoped to exactly that box.
+
+  This element has no look of its own and never will. Its entire job is to be the
+  containing block for HeroBackdrop's `position: sticky` layer, which is what makes the
+  boundary at the Story section's bottom edge a fact of the layout rather than a threshold
+  some component has to compute. Read the arithmetic in HeroBackdrop.module.css before
+  changing anything here; this box's height is the H in it.
+
+  IT IS DELIBERATELY BARE, and each absence is load-bearing:
+
+  - NO `overflow` other than visible. Anything else makes this a scroll container, the
+    sticky child sticks to it instead of to the viewport, and the pinning stops working.
+  - NO `transform`, `filter`, `perspective` or `contain`. Each would make this a containing
+    block for fixed/absolute descendants and re-scope the sticky child.
+  - NO `isolation`, `opacity` or `backdrop-filter`. Those create a backdrop root, and
+    About's frosted ground has to reach *through* this box to the footage behind it. Adding
+    one would silently flatten the Story section to a plain dark panel.
+  - NO `position` and NO `z-index`. Left static and non-stacking, its three children —
+    the backdrop at `z-index: 0`, `.hero` and `.about` at `z-index: auto` — go on painting
+    in document order in the root stacking context, exactly as they did when the backdrop
+    was fixed. A `z-index` here would trap them in a new context; it would still look
+    right today, but Founder and WhyAgb sit at `--z-base` in that same root context and
+    the relationship is worth keeping honest.
+
+  Which leaves nothing to declare. The rule exists to hold the comment and to give the
+  class a definition to resolve to — a CSS Module class with no rule compiles to nothing
+  and the `styles.stage` lookup would come back undefined.
+*/
+.stage {
+  /*
+    Not a no-op: this is the one property the box does need. Its children are block-level
+    and would otherwise be free to collapse their block margins through this wrapper,
+    which would move the stage's edges away from the sections' own — and the stage's
+    height is the H the sticky arithmetic is measured against.
+  */
+  display: flow-root;
+}
+
+/*
+  THE HERO AND THE STORY SECTION, SLID UP OVER THE BACKDROP.
+
+  HeroBackdrop is `position: sticky`, which means it is in flow and claims a screen of
+  layout height. That screen has to be given back or the hero starts one viewport down the
+  page, and THIS is where it is given back — deliberately not as a negative margin on the
+  backdrop itself, which is the obvious version and is wrong: a sticky box is constrained
+  by its containing block deflated by its own margins, so a -100vh there hands the box an
+  extra screen of travel and it stays pinned a full viewport into the Founder. Measured,
+  not theorised. The comment in HeroBackdrop.module.css has the numbers.
+
+  Taking it here instead leaves the backdrop's margins at zero, so its travel is exactly
+  `stage height - 100vh` — which is exactly the distance it needs in order to hand the
+  footage over to the stage's own scrolling at the right moment.
+
+  THE -100vh MUST MATCH HeroBackdrop's `block-size` EXACTLY. They are one value in two
+  files; if they drift, the whole page shifts by the difference.
+
+  This wrapper exists only to carry that margin. It must stay as bare as `.stage` above —
+  no position, no z-index, no overflow, no isolation — so that `.hero` and `.about` go on
+  painting in the root stacking context, in document order, after the backdrop.
+*/
+.stage-content {
+  margin-block-start: -100vh;
+}

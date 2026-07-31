@@ -4,47 +4,25 @@ import useScrollPosition, {
   isPastFirstViewport,
 } from '../hooks/useScrollPosition'
 import Header from '../components/Header/Header'
+import HeroBackdrop from '../components/Hero/HeroBackdrop'
 import Hero from '../components/Hero/Hero'
 import About from '../components/About/About'
 import Founder from '../components/Founder/Founder'
 import WhyAgb from '../components/WhyAgb/WhyAgb'
+import styles from './HomePage.module.css'
 
 function HomePage() {
-  /*
-    WHO STILL NEEDS THE HERO'S FIXED BACKDROP — and this page is the right owner of
-    that question, because it is the only thing that knows which sections exist.
-
-    Hero's video backdrop is `position: fixed` and About's ground is frosted glass
-    over it, so the footage is genuinely on screen well past the hero: About is the
-    one section that samples it, and it does so from its first visible pixel to its
-    last. Below that — Founder, the placeholder, anything added after them — every
-    section paints an opaque ground of its own, and the backdrop is a full-viewport
-    composited layer holding a 4K texture for something nobody can see. Hero drops it
-    entirely when this is false; the argument in full is at the gate in Hero.jsx.
-
-    Starts `true`, which is the safe direction: the cost of being wrong here is one
-    extra frame of a layer that is about to be needed anyway, where starting false
-    would flash About's glass flat black for a frame on a reload part-way down the
-    page (browsers restore scroll before an IntersectionObserver can report).
-
-    Adding a section below Founder needs nothing here. Adding another *translucent*
-    one does — it has to report itself the same way About does, or it will show a
-    backdrop that is no longer there.
-  */
-  const [storyGlassVisible, setStoryGlassVisible] = useState(true)
-
   /*
     WHEN THE FIXED SITE HEADER IS DUE — the Story section's own halfway mark, reported
     from that section because it is measured against that section's box.
 
-    It is wired here for the same reason the flag above is: Header and About are
-    siblings that know nothing of each other, and this page is the only thing that knows
-    they are on the same screen. Header used to answer this itself, from a scroll
-    threshold; the note on its `visible` prop has the before and after.
+    It is wired here because Header and About are siblings that know nothing of each
+    other, and this page is the only thing that knows they are on the same screen. Header
+    used to answer this itself, from a scroll threshold; the note on its `visible` prop
+    has the before and after.
 
-    Starts `false`, the opposite of the flag above, because the two are wrong in
-    opposite directions: an unwanted frame of a hidden video layer costs nothing, and an
-    unwanted frame of the site header would flash it over the hero.
+    Starts `false`: an unwanted frame of the site header would flash it over the hero,
+    where a late arrival costs nothing.
   */
   const [storyHalfVisible, setStoryHalfVisible] = useState(false)
 
@@ -60,17 +38,18 @@ function HomePage() {
 
     Or-ing it with "the hero is behind us" turns the pair into a threshold. The union is
     continuous rather than merely adjacent, and that is worth being explicit about: the
-    Story section begins one viewport down, so it reaches half-visible at half a
-    viewport of scrolling — before this flag flips at one — and it stays half-visible
-    well past that point. Whatever the section's real height, the two windows overlap
-    and the header cannot flicker in the seam between them.
+    Story section begins one viewport down, so it reaches half-visible at half a viewport
+    of scrolling — before this flag flips at one — and it stays half-visible well past
+    that point. Whatever the section's real height, the two windows overlap and the header
+    cannot flicker in the seam between them.
 
     THE ONE THING THIS DELIBERATELY DOES NOT DO is latch permanently. Scrolling back up
-    into the hero hides the header again, and that is not the bug being fixed here: the
-    hero carries its own in-flow header, the fixed pill would land on top of its logo
-    and nav, and "the two headers are never on screen together" is the invariant the
-    whole arrangement exists to keep (CLAUDE.md §4). Once past the hero the header is
-    visible for the remainder of the page, in both directions, which is what was asked.
+    into the hero hides the header again: the hero carries its own in-flow header, the
+    fixed pill would land on top of its logo and nav, and "the two headers are never on
+    screen together" is the invariant the whole arrangement exists to keep (CLAUDE.md §4).
+
+    Note this is a *scroll* threshold and always was — it has nothing to do with how the
+    footage behind the hero is pinned, so it is untouched by that becoming sticky.
   */
   const heroBehind = useScrollPosition(isPastFirstViewport)
 
@@ -78,26 +57,48 @@ function HomePage() {
     <>
       <Header visible={storyHalfVisible || heroBehind} />
       <main>
-        <Hero sampledBelow={storyGlassVisible} />
-        <About
-          onGlassVisibilityChange={setStoryGlassVisible}
-          onHalfVisibleChange={setStoryHalfVisible}
-        />
+        {/*
+          THE STAGE: the hero, the Story section, and the footage behind both.
+
+          This wrapper is not a layout device — it is the boundary. HeroBackdrop is a
+          `position: sticky` layer, and a sticky box cannot be offset past its own
+          containing block, so putting the two sections that need the footage inside one
+          box is what makes "the video does not exist below the Story section" a fact of
+          the layout instead of a scroll threshold. Everything that used to compute that
+          threshold is gone: Hero's `sampledBelow` prop, the `storyGlassVisible` state
+          that lived here, and About's `onGlassVisibilityChange` observer.
+
+          ORDER MATTERS. The backdrop is first so that both sections, which are positioned
+          at `z-index: auto`, paint over it in document order — the same relationship it
+          had as a fixed child of the hero, and the one About's `backdrop-filter` depends
+          on to find the footage underneath itself.
+
+          The stylesheet is mostly a list of things this box must never be given; read it
+          before adding a property here.
+        */}
+        <div className={styles.stage}>
+          <HeroBackdrop />
+
+          {/*
+            The inner wrapper is not decoration: it carries the negative margin that gives
+            back the screen of layout height the sticky backdrop claims. That margin cannot
+            live on the backdrop, because a sticky box's own margins change how far it is
+            allowed to travel — see the note in HomePage.module.css.
+          */}
+          <div className={styles['stage-content']}>
+            <Hero />
+            <About onHalfVisibleChange={setStoryHalfVisible} />
+          </div>
+        </div>
 
         {/*
-          A sibling of About rather than a child of it. It used to be rendered from inside
-          About, pinned across that section's scroll-zoom stage and faded in over the
-          finished transition; with the zoom gone it is simply the next section on the
-          page and belongs here with the others.
+          Outside the stage, and that is the whole guarantee. There is no scroll position
+          at which the hero's footage can be painted here — not because a flag says so,
+          but because the element that draws it is confined to a box that ends above this
+          one. Their own opaque grounds at --z-base remain correct on their own terms and
+          stay as they are.
         */}
         <Founder />
-
-        {/*
-          The closing section, in the slot the empty `.placeholder` used to hold — the
-          one that existed so the Founder had somewhere to scroll away to. It has real
-          content now, so the placeholder and its stylesheet are gone; WhyAgb carries the
-          `position: relative` + --z-base that slot has always needed.
-        */}
         <WhyAgb />
       </main>
     </>

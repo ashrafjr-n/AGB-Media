@@ -29,7 +29,7 @@ Single source of truth for every task in this repository. Read this before writi
 
 ### Routing, and what is wired ahead of itself
 
-`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with `<Hero />`, `<About />`, `<Founder />` and `<WhyAgb />`. There is no placeholder section any more — `WhyAgb` took that slot, and `HomePage.module.css` went with it.
+`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with a `.stage` wrapper holding `<HeroBackdrop />`, `<Hero />` and `<About />`, followed by `<Founder />` and `<WhyAgb />`. There is no placeholder section any more — `WhyAgb` took that slot. `HomePage.module.css` went with it and has since come back, for the stage — see §7.
 
 `/about`, `/services` and `/contact` are linked from `navLinks.js`, and About's CTA points at `/about`, but **none of them has a `<Route>`** — following one renders an empty page. The links are deliberately wired ahead of the pages. When adding one of those pages, add the route *and* check nothing in `navLinks.js` needs to change.
 
@@ -38,11 +38,12 @@ Single source of truth for every task in this repository. Read this before writi
 | File | What it is |
 | --- | --- |
 | `App.jsx` | Router shell. One route. |
-| `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`, `Founder`, `WhyAgb`). **No stylesheet of its own.** Holds **two booleans**, both reported by `About` and both consumed by a component that knows nothing of it: whether the Story glass is still showing the hero's fixed footage (→ `Hero`'s `sampledBelow`, §7) and whether the Story section is half on screen (→ `Header`'s `visible`, §4). This page is the wiring because it is the only thing that knows those components share a screen. |
+| `pages/HomePage.jsx` | The only page. Owns **`.stage`** — the wrapper holding `HeroBackdrop`, `Hero` and `About`, which is what scopes the sticky footage to those two sections (§7). Holds **one boolean**, reported by `About` and consumed by a component that knows nothing of it: whether the Story section is half on screen (→ `Header`'s `visible`, §4). It held a second until the backdrop became sticky and made the question unnecessary. |
 | `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden via `data-hidden` + `inert` until its `visible` prop says otherwise; it reads no scroll position of its own. See §4 "The two headers". |
-| `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`, and carries `data-offscreen` at the same threshold to stop the animations inside it — see §7. Takes one prop, `sampledBelow`, which extends how long the backdrop is *rendered* past that — §7 again. |
+| `components/Hero/Hero.jsx` | `100svh` landing section: an `sr-only` `<h1>`, its own header, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. **Takes no props and holds no video** — it carries `data-offscreen` at `viewportProgress >= 1` to stop the animations inside it, and nothing else. |
+| `components/Hero/HeroBackdrop.jsx` | The 4K footage under a `--color-scrim` overlay — **`position: sticky`, and a sibling of `Hero` and `About` rather than a child of either**, because the pinning spans both and a sticky box is constrained by its containing block. Owns the play/pause gate and the unmute-on-first-gesture effect. Lives in `Hero/` because the footage is the hero's, like `HeroHeader.jsx`. See §7. |
 | `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
-| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. Reveals on the shared ladder in `useSectionReveal`. Its ground is a **full-height** `::before`, not the section's own background — §7. **Observes its own box three times** — at `0.2` for its video, at an **asymmetric** root margin for the hero's backdrop (400px of lead-in, a hard cutoff on the trailing edge — `onGlassVisibilityChange`, §7), and at `0.5` for the site header's arrival (`onHalfVisibleChange`, §4). The last two are reported to `HomePage` rather than used here. |
+| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. Reveals on the shared ladder in `useSectionReveal`. Its ground is a **full-height** `::before`, not the section's own background — §7. **Observes its own box twice** — at `0.2` for its video, and at `0.5` for the site header's arrival (`onHalfVisibleChange`, §4, reported to `HomePage` rather than used here). There was a third, for the hero's backdrop, until sticky made it unnecessary — §7. |
 | `components/shared/Button.module.css` | **The** button definition — base + **two** glass variants. A module with no `.jsx` sibling, on purpose. |
 | `components/shared/FluidBar.jsx` | The hero ticker's water — three drifting gradient masses under an SVG turbulence displacement. **Pure markup + CSS: no canvas, no WebGL, no JS.** The only genuinely moving surface on the site. |
 | `components/shared/CssLens.jsx` | The Story circle: the looping `<video>`, plus a 140px frosted-glass disc that follows the pointer over it. Pure DOM — a `backdrop-filter: blur() saturate()`, a white tint, a soft radial highlight, a thin rim and one inset shadow. A **perfect circle at every moment**; nothing distorts its geometry. Takes a `pointer` ref (not props) so mousemove does not re-render it, and a `wakeRef` so About can restart its follow loop. **It does not bend the footage** — see §7. |
@@ -126,12 +127,12 @@ Shadows are the exception: `--shadow-soft` is legitimately black-based, because 
 
 ### Section boundaries over the hero backdrop
 
-The hero's video backdrop is `position: fixed`, so every section below it scrolls *over* the footage. Sections meet that footage **directly**, with no gradient band, shadow, or any other treatment easing the join. An earlier pass faded the `About` edge with a gradient band and it was removed deliberately; **do not reintroduce one.**
+The hero's video backdrop is `position: sticky` and pinned to the top of the viewport, so the Story section scrolls *over* the footage. Sections meet that footage **directly**, with no gradient band, shadow, or any other treatment easing the join. An earlier pass faded the `About` edge with a gradient band and it was removed deliberately; **do not reintroduce one.**
 
 What changed is what "directly" means. `About` no longer *covers* the footage — it filters it. `--section-glass-fill` (0.75) plus a viewport-wide `backdrop-filter` blur makes the section frosted glass with the hero's frozen frame visible through it. Two consequences worth knowing before touching either end:
 
 - **The opacity is still load-bearing, for a different reason.** `Hero.jsx` pauses the video at `viewportProgress >= 1` because it treats one scrolled viewport as "covered". That gate is untouched and still correct — it now stops work on something visible but frozen behind glass rather than on something hidden.
-- **The blur only reaches the video while nothing between `.about` and the document root establishes a backdrop root.** No ancestor may take `filter`, `opacity < 1`, `mask`, `contain`, or `isolation` — adding `isolation: isolate` to `<main>` would silently flatten the glass to a plain dark panel. `.backdrop` sits at `z-index: 0` and `.about` at `z-index: auto`, so tree order puts the footage underneath; giving `About` a z-index below the backdrop's would break it the same way.
+- **The blur only reaches the video while nothing between `.about` and the document root establishes a backdrop root.** That chain is now `.stage-content` → `.stage` → `<main>`, and none of them may take `filter`, `opacity < 1`, `mask`, `contain`, or `isolation` — adding `isolation: isolate` to any one would silently flatten the glass to a plain dark panel. `.backdrop` sits at `z-index: 0` and `.about` at `z-index: auto`, so tree order puts the footage underneath; giving `About` a z-index below the backdrop's, or giving either wrapper a z-index, would break it the same way.
 
 **There is a known seam at the hero's bottom edge.** `.ticker` is painted in **fully opaque `--color-black`** and extends its fill through `.hero`'s block-end padding (`padding-block-end` plus an equal negative `margin-block-end`) specifically so the strip met `About`'s identical opaque black invisibly. That premise is gone — an opaque strip now runs into translucent glass, leaving a step in tone. Closing it means giving the ticker the same glass treatment; it is a Hero decision and has not been made. **Keep the two padding values equal** regardless — they cancel, which is what leaves the metadata sitting where it would without them.
 
@@ -226,6 +227,8 @@ src/
     Hero/
       Hero.jsx
       Hero.module.css
+      HeroBackdrop.jsx      # the sticky footage — a sibling of Hero, not a child (see §7)
+      HeroBackdrop.module.css
       HeroHeader.jsx        # the hero's own in-flow header (see "The two headers")
       HeroHeader.module.css
     About/
@@ -240,8 +243,8 @@ src/
       CssLens.jsx           # the story circle: the video, and a glass disc over it
       LogoLoop.jsx          # the founder's scrolling strips — stills, and titles
   pages/                    # route-level components
-    HomePage.jsx            # wires About's two reports to Hero and Header
-    HomePage.module.css
+    HomePage.jsx            # owns .stage, and wires About's report to Header
+    HomePage.module.css     # .stage and .stage-content — the sticky backdrop's scope
   styles/
     variables.css           # design tokens ONLY
     global.css              # reset, base element styles, noise overlay
@@ -418,7 +421,7 @@ The cost is real and accepted: on the windows where About overflows, its `backdr
 **The two are built differently, and neither may take the other's form:**
 
 - **Founder** uses two absolutely positioned layers at `z-index: -2` / `-1`, contained because `.founder` is a stacking context (`position: relative` + `--z-base`).
-- **About uses `.about::before` with no z-index at all**, and `.inner` takes `position: relative` so the copy paints over it. It cannot use a negative index: that only stays inside a section that is a stacking context, and the moment `.about` has a z-index its glass is a member of *that* context rather than a box painting in document order against the hero's fixed backdrop — which is the one thing About's glass has to reach. The Founder can afford it because what its glass samples is a sibling inside the section.
+- **About uses `.about::before` with no z-index at all**, and `.inner` takes `position: relative` so the copy paints over it. It cannot use a negative index: that only stays inside a section that is a stacking context, and the moment `.about` has a z-index its glass is a member of *that* context rather than a box painting in document order against the hero's sticky backdrop — which is the one thing About's glass has to reach. The Founder can afford it because what its glass samples is a sibling inside the section.
 
 ### The founder's portrait is clipped by a frame, not sized by itself — 2026-07-31
 
@@ -430,18 +433,28 @@ The fix is a `.portrait-frame` that carries the box the image used to have — t
 
 The same reasoning applies to any full-width image in an `fr` track. There is exactly one on the site.
 
-### The fixed backdrop is dropped once nothing samples it — 2026-07-31
+### The backdrop is `position: sticky`, scoped to a stage — 2026-07-31
 
-Hero's `.backdrop` is `position: fixed`, and it used to exist for the **entire** scroll length of the page. Pausing the video at `isPastFirstViewport` stopped the *decode*; it did not stop the element being a full-viewport composited layer holding a 4K texture. Founder and the placeholder are both opaque and paint over it, so from the founder down that layer was kept alive for something nobody could see.
+**This replaced a JS visibility gate, and the replacement is the point.** Hero's `.backdrop` was `position: fixed`, which put it in the viewport's coordinate space — that is to say everywhere, for the whole length of the document — so something had to keep taking it away again. That something grew into: a `data-hidden` attribute driving `display: none`, a `sampledBelow` prop on `Hero`, a `storyGlassVisible` state on `HomePage`, and a fourth `IntersectionObserver` in `About` (`onGlassVisibilityChange`) reporting its own box at a root margin. The margin was tuned twice and was wrong in one direction or the other both times — too tight and the layer was rebuilt on the frame the glass first sampled it, too loose and a full-viewport 4K texture stayed composited well into the Founder. **All of it is deleted.**
 
-It is now rendered only while **the hero is on screen, or About is** — `display: none` otherwise, set from `data-hidden` on `.backdrop`.
+The footage now lives in `components/Hero/HeroBackdrop.jsx` as a `position: sticky` child of `.stage` (`pages/HomePage.module.css`), a wrapper holding exactly `<Hero />` and `<About />`. A sticky box cannot be offset past its own containing block, so the stage's bottom edge — which is the Story section's bottom edge — is the boundary, as a fact of layout. There is no threshold left to get wrong.
 
-- **Fixed is load-bearing, and scoping the video to the hero's own box is not an option.** About's ground is frosted glass *over that footage* (§2), and `backdrop-filter` can only sample what is actually painted beneath it. An absolutely positioned backdrop would be a viewport above the screen by the time About arrives, and the Story section would flatten to a plain dark panel. Fixed matters for exactly as long as About is on screen, and not one pixel further.
-- **About reports its own position**, through `onGlassVisibilityChange` to `HomePage`, which passes the flag to Hero as `sampledBelow`. A scroll threshold would have been cheaper and is wrong: `.about` is `min-block-size: 100vh`, so on a short window it is taller than one viewport and any "two viewports down" arithmetic would cut the footage while the glass was still showing it. The section's own box is the only honest answer.
-- **The observation's root margin is asymmetric** (`GLASS_REACH_MARGIN`, `top right bottom left`), and the asymmetry is the whole of it. `bottom: 400px` is the **lead-in**: re-creating a compositor layer can cost a frame, and that frame must not be the one the glass first samples on. `top: 0` is the **cutoff**, and it was 400px, which was a bug — a symmetric margin held Hero's full-viewport 4K layer alive for the first 400px of the Founder, underneath *that* section's own viewport-wide `backdrop-filter`, for something nothing could see. The cutoff is now the Story section's exact bottom edge. It can be that tight because it is invisible by construction: at the crossing About shows zero pixels, and every section below paints an opaque `--color-black` at `--z-base`, above the backdrop's `z-index: 0`. What it trades is one frame on a fast scroll *back up*, where the first sliver of About's glass blurs the page's own black instead of the footage — the fill is that same black at 0.75, so across a few dozen pixels the difference is slight. **Do not make it symmetric again.**
-- **`display: none`, never `opacity: 0` or `visibility: hidden`.** The cost being removed is the layer and the texture, and an invisible layer is still a layer.
-- **The default keeps Hero self-sufficient.** `sampledBelow` defaults to `false` and can only ever *extend* the backdrop's life — while any of the hero is on screen it renders regardless, so a page that forgets the prop still gets a correct hero. `HomePage`'s state starts at `true` for the opposite reason: a scroll restoration part-way down the page lands before any IntersectionObserver can report, and one needless frame of the layer beats a frame of About's glass over flat black.
-- **Adding a section below Founder needs nothing.** Adding another *translucent* one does — it has to report itself the way About does, or it will be glass over a backdrop that is no longer rendered.
+**The arithmetic, because it is the design and one number breaks it.** With stage height `H`, backdrop height `100vh` and scroll offset `s`, the box's top is `clamp(s, 0, H - 100vh)`:
+
+- `s ≤ H - 100vh` — the box tracks the viewport exactly. Indistinguishable from `fixed`.
+- `s > H - 100vh` — the offset is capped, so the box sits at the stage's last screen and scrolls out **in lockstep with the Story content in front of it**. The two stay aligned to the pixel.
+- `s = H` — the box's bottom edge is the viewport's top edge, and Founder begins. Gone, by geometry.
+
+The travel a sticky box gets is `H - h`, and the travel this needs is `H - 100vh`. They are equal only at `h = 100vh` — **shorter and the last phase leaves Story with bare page behind it; taller and it stops tracking early, mid-Story.**
+
+- **The 100vh of flow height it claims is given back by `.stage-content`, NOT by a margin on the backdrop.** This is the one genuine trap, it fails silently, and it was found by measuring rather than by reading. A sticky box is constrained by its containing block **deflated by the box's own margins**, so `margin-block-end: -100vh` *inflates* the constraint rect by a screen and hands the box an extra screen of travel: measured on a 1440×900 window it stayed pinned to the viewport top until 767px past the stage's bottom edge — a full viewport into the Founder, invisible only because that section is opaque. Exactly the bug this refactor exists to prevent, reintroduced by the fix for a layout detail. The negative margin lives on the sibling wrapper instead, so the backdrop's own margins stay zero. **The two values are one number in two files; each names the other.**
+- **Nothing between `.backdrop` and `.stage` may take `overflow` other than `visible`, or a `transform`, `filter`, `perspective` or `contain`.** The first makes a scroll container, which becomes what the box sticks to; the rest re-scope its containing block. This is also why the backdrop could not stay inside `.hero` — that section is `overflow: hidden`, so a sticky child of it would not stick at all.
+- **`.stage` and `.stage-content` must stay free of `isolation`, `opacity` and `backdrop-filter`.** Those create a backdrop root, and About's frosted ground has to reach *through* both to the footage. Either one would silently flatten the Story section to a plain dark panel.
+- **Neither wrapper takes a `position` or `z-index`.** Left static and non-stacking, the backdrop (`z-index: 0`), `.hero` and `.about` (both `z-index: auto`) go on painting in document order in the root stacking context, exactly as they did under `fixed` — which is what About's `backdrop-filter` depends on to find the footage beneath itself.
+- **The playback gate stays, and answers a different question.** Sticky stops the element being *seen*; it does not stop the browser decoding 4K frames. `isPastFirstViewport` still pauses at one scrolled viewport and resumes on the way back up.
+- **Adding a section below the stage needs nothing — including a translucent one.** That is the whole gain over the old arrangement: there is no flag to opt into, because there is no footage down there to sample.
+
+Measured in Brave over CDP at 1440×900 and 390×844, scrolling down and back up, the backdrop's bottom edge never once passed the stage's bottom edge (max overhang `0px`), including the narrow case where Story overflows a screen (967px against an 844px viewport) — the case the old scroll-threshold arithmetic could not express.
 
 ### Only one video decodes at a time
 

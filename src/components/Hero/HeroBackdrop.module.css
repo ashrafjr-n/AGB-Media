@@ -1,0 +1,116 @@
+/*
+  The hero's footage, pinned behind the hero AND the Story section, and structurally
+  incapable of reaching past them.
+
+  IT IS `position: sticky`, WHERE IT WAS `position: fixed`. Fixed put the layer in the
+  viewport's coordinate space, which is to say everywhere, for the whole length of the
+  document — so a JS gate had to keep taking it away again (a `display: none` toggle fed
+  by an IntersectionObserver in About.jsx, reported up through HomePage). Sticky puts the
+  boundary in the layout instead: a sticky box is offset only as far as its own containing
+  block allows, and its containing block here is `.stage` in HomePage.module.css, which is
+  exactly the hero plus the Story section. It cannot be painted below that box. There is no
+  threshold left to get wrong.
+
+  THE ARITHMETIC, because it is the whole design and it is easy to break by changing one
+  number. Let H be the stage's height (hero + Story) and s the document scroll offset. This
+  box is 100vh tall and its natural in-flow position is the stage's first screen, so:
+
+      box top = clamp(s, 0, H - 100vh)
+
+  - s from 0 to H - 100vh: the box tracks the viewport exactly — this is the phase that
+    looks identical to `fixed`, and it covers the hero and all but the last screen of the
+    Story section.
+  - s past H - 100vh: the offset is capped, so the box stops tracking and sits at the
+    stage's LAST screen, [H - 100vh, H]. It now scrolls up in lockstep with the rest of the
+    stage — and so does the remaining Story content in front of it, so the two stay exactly
+    aligned all the way out.
+  - s = H: the box's bottom edge is the viewport's top edge. Founder begins here. The
+    footage is gone, by geometry rather than by a flag.
+
+  A 100vh BOX IS THE ONLY HEIGHT THAT WORKS, and it is worth saying why the obvious
+  alternatives do not. Shorter, and the final phase leaves a strip of the Story section
+  with no footage behind it. Taller, and `H - 100vh` shrinks: the box stops tracking the
+  viewport *early*, mid-Story, and the glass above it would sample footage sliding away.
+  `100vh` and not `100svh`, deliberately: on mobile the large viewport is the taller of the
+  two, so this always covers the visible area rather than leaving a band under a retracted
+  URL bar.
+
+  THIS ELEMENT CARRIES NO MARGIN, AND THAT IS A CORRECTION RATHER THAN AN OMISSION.
+
+  A sticky box is in flow — it is a relatively positioned box that has been offset — so it
+  claims a screen of layout height that has to be given back somewhere, or the hero starts
+  one screen down the page. The obvious place is here, as `margin-block-end: -100vh`. It
+  does not work, and it fails silently in the one direction nobody checks.
+
+  Chromium (and the spec) constrain a sticky box by its containing block **deflated by the
+  box's own margins**. A margin of -100vh therefore *inflates* the constraint rect by a
+  screen, and the box buys itself a screen of extra travel: measured, it stayed pinned to
+  the top of the viewport until 767px past the stage's bottom edge on an 1440×900 window —
+  a full viewport into the Founder, invisible only because that section is opaque. That is
+  precisely the class of bug this refactor exists to make impossible, reintroduced by the
+  fix for a layout detail.
+
+  So the height comes off the NEXT element instead: `.stage-content` in HomePage.module.css
+  takes `margin-block-start: -100vh` and slides the two sections up over this one. The
+  stage ends up the same height either way; the difference is that this box's own margins
+  stay zero, so its travel is exactly `H - 100vh` — which is exactly the travel the phases
+  above require. THE TWO VALUES MUST STAY EQUAL AND OPPOSITE, and they now live in two
+  files; each names the other.
+
+  WHAT MUST NOT APPEAR BETWEEN THIS AND `.stage`: any `overflow` other than `visible`, any
+  `transform`, `filter` or `contain`. The first creates a scroll container, which becomes
+  the box this sticks to and defeats the pinning; the others create a containing block that
+  would re-scope it. This is why the element is a child of the stage rather than of `.hero`
+  — `.hero` is `overflow: hidden`, so a backdrop left inside it would not stick at all.
+
+  z-index 0 rather than a negative value keeps it inside the normal positioned layer, where
+  later positioned siblings — `.hero` and `.about`, both `z-index: auto` and both after
+  this in tree order — paint on top of it. That is unchanged from the fixed version, and it
+  is what lets About's `backdrop-filter` sample this: the two are same-layer boxes painting
+  in document order, and this one comes first.
+
+  pointer-events: none is mandatory: full-width and screen-tall, it would otherwise
+  intercept clicks and hovers across the whole of both sections.
+*/
+.backdrop {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 0;
+
+  block-size: 100vh;
+  /*
+    NO MARGIN HERE. The 100vh of flow height this claims is taken back by
+    `.stage-content`'s margin-block-start in HomePage.module.css — a margin on this
+    element would change how far it is allowed to travel. See the note above.
+  */
+
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.backdrop-video {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+  Light scrim above the video — just enough to keep the foreground text legible without
+  hiding the footage.
+
+  --color-scrim, not raw black, so the hero darkens toward exactly the tone the body and
+  About are painted in rather than toward something cooler and deeper. At the current
+  ground the two are within a hair of each other and the distinction no longer shows, but
+  the rule holds for whatever the ground becomes: raw black is what puts a visible step at
+  a section boundary.
+
+  Note that About's glass blurs the footage *already scrimmed* — this layer is inside the
+  box the backdrop-filter samples.
+*/
+.backdrop-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-scrim);
+}

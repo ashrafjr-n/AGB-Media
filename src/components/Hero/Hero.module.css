@@ -44,84 +44,21 @@
   overflow: hidden;
 }
 
-/* --- Video backdrop -------------------------------------------------------- */
-
 /*
-  Fixed, not absolute, so it stays put while the rest of the page scrolls over
-  it — it reads as a backdrop the document slides across rather than as part of
-  the hero's own box. `overflow: hidden` on .hero does not clip it: a fixed
-  element is laid out against the viewport, and only an ancestor that is itself a
-  fixed containing block (transform, filter, contain) would crop it.
+  THE VIDEO BACKDROP IS NOT IN THIS FILE ANY MORE — it is HeroBackdrop.module.css.
 
-  z-index 0 rather than a negative value keeps it inside the normal positioned
-  layer, where later positioned siblings — About, with its opaque ground fill —
-  paint on top of it in tree order. A negative index would work today but would
-  be trapped the moment any ancestor became a stacking context.
+  It was a `position: fixed` child of this section. It is now a `position: sticky`
+  *sibling* of it, one level up in `.stage` (HomePage.module.css), because the pinning it
+  performs spans this section and the Story section below and a sticky box is constrained
+  by its own containing block. The `overflow: hidden` above is the second reason it could
+  not stay: an ancestor with a non-visible overflow is a scroll container, and a sticky
+  descendant sticks to *that* rather than to the viewport.
 
-  pointer-events: none is mandatory: full-viewport and fixed, it would otherwise
-  intercept every click and hover on the page.
+  What this section still assumes about it: the backdrop paints at `z-index: 0` and comes
+  before `.hero` in tree order, so everything in here paints over it without asking. The
+  explicit z-index on .ticker below (and on .hero-header) is what was already needed for
+  that, and it is unchanged.
 */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/*
-  Out of the render tree once nothing can see it — set from Hero.jsx, where the
-  full argument for the gate is.
-
-  `display: none` rather than `opacity: 0` or `visibility: hidden`, and the choice is
-  the entire point of the rule. The cost being removed is not the fill, it is the
-  compositor layer and the video texture it holds; a transparent or invisible layer is
-  still a layer, and on a 4K source that is the most expensive one on the page. Only
-  `display: none` guarantees the box, the layer and the texture all go.
-
-  What it trades, so it is not filed as a bug later: taking the element out of the tree
-  and putting it back can cost a frame before the paused video paints its held frame
-  again. That is why the observation driving the gate carries 400px of LEAD-IN — it is
-  the `bottom` half of the root margin in About.jsx, and by the time anything can see
-  this again it has had most of a second of scrolling to come back.
-
-  The other half of that margin is 0. The gate used to be symmetric, which held this
-  layer alive for the first 400px of the Founder — underneath that section's own
-  viewport-wide backdrop-filter, for something nothing could see. It now goes at the
-  Story section's exact bottom edge, which is invisible because every section below that
-  edge paints an opaque --color-black at --z-base, above this element's z-index 0. See
-  GLASS_REACH_MARGIN in About.jsx for the full argument.
-
-  It cannot fire while any of the hero is on screen: the flag it is driven by is
-  `!isHeroCovered || sampledBelow`, and isHeroCovered is a full scrolled viewport
-  against a 100svh section.
-*/
-.backdrop[data-hidden='true'] {
-  display: none;
-}
-
-.backdrop-video {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-}
-
-/*
-  Light scrim above the video — just enough to keep the foreground text legible
-  without hiding the footage.
-
-  --color-scrim, not raw black, so the hero darkens toward exactly the tone the body
-  and About are painted in rather than toward something cooler and deeper. At the current ground the two are within a hair of each other and the
-  distinction no longer shows, but the rule holds for whatever the ground becomes:
-  raw black is what puts a visible step at a section boundary.
-*/
-.backdrop-overlay {
-  position: absolute;
-  inset: 0;
-  background-color: var(--color-scrim);
-}
 
 /* --- Bottom metadata ticker ---------------------------------------------- */
 

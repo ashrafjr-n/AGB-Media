@@ -29,11 +29,11 @@
   How it works: --section-glass-fill is --color-black at 0.75, and the backdrop-filter
   blurs everything painted beneath that layer. That reaches the hero's video because
   nothing between here and the document root establishes a backdrop root — no ancestor
-  carries filter, opacity, mask, contain or isolation — and because `.backdrop` sits at
-  z-index 0 in the root stacking context while this section is positioned at z-index
-  auto, so same-layer boxes paint in tree order and Hero's comes first. Both facts are
-  load-bearing now in a way they were not when this was opaque: adding `isolation:
-  isolate` or an opacity to <main>, or giving this section a z-index below the
+  carries filter, opacity, mask, contain or isolation, and that now includes `.stage`, the
+  wrapper this section shares with the hero — and because the backdrop sits at z-index 0
+  while this section is positioned at z-index auto, so same-layer boxes paint in tree order
+  and the footage comes first. Both facts are load-bearing: adding `isolation: isolate` or
+  an opacity to <main> or to `.stage`, or giving this section a z-index below the
   backdrop's, would each silently flatten the glass to a plain dark panel.
 
   THIS SECTION MUST STAY AT `z-index: auto`, and that is why the ground below is a
@@ -48,17 +48,24 @@
   the fixed backdrop at --color-scrim (0.25) — so the effective darkening is the two
   compounded, not 0.75 alone.
 
-  THIS SECTION IS WHAT KEEPS THAT BACKDROP ALIVE, and it is the ONLY thing that does.
-  Hero renders its fixed video while the hero itself is on screen, or while this section
-  is — from 400px before its top edge arrives to the moment its bottom edge leaves, and
-  not a pixel further. Everything below paints an opaque ground at --z-base, so past this
-  section the layer was a full-viewport 4K texture held in the compositor for nobody.
-  About.jsx reports its own position for that gate and HomePage.jsx wires the two
-  together. The consequence for this rule: the glass has footage to sample for exactly as
-  long as it can show any, which is why the panel below has to be the section's real
-  height — a ground that stops short does not fall back to black, it falls back to bare
-  footage. If this section is ever made to reach further — a sticky child, a parallax —
-  the lead-in margin in About.jsx has to grow with it.
+  THIS SECTION NO LONGER HAS TO KEEP THAT BACKDROP ALIVE, and that is the change worth
+  knowing before touching either end. The footage was `position: fixed`, which put it over
+  the whole document whether or not anything could see it, so this section observed its own
+  box and reported up through HomePage to tell Hero when to `display: none` the layer. The
+  margin on that observation was tuned twice and was wrong both times — too tight and the
+  layer was rebuilt on the frame the glass first read it, too loose and a 4K texture stayed
+  composited well into the Founder.
+
+  It is `position: sticky` now, scoped to a stage that holds exactly the hero and this
+  section (HeroBackdrop.module.css, HomePage.module.css). It is pinned to the top of the
+  viewport for as long as any of that stage is on screen and cannot be offset past the
+  stage's bottom edge, which is this section's bottom edge. So the footage is behind this
+  glass for precisely as long as this glass exists, by layout, and there is no flag.
+
+  WHAT THIS SECTION OWES IN RETURN, and it is the one thing that can still break it: the
+  panel below must cover this section's FULL height. A ground that stops short does not
+  fall back to black — this section paints no background of its own — it falls back to
+  bare footage, which is now guaranteed to be right there behind it.
 
   COST. This is the most expensive declaration in the project. A viewport-sized
   backdrop-filter re-blurs the full frame as the section scrolls, on top of a 4K decode

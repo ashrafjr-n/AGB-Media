@@ -53,39 +53,26 @@ const LENS_MIN_WIDTH = '(min-width: 48rem)'
 const PLAYBACK_AMOUNT = 0.2
 
 /*
-  How far outside the viewport this section still counts as "showing the hero's
-  footage through my glass", as an IntersectionObserver root margin.
+  THERE IS NO LONGER A `GLASS_REACH_MARGIN` HERE, and the deletion is the point rather
+  than a tidy-up.
 
-  ASYMMETRIC, AND THE ASYMMETRY IS THE POINT. `top right bottom left`, and the two block
-  edges answer opposite questions:
+  This section used to observe its own box a third time, at a root margin, purely to tell
+  Hero whether its `position: fixed` footage was still being sampled through this glass —
+  reported up through HomePage as `onGlassVisibilityChange`. The margin was the whole
+  difficulty: too tight and the layer was re-created on the frame the glass first read it,
+  too loose and a full-viewport 4K texture stayed composited well into the Founder. It was
+  tuned twice and was wrong in one direction or the other both times.
 
-  - `bottom: 400px` is the LEAD-IN. Scrolling down, this section enters the expanded root
-    400px before its top edge reaches the screen, so Hero's fixed layer is re-created and
-    has its texture back well before any of this glass can sample it. Reporting on the
-    exact edge would put a fresh compositor layer and the backdrop-filter that reads it on
-    the same frame. 400px is roughly half a laptop viewport; the 200px this started at was
-    often still landing after the thing it was meant to lead.
+  The footage is now `position: sticky`, scoped to a stage holding exactly the hero and
+  this section (HeroBackdrop.module.css). A sticky box cannot be offset past its own
+  containing block, so it stops being on screen at this section's bottom edge as a matter
+  of layout. Nothing has to observe anything and there is no threshold left to tune.
 
-  - `top: 0` is the CUTOFF, and it was 400px, which is the bug. A symmetric margin held
-    Hero's full-viewport 4K layer alive for the first 400px of the Founder — a section
-    that carries its own viewport-wide backdrop-filter — so for that stretch the page
-    composited the most expensive layer on the site underneath the second most expensive,
-    for something no longer capable of being seen. The cutoff now lands exactly on this
-    section's own bottom edge.
-
-  THE CUTOFF IS INVISIBLE BY CONSTRUCTION, which is why it can be this tight. At the
-  crossing this section shows zero pixels, and everything below it — Founder, then WhyAgb —
-  paints an opaque --color-black at --z-base, above the backdrop's z-index 0. There is no
-  scroll position past this edge at which the layer could be seen whether it exists or not.
-
-  What the tight edge trades, so it is not re-derived as a fault: scrolling back UP into
-  this section, the layer is restored on the same crossing rather than ahead of it, so a
-  fast flick can show one frame in which the first sliver of this section's glass blurs the
-  page's own --color-black instead of the footage. --section-glass-fill is that same black
-  at 0.75, so the difference across a few dozen pixels at the very top of the screen is
-  slight. Widening `top` again is what would trade it back, at the cost above.
+  WHAT THIS SECTION STILL OWES THE ARRANGEMENT: its ground must cover its FULL height, not
+  just the first screen — see .about::before. The glass is the only thing between the
+  reader and that footage, and a ground that stops short does not fall back to black, it
+  falls back to bare video.
 */
-const GLASS_REACH_MARGIN = '0px 0px 400px 0px'
 
 /*
   How much of this section has to be on screen before the fixed site header arrives.
@@ -108,22 +95,20 @@ const GLASS_REACH_MARGIN = '0px 0px 400px 0px'
 const HEADER_REVEAL_AMOUNT = 0.5
 
 /**
- * Two of this section's three observations of itself are reported upward rather than
- * used here, because what they gate belongs to other components. Both are wired in
- * HomePage.jsx, which is the only thing that knows those components are on the same
- * page as this one.
+ * One of this section's two observations of itself is reported upward rather than used
+ * here, because what it gates belongs to another component. It is wired in HomePage.jsx,
+ * which is the only thing that knows the two are on the same screen.
+ *
+ * There were three, and the third — `onGlassVisibilityChange`, which told Hero whether
+ * its footage was still being sampled through this glass — went with the fixed backdrop
+ * it existed to gate. See the note where its root margin used to be, above.
  *
  * @param {object} props
- * @param {(visible: boolean) => void} [props.onGlassVisibilityChange]
- *   Reports whether this section's frosted ground is near enough to the viewport to
- *   be showing the hero's fixed footage through it. This section is the only thing
- *   on the page that samples that backdrop, so the answer is what decides whether
- *   Hero renders it at all — see the gate in Hero.jsx.
  * @param {(halfVisible: boolean) => void} [props.onHalfVisibleChange]
  *   Reports whether half of this section is on screen, which is when the fixed site
  *   header is due — see HEADER_REVEAL_AMOUNT above and Header.jsx.
  */
-function About({ onGlassVisibilityChange, onHalfVisibleChange }) {
+function About({ onHalfVisibleChange }) {
   /*
     Read here for the LENS alone — the reveal ladder carries its own copy of this
     check inside useSectionReveal.
@@ -287,41 +272,25 @@ function About({ onGlassVisibilityChange, onHalfVisibleChange }) {
   /* --- What this section's position tells the rest of the page ------------- */
 
   /*
-    THREE OBSERVATIONS OF ONE BOX, at three distances, and each answers a question the
-    others cannot. `inView` above is "may my video decode", at a fifth of the section.
-    `glassInReach` is "is the hero's footage still being looked at", from 400px out.
+    TWO OBSERVATIONS OF ONE BOX, at two distances, and each answers a question the other
+    cannot. `inView` above is "may my video decode", at a fifth of the section.
     `halfVisible` is "is the site header due", at the section's midpoint.
 
+    There was a third at a root margin — "is the hero's footage still being looked at" —
+    and it is gone with the fixed backdrop it fed. Sticky answers that in layout now.
+
     They are separate observers rather than one with several thresholds because they are
-    read as three independent booleans and IntersectionObserver reports a threshold
-    crossing, not which threshold: collapsing them would mean deriving three states from
-    one ratio on every crossing, which is more code and one shared failure. Three
-    observers on one element is cheap — the browser batches them off the main thread and
-    none of them reads layout.
+    read as independent booleans and IntersectionObserver reports a threshold crossing,
+    not which threshold: collapsing them would mean deriving both states from one ratio on
+    every crossing, which is more code and one shared failure. Two observers on one
+    element is cheap — the browser batches them off the main thread and neither reads
+    layout.
+
+    Reported through an effect rather than during render because it is a parent's state
+    being written: HomePage owns the flag, since it is the only component that knows this
+    section and the header are on the same screen. The callback is a setState function and
+    therefore stable, so this fires on the two crossings and nothing else.
   */
-
-  /*
-    "Is the hero's footage still being looked at", from 400px out.
-
-    The distances are the reason these are not one observation. Playback wants the
-    section committed to the screen; the glass starts sampling the footage at the
-    section's very first visible pixel, and the layer it samples has to already
-    exist by then — so this one is the default `amount: 0` with a margin either
-    side, which is as early and as late as either edge can be answered.
-
-    Reported through an effect rather than during render because it is a parent's
-    state being written: HomePage owns the flag, since it is the only component that
-    knows this section and the hero are on the same page. The callback is a setState
-    function and therefore stable, so this fires on the two crossings and nothing
-    else.
-  */
-  const glassInReach = useInView(aboutRef, { margin: GLASS_REACH_MARGIN })
-
-  useEffect(() => {
-    onGlassVisibilityChange?.(glassInReach)
-  }, [glassInReach, onGlassVisibilityChange])
-
-  /* The site header's cue — see HEADER_REVEAL_AMOUNT. */
   const halfVisible = useInView(aboutRef, { amount: HEADER_REVEAL_AMOUNT })
 
   useEffect(() => {
