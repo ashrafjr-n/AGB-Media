@@ -35,8 +35,13 @@
   --why-row-gap: clamp(1.5rem, 3.6vh, 2.75rem);
   --why-column-gap: clamp(2rem, 6vw, 5.5rem);
 
-  /* The height the numeral needs above the title it sits behind. */
-  --why-numeral-lead: clamp(1.5rem, 3.4vh, 2.5rem);
+  /*
+    The gap under the numeral label. Small on purpose: the numeral belongs to the title
+    beneath it, and the pair has to read as one block against --why-row-gap separating the
+    cells. It replaces a --why-numeral-lead of 1.5-2.5rem, which was clearance for a
+    numeral sitting *behind* the title rather than above it.
+  */
+  --why-numeral-gap: clamp(0.3rem, 0.8vh, 0.5rem);
 
   /*
     THE FIELD'S WEIGHT, and the one dial worth having a number for.
@@ -76,10 +81,18 @@
 /*
   Three rows of outlined "AGB MEDIA", spread down the section behind everything else.
 
-  `justify-content: space-around` rather than `space-between`: between would pin the first
-  and last rows to the section's exact edges, where they would read as a border. Around
-  leaves half a gap top and bottom so the field looks like it continues past the section
-  rather than being framed by it.
+  `justify-content: center`, where this was `space-around`. The three rows are now a single
+  tight block of type rather than three separate lines distributed down the section — which
+  is what the larger size is for. Spread apart at this scale they read as three unrelated
+  bands; stacked to nearly touching they read as one architectural mass with the content
+  laid over it.
+
+  THE BLOCK DOES NOT FILL THE SECTION, and that is the current state rather than an
+  oversight: three rows at the capped size measure about 615px against a 720px or 900px
+  section, so it is centred with plain --color-black above and below it. The rows bleed off
+  the section's *inline* edges, never its block edges. Making it bleed vertically as well
+  would mean a fourth row or a much larger cap, and at the moment the empty band is what
+  gives the heading its air. Measured, not assumed — re-measure if the type size moves.
 
   z-index 0 against `.inner`'s 1, both inside this section's own stacking context. It is
   `position: absolute` and therefore paints above the section's background-color, which is
@@ -92,7 +105,7 @@
 
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: center;
 
   overflow: hidden;
   /* Full-bleed over the section; without this it would swallow every drag and click. */
@@ -104,6 +117,33 @@
 .field-row {
   /* Each row clips its own track, so a track can never widen the flex column. */
   overflow: hidden;
+}
+
+/*
+  THE POINTER LAYER — the middle row only, and empty on the other two.
+
+  It exists so two independent transforms can be composed without either owning the other's
+  property: the CSS keyframes animate `.field-track` inside this, and WhyAgb.jsx's follow
+  loop writes `transform` straight onto this node. Nested transforms multiply, so the row
+  keeps drifting on the compositor exactly as it did and the pointer offset slides the whole
+  drifting row along on top of it. On one element the loop would overwrite the animation
+  sixty times a second.
+
+  NO `will-change` AND NO `transform` HERE. The loop writes `translate3d`, which promotes
+  the element on its own for as long as it is moving; a `will-change` would be a compositor
+  layer held permanently for a row that is stationary most of the time, and CLAUDE.md's
+  rule is that the hint has to be droppable when the motion stops.
+
+  `inline-size: max-content` is the one thing it does declare, and it has to declare
+  something: a rule whose body is only a comment is dropped by the build, and a CSS Module
+  class with no rule is absent from the `styles` object — `styles['field-shift']` would come
+  back `undefined` and the element would render with an empty class. Verified against the
+  built stylesheet, not assumed. The value is also correct rather than filler: the wrapper
+  should be exactly as wide as the track it holds, matching `.field-track` below, so it
+  never reports a width of its own into the row.
+*/
+.field-shift {
+  inline-size: max-content;
 }
 
 /*
@@ -173,9 +213,22 @@
   white-space: pre;
 
   font-family: var(--font-display);
-  font-size: clamp(4.5rem, 12vw, 10rem);
+  /*
+    Roughly 20vw, where this was 12 — the wordmark is architecture now rather than texture,
+    and on a 1280px window one repeat sets around 1,600px, so a little under one full
+    "AGB MEDIA" is on screen at a time. That is the intent: the reader sees fragments of a
+    very large word, not a legible line of small repeated text.
+  */
+  font-size: clamp(5rem, 20vw, 16rem);
   font-weight: var(--font-weight-heavy);
-  line-height: 1;
+  /*
+    UNDER 1, and this is what puts the rows nearly in contact. A line box at `line-height:
+    1` is the full em, which carries the face's ascender and descender space above and
+    below glyphs that are mostly cap-height — so three stacked rows sat with a visible band
+    of nothing between them. 0.8 pulls each box tight to its own caps; what is left between
+    rows is the type's own overshoot, which is the gap the reference has.
+  */
+  line-height: 0.8;
   letter-spacing: var(--tracking-tight);
 
   color: transparent;
@@ -301,55 +354,45 @@
 }
 
 /*
-  The numeral, and the section's only piece of depth.
+  The numeral, as a label on its own line directly above the title.
 
-  It sits behind the title rather than beside it, at 8% of the accent — present enough to
-  give the cell a centre of gravity, far too dim to be read as a number first. That low
-  alpha is what allows it to be this large: at a legible opacity, a 7rem numeral behind a
-  1.5rem title would be the cell's subject.
+  IT WAS A DECORATIVE WASH BEHIND THE TITLE — 7rem of gold at 8%, absolutely positioned,
+  with the copy layered over it. That needed the cell to be a positioning context and the
+  copy to live in a wrapper of its own. This is the opposite treatment and needs neither:
+  a small, clearly legible mark that reads as an index, in normal flow, so the cell is
+  simply numeral, title, description down the page.
 
-  `position: absolute` and FIRST in document order, with `.body` positioned after it, so
-  the two paint in tree order with the copy on top. Neither needs a z-index and this cell
-  needs no stacking context of its own — which matters, because Framer writes an inline
-  `transform` on this element for the reveal and a stacking context here would be created
-  and destroyed as that animation runs.
+  70% of the accent, where it was 8%. At label size a wash is illegible rather than subtle,
+  and the number now has a job — it enumerates — so it has to be readable. Full --color-gold
+  would sit brighter than the titles it labels, which inverts the hierarchy; at 70% it reads
+  as gold and stays a step under the white.
 
-  `line-height: 0.8` pulls the numeral's box tight to its digits so the offsets below are
-  measured against the glyphs rather than against a line box with leading in it.
-  `tabular-nums` so 01 through 06 sit on one vertical edge; Clash Display may not carry the
-  feature, in which case this costs nothing.
+  --font-weight-medium rather than the heavy the decorative version used: at 1.5rem a heavy
+  numeral is a heading, and this is a tag.
+
+  `tabular-nums` so 01 through 06 occupy identical width and the six sit on one vertical
+  edge. Clash Display may not carry the feature, in which case this costs nothing.
 */
 .index {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
+  display: block;
+  margin-block-end: var(--why-numeral-gap);
 
-  color: color-mix(in srgb, var(--color-gold) 8%, transparent);
-  font-size: clamp(4rem, 8vw, 7rem);
-  font-weight: var(--font-weight-heavy);
-  line-height: 0.8;
+  color: color-mix(in srgb, var(--color-gold) 70%, transparent);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
   letter-spacing: var(--tracking-tight);
   font-variant-numeric: tabular-nums;
 }
 
-.item {
-  position: relative;
-  min-inline-size: 0;
-}
-
 /*
-  The copy, inset from the cell's origin so the numeral behind it is not fully covered.
-
-  The block inset is what lets the numeral's top half show above the title; the inline
-  inset moves the text off the numeral's left stem, which is the part that would otherwise
-  sit directly under the first letter of the heading. Both are small — the numeral is meant
-  to be found behind the words, not beside them.
+  No `position` any more. The cell was a positioning context only so the numeral could be
+  absolutely placed behind the copy; with everything in flow there is nothing to position
+  against, and leaving it would be a stacking context created and destroyed on every reveal
+  (Framer writes an inline transform on this element).
 */
-.body {
-  position: relative;
-
-  padding-block-start: var(--why-numeral-lead);
-  padding-inline-start: clamp(0.75rem, 1.6vw, 1.5rem);
+.item {
+  min-inline-size: 0;
 }
 
 /*
