@@ -12,6 +12,13 @@
   The background is opaque --color-black rather than nothing, for the same reason: the
   hero's footage is fixed and would otherwise still be showing through here, four
   viewports down the page.
+
+  Both of those are now belt to the braces of the gate in Hero.jsx, which stops
+  rendering that backdrop once About — the only section that samples it — has left the
+  screen, so there is nothing behind this section to show through or to paint over it
+  by the time it arrives. Keep them anyway: this is what makes the section correct on
+  its own terms rather than correct because of a threshold in another component, and it
+  is the state the page falls back to for the frame after a scroll restoration.
 */
 .placeholder {
   position: relative;

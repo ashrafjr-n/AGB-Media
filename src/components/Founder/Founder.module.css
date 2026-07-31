@@ -4,12 +4,16 @@
 
   IT PAINTS ITS OWN GROUND, which it did not use to. It lived inside About's scroll-zoom
   stage, pinned above a full-viewport blurred frozen frame of story.webm that served as
-  its background; with the zoom removed there is nothing behind it but the hero's fixed
-  4K footage, four viewports up the page. Hence the opaque --color-black below — and the
-  `position: relative` that goes with it, for the same reason .about and .placeholder are
-  positioned: Hero's .backdrop is `position: fixed` at z-index 0, and a positioned box at
-  z-index 0 paints above every static in-flow block in the same stacking context, so a
-  static section here would be drawn *underneath* the video whatever colour it was given.
+  its background; with the zoom removed there was nothing behind it but the hero's fixed
+  4K footage, four viewports up the page. It now builds that backdrop for itself instead —
+  .backdrop and .glass below — and keeps the opaque --color-black under both as the floor
+  the section is drawn on before a frame of video has arrived.
+
+  `position: relative` goes with that for two reasons. It is the containing block for the
+  two absolute layers; and it is the same fix .about and .placeholder need — Hero's
+  .backdrop is `position: fixed` at z-index 0, and a positioned box at z-index 0 paints
+  above every static in-flow block in the same stacking context, so a static section here
+  would be drawn *underneath* the hero's video whatever colour it was given.
 
   ONE SCREEN. The column is centred in the viewport and every area takes its natural
   height, so what fills the screen is the content rather than any single stretched block.
@@ -64,6 +68,68 @@
   padding-block: var(--founder-pad);
 
   background-color: var(--color-black);
+}
+
+/* --- The ground: footage under frosted glass ------------------------------ */
+
+/*
+  BOTH LAYERS SIT AT A NEGATIVE Z-INDEX, and that is what keeps this section's markup
+  free of layout changes. Everything else in here is static and in flow, which paints
+  *below* positioned descendants — so two absolutely positioned overlays at z-index auto
+  would cover the copy. Negative z-index puts them the other side of the in-flow content
+  while still inside the section: above .founder's own background-color, below its text.
+
+  It is contained because .founder carries `position: relative` with a z-index of its own,
+  which makes it a stacking context — without that, a negative-z child escapes to paint
+  behind the whole section. Remove the z-index up there and these two go with it.
+
+  A stacking context is NOT a backdrop root, so .glass's backdrop-filter still reaches the
+  video beneath it. What would break that is a `filter`, a `mask`, `isolation: isolate` or
+  a permanent `opacity < 1` on .founder — the section's entrance animates opacity, but
+  that only isolates the subtree while it runs, and the video is *inside* the subtree, so
+  the glass keeps sampling exactly what it is meant to.
+*/
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+
+  inline-size: 100%;
+  block-size: 100%;
+  /* A 16:9 source filling a viewport-tall box: crop, never letterbox or stretch. */
+  object-fit: cover;
+}
+
+/*
+  The frosted pane, and deliberately the same two tokens .about uses on its own ground:
+  --section-glass-fill (--color-black at 0.75) over --section-glass-blur (20px). The two
+  sections are meant to read as one material at two places on the page, so this is the
+  one case where duplicating a treatment is the point — if the Story ground is retuned,
+  retune this with it.
+
+  COST, stated because CLAUDE.md calls About's copy of this the most expensive declaration
+  in the project and this is a second one. It is cheaper than About's in the way that
+  matters: About's has to reach *outside* itself, through the document to the hero's fixed
+  footage, so backdrop-filter is the only mechanism that can do it. Here the only thing
+  behind the glass is .backdrop, a sibling — so if this ever reads as heavy on a mid-range
+  machine, the drop-in replacement is `filter: blur()` on .backdrop itself (scaled up a
+  few percent so its own blurred edges stay outside the box) plus a flat fill here, which
+  blurs one element instead of resampling the composited backdrop. The result is visually
+  the same. It is written this way because matching About exactly is worth more than the
+  saving until the saving is measured.
+
+  The two sections are never both fully on screen, but they do overlap at the boundary,
+  so for part of one scroll there are two viewport-wide backdrop-filters live at once.
+*/
+.glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  background-color: var(--section-glass-fill);
+  /* -webkit- prefix for Safari, which still requires it — as in About and Header. */
+  -webkit-backdrop-filter: blur(var(--section-glass-blur));
+  backdrop-filter: blur(var(--section-glass-blur));
 }
 
 /* --- The eyebrow ---------------------------------------------------------- */

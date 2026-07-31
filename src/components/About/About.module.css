@@ -29,6 +29,16 @@
   the fixed backdrop at --color-scrim (0.25) — so the effective darkening is the two
   compounded, not 0.75 alone.
 
+  THIS SECTION IS WHAT KEEPS THAT BACKDROP ALIVE. Hero renders its fixed video only
+  while the hero itself is on screen or while this section is within 400px of it —
+  everything below paints an opaque ground, so past here the layer was a full-viewport
+  4K texture held in the compositor for nobody. About.jsx reports its own position for
+  that gate and HomePage.jsx wires the two together. The consequence for this rule: the
+  glass has footage to sample for exactly as long as it can show any, and if this
+  section is ever made to reach further — a taller box, a sticky child, a parallax —
+  the margin in About.jsx has to grow with it or the footage will cut to flat black at
+  the edge.
+
   COST. This is the most expensive declaration in the project. A viewport-sized
   backdrop-filter re-blurs the full frame as the section scrolls, on top of a 4K decode
   and the blended grain layer in global.css. The video pausing at viewportProgress >= 1

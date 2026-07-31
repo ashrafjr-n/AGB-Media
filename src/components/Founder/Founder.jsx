@@ -1,5 +1,13 @@
-import { motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { motion, useInView, useReducedMotion } from 'framer-motion'
 
+import useExclusiveVideo, {
+  PLAYBACK_PRIORITY,
+} from '../../hooks/useExclusiveVideo'
+import useScrollPosition, {
+  isPastFirstViewport,
+} from '../../hooks/useScrollPosition'
+import storyVideo from '../../assets/videos/story.webm'
 import LogoLoop from '../shared/LogoLoop'
 import styles from './Founder.module.css'
 
@@ -35,6 +43,12 @@ import work007 from '../../assets/abdullah/strip/007.jpg'
   runway and faded up over the finished zoom, painting no ground of its own because the
   blurred frozen frame behind it *was* its background. That whole transition is gone, so
   this now owns its own ground and arrives with a plain whileInView reveal.
+
+  The ground is that same footage again, built rather than inherited: a <video> filling
+  the section under a frosted pane of --section-glass-fill and --section-glass-blur, which
+  is the identical treatment About gives the hero's backdrop. It is a second <video>
+  element pointing at the same file, and it is arbitrated so that it and the Story
+  circle's copy are never decoding at the same moment — see useExclusiveVideo.js.
 */
 
 const bio =
@@ -86,6 +100,27 @@ const workImages = [work002, work003, work004, work005, work006, work007].map(
   (src, index) => ({ src, alt: `AGB Media production still ${index + 1}` }),
 )
 
+/*
+  How much of the section has to be on screen before its background video is allowed to
+  run. The same fifth About uses, so the two sections ask the same question of themselves
+  and the arbitration in useExclusiveVideo.js is comparing like with like.
+*/
+const PLAYBACK_AMOUNT = 0.2
+
+/*
+  How early the file starts downloading, as an IntersectionObserver root margin.
+
+  400px rather than the section's own edge, so the fetch and the first decode happen while
+  the founder is still below the fold and the video has something to show the moment it
+  arrives. In practice this is almost always instant anyway: it is the *same file* the
+  Story circle has been streaming, so it comes out of the HTTP cache — the margin is
+  insurance for the visitor who jumps straight down the page.
+
+  Roughly half a laptop viewport of lead, where the 200px this started at was closer to a
+  quarter of a second of scrolling and often landed after the section did.
+*/
+const PRELOAD_MARGIN = '400px 0px'
+
 function Founder() {
   /*
     The global prefers-reduced-motion rule in global.css governs CSS animations only;
@@ -97,6 +132,67 @@ function Founder() {
     page assembling itself rather than as content appearing.
   */
   const shouldReduceMotion = useReducedMotion()
+
+  /* --- The background video ---------------------------------------------- */
+
+  const sectionRef = useRef(null)
+
+  /*
+    Two observations of the same box, because they answer two different questions at two
+    different distances: `nearView` is "start fetching", 400px out; `inView` is "start
+    playing", once a fifth of the section is genuinely on screen.
+  */
+  const nearView = useInView(sectionRef, { margin: PRELOAD_MARGIN })
+  const inView = useInView(sectionRef, { amount: PLAYBACK_AMOUNT })
+
+  /*
+    Belt and braces on the page-wide rule, and cheap: useScrollPosition shares one
+    listener and one scroll read across every consumer, and the selector keeps this to two
+    renders per pass rather than one per frame.
+
+    The founder cannot be a fifth on screen while the hero is still playing — it is two
+    viewports further down — so this is never the gate that decides anything. It is here
+    so that "the hero and this can never both be decoding" is provable from this file
+    rather than inferred from the page's height.
+  */
+  const heroCovered = useScrollPosition(isPastFirstViewport)
+
+  /*
+    Intent, not a decision. The Story section asks for the same file over an overlapping
+    range — at the boundary a fifth of both sections is on screen — and useExclusiveVideo
+    resolves that to exactly one decoding element. This section holds the LOWER priority:
+    its footage is under a 20px blur and a 0.75 scrim, where a frozen frame is very hard
+    to tell from a moving one, and the Story circle's is not. The argument is at
+    PLAYBACK_PRIORITY.
+  */
+  const { attachVideo, videoRef } = useExclusiveVideo({
+    priority: PLAYBACK_PRIORITY.founder,
+    wants: heroCovered && inView,
+  })
+
+  /*
+    Promoting the element from `preload="none"` to a real fetch, once — and the reason the
+    attribute starts at "none" at all.
+
+    Left at the default, this <video> would begin buffering the moment it mounts, which is
+    during first paint, competing with the hero's 3.7MB for the first screen's bandwidth
+    while sitting four viewports below the fold. `none` means the browser touches the
+    network only when told to.
+
+    `load()` rather than setting `.preload` alone: raising the attribute is a hint that
+    browsers are free to ignore, while load() restarts the resource selection algorithm
+    and reliably begins fetching. It is safe here precisely because it *resets* the
+    element — nothing has played yet, so there is no playhead to lose. The `preload`
+    guard is what keeps it to once; without it a section scrolled past twice would reset
+    a video that by then has a playhead worth keeping.
+  */
+  useEffect(() => {
+    const video = videoRef.current
+    if (!nearView || !video || video.preload === 'auto') return
+
+    video.preload = 'auto'
+    video.load()
+  }, [nearView, videoRef])
 
   const reveal = shouldReduceMotion
     ? {}
@@ -111,9 +207,40 @@ function Founder() {
     <motion.section
       className={styles.founder}
       id="founder"
+      ref={sectionRef}
       aria-labelledby="founder-name"
       {...reveal}
     >
+      {/*
+        The ground: the same footage the Story circle shows, filling the section behind
+        everything else.
+
+        No `autoPlay` and `preload="none"`, both deliberate and both explained above — the
+        element is inert until useExclusiveVideo hands it the page's one playback slot.
+        `muted` is not a preference: an unmuted play() without a user gesture is refused
+        outright, and this one is never started by a gesture.
+
+        aria-hidden because it is decoration with no information in it, and the section is
+        already labelled by the founder's name.
+      */}
+      <video
+        ref={attachVideo}
+        className={styles.backdrop}
+        src={storyVideo}
+        loop
+        muted
+        playsInline
+        preload="none"
+        aria-hidden="true"
+      />
+
+      {/*
+        The frosted pane between the footage and the copy — the same two tokens About
+        uses on its own ground, so the two sections read as one material rather than as
+        two treatments that happen to be dark.
+      */}
+      <div className={styles.glass} aria-hidden="true" />
+
       {/* --- Hero block: the name and portrait against the profile ------------ */}
       <div className={styles.intro}>
         <div className={styles.identity}>

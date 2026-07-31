@@ -39,7 +39,20 @@ const tickerItems = [
   { label: 'Scope', value: 'Qatar · Gulf · Arab World' },
 ]
 
-function Hero() {
+/**
+ * @param {object} props
+ * @param {boolean} [props.sampledBelow]
+ *   Whether a section further down the page is still showing this hero's fixed
+ *   footage through its own glass — today that is About and nothing else, and
+ *   HomePage.jsx is what wires the two together.
+ *
+ *   It defaults to `false`, which is the honest default for a hero rendered on its
+ *   own: nothing below it samples anything. It can only ever *extend* the backdrop's
+ *   life, never cut it short — while any of the hero is on screen the backdrop is
+ *   rendered whatever this says, so a page that forgets to pass it still gets a
+ *   correct hero.
+ */
+function Hero({ sampledBelow = false }) {
   /*
     Playback gate. The backdrop is `position: fixed`, so it keeps decoding frames
     long after it is invisible — the section below the hero is 100vh and starts
@@ -67,6 +80,30 @@ function Hero() {
   */
   const videoRef = useRef(null)
   const isHeroCovered = useScrollPosition(isPastFirstViewport)
+
+  /*
+    WHETHER THE BACKDROP IS RENDERED AT ALL — a second, later gate than the pause
+    above, and the two answer different questions.
+
+    Pausing stops the *decode*. It does not stop the element existing: a fixed,
+    full-viewport <video> stays a composited layer with a 4K texture behind it for
+    the entire scroll length of the page, long after the last thing that could see
+    it has gone. Founder and the placeholder are both opaque and both paint over it,
+    so from the founder down it was a full-screen layer kept alive to be invisible.
+
+    It cannot simply be scoped to the hero's own box instead. About's ground is
+    frosted glass over this footage (see About.module.css), and `backdrop-filter`
+    can only sample what is actually painted beneath it — an absolutely positioned
+    backdrop would be a viewport above the screen by the time About arrives, and the
+    Story section would flatten to a plain dark panel. Fixed is load-bearing for as
+    long as About is on screen, and irrelevant after that.
+
+    So: rendered while the hero is on screen, or while something below is still
+    sampling it. Past both, `display: none` takes the layer, the texture and the
+    scrim out of the compositor entirely, and gives them back the moment either is
+    true again.
+  */
+  const isBackdropVisible = !isHeroCovered || sampledBelow
 
   useEffect(() => {
     const video = videoRef.current
@@ -159,7 +196,11 @@ function Hero() {
         Sound is restored on the first real interaction instead — see the effect
         above, which is what the old comment described but nothing implemented.
       */}
-      <div className={styles.backdrop} aria-hidden="true">
+      <div
+        className={styles.backdrop}
+        data-hidden={isBackdropVisible ? 'false' : 'true'}
+        aria-hidden="true"
+      >
         {/*
           `preload="auto"` states outright what the browser is otherwise left to guess.
           It is the default for a <video> with a src on desktop, but not on every mobile

@@ -174,25 +174,35 @@
 
     Built up from white like the header's pill rather than down from the ground tone, for
     the same reason: it is a lift, not a tint, and it has to read against whatever frame
-    of the footage happens to be under it. The rim is --glass-border rather than a value
-    of its own, which is the same call About.module.css makes for the circle itself.
+    of the footage happens to be under it.
 
-    The two fringe tints are the one place on the site with a saturated colour outside the
-    gold, and they are meant to stay invisible *as colours*: at 0.015 what registers is
-    that the disc's edge is not a single clean line. Anything higher stops reading as
-    dispersion and starts reading as two coloured rings.
+    --lens-blur IS THE EFFECT, and it is the whole per-frame cost of it. At 1px, which is
+    where this sat, the disc was a faint highlight with a sharp picture behind it and it
+    read as a smudge on the glass rather than as glass. 10px is frosted: the footage stays
+    legible through it — shapes, motion and colour all survive — but it is clearly
+    diffused, which is what makes the disc read as a pane sitting *on* the video. It is
+    also a real cost, one blurred region resampled per frame while the disc moves; the
+    saving is that the disc is 140px and the region is only ever that.
 
-    --lens-blur is deliberately tiny. It is the only part of the effect that touches the
-    footage, and the disc is meant to be a clean pane over the picture rather than a
-    smudge on it; it is also the whole per-frame cost of the lens, so raising it is the
-    one change here that is not free.
+    --lens-saturate is the other half of frosted glass and is close to free. Blur alone
+    averages colour toward grey, so a heavily blurred backdrop goes flat and dead; pulling
+    saturation back up is what keeps the diffused footage looking like footage.
+
+    --lens-tint is the frost itself — a flat white lift carried across the whole disc, so
+    the pane has a body rather than only a lit centre. --lens-highlight sits on top of it
+    as the light *on* the glass, and both are deliberately gentle: against a 10px blur a
+    strong highlight stops reading as light and starts reading as a white blob.
+
+    --lens-inner-shadow is the only shadow on the disc, and it is inset. A drop shadow
+    would say the disc floats above the picture; a shadow cast inward from the top rim
+    says the glass has thickness and a slight concavity to it.
   */
-  --lens-highlight: rgba(255, 255, 255, 0.08);
-  --lens-highlight-soft: rgba(255, 255, 255, 0.02);
-  --lens-glow: rgba(255, 255, 255, 0.05);
-  --lens-fringe-warm: rgba(255, 0, 0, 0.015);
-  --lens-fringe-cool: rgba(0, 255, 255, 0.015);
-  --lens-blur: 1px;
+  --lens-blur: 10px;
+  --lens-saturate: 125%;
+  --lens-tint: rgba(255, 255, 255, 0.04);
+  --lens-highlight: rgba(255, 255, 255, 0.1);
+  --lens-highlight-soft: rgba(255, 255, 255, 0.03);
+  --lens-inner-shadow: rgba(0, 0, 0, 0.15);
 
   /*
     The Story section's blur, and the one that deliberately breaks the "keep the blur

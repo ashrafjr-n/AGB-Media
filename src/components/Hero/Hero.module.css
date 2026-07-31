@@ -69,6 +69,30 @@
   pointer-events: none;
 }
 
+/*
+  Out of the render tree once nothing can see it — set from Hero.jsx, where the
+  full argument for the gate is.
+
+  `display: none` rather than `opacity: 0` or `visibility: hidden`, and the choice is
+  the entire point of the rule. The cost being removed is not the fill, it is the
+  compositor layer and the video texture it holds; a transparent or invisible layer is
+  still a layer, and on a 4K source that is the most expensive one on the page. Only
+  `display: none` guarantees the box, the layer and the texture all go.
+
+  What it trades, so it is not filed as a bug later: taking the element out of the tree
+  and putting it back can cost a frame before the paused video paints its held frame
+  again. That is why the gate is driven by an observation with 400px of margin either
+  side (About.jsx) rather than by the section's exact edge — by the time anything can
+  see this again it has had most of a second of scrolling to come back.
+
+  It cannot fire while any of the hero is on screen: the flag it is driven by is
+  `!isHeroCovered || sampledBelow`, and isHeroCovered is a full scrolled viewport
+  against a 100svh section.
+*/
+.backdrop[data-hidden='true'] {
+  display: none;
+}
+
 .backdrop-video {
   position: absolute;
   inset: 0;

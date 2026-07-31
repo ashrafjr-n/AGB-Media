@@ -7,6 +7,9 @@ import useMediaQuery from '../../hooks/useMediaQuery'
 import useScrollPosition, {
   isPastFirstViewport,
 } from '../../hooks/useScrollPosition'
+import useExclusiveVideo, {
+  PLAYBACK_PRIORITY,
+} from '../../hooks/useExclusiveVideo'
 import storyVideo from '../../assets/videos/story.webm'
 import CssLens from '../shared/CssLens'
 import buttonStyles from '../shared/Button.module.css'
@@ -48,7 +51,33 @@ const LENS_MIN_WIDTH = '(min-width: 48rem)'
 */
 const PLAYBACK_AMOUNT = 0.2
 
-function About() {
+/*
+  How far outside the viewport this section still counts as "showing the hero's
+  footage through my glass", as an IntersectionObserver root margin.
+
+  This is the one thing keeping Hero's fixed backdrop alive below the hero, so the
+  margin is deliberately generous in both directions: it brings the backdrop back
+  well before any of this section's glass can show it, and holds it a little past
+  the section's bottom edge on the way down. The alternative — reporting on the
+  section's exact edges — would put a re-created compositor layer and the glass that
+  samples it on the same frame.
+
+  400px, the same lead the Founder's video preload uses, for the same reason: it is
+  roughly half a laptop viewport, which is a comfortable fraction of a second of
+  scrolling rather than the quarter-second 200px buys.
+*/
+const GLASS_REACH_MARGIN = '400px 0px'
+
+/**
+ * @param {object} props
+ * @param {(visible: boolean) => void} [props.onGlassVisibilityChange]
+ *   Reports whether this section's frosted ground is near enough to the viewport to
+ *   be showing the hero's fixed footage through it. This section is the only thing
+ *   on the page that samples that backdrop, so the answer is what decides whether
+ *   Hero renders it at all — see HomePage.jsx, which is where the two are wired
+ *   together, and the gate in Hero.jsx.
+ */
+function About({ onGlassVisibilityChange }) {
   /*
     The global prefers-reduced-motion rule in global.css only governs CSS
     animations; Framer Motion drives these inline, so the preference has to be
@@ -156,7 +185,6 @@ function About() {
   /* --- Playback ----------------------------------------------------------- */
 
   const aboutRef = useRef(null)
-  const videoRef = useRef(null)
 
   /*
     Whether the hero has finished — and therefore whether the hero's own video has been
@@ -164,12 +192,16 @@ function About() {
     so the two are two halves of one switch rather than two thresholds that happen to
     agree.
 
-    THE RULE: exactly one of the two videos decodes at a time. story.webm used to start
+    THE RULE: exactly one video on the page decodes at a time. story.webm used to start
     the moment About mounted, which is during first paint, which is while the visitor is
     still on the hero watching hero.webm — two simultaneous decodes for the whole first
     screen, on top of the hero's fixed backdrop, the section's viewport-wide
     backdrop-filter, the ticker's SVG displacement and the blended grain layer. It
     reverses cleanly too: scrolling back up resumes the hero and pauses this one.
+
+    Folding it into `wants` below is also what keeps the hero exclusive without the hero
+    being arbitrated: this section will not ask for playback until the hero has stopped.
+    See the note on `wants` in useExclusiveVideo.js.
 
     THE ONE COST, stated plainly: About's circle is on screen from roughly a third of
     the way down the hero, but the hero's video does not pause until a full viewport has
@@ -183,59 +215,48 @@ function About() {
   const inView = useInView(aboutRef, { amount: PLAYBACK_AMOUNT })
 
   /*
-    Both gates read through a ref so `syncPlayback` can stay a stable callback — it is
-    handed to CssLens as a `ref` prop, and an identity that changed with the scroll would
-    detach and reattach the element for no reason.
+    Both gates in one expression, because they are one question — "would this section
+    like its video running right now?" — and splitting them is how the two ends drift
+    apart.
+
+    It is an *intent*, not a decision. The Founder section asks the same question about
+    its own background, and the two windows overlap at the boundary; useExclusiveVideo
+    arbitrates and guarantees only one of them is ever actually decoding. This section
+    holds the higher priority — the argument is at PLAYBACK_PRIORITY.
+
+    CssLens renders its `<video>` without `autoPlay`, so `attachVideo` is the only thing
+    that ever starts it, and it will not until the hero's own video has stopped.
   */
-  const shouldPlay = heroCovered && inView
-  const shouldPlayRef = useRef(shouldPlay)
-  shouldPlayRef.current = shouldPlay
+  const { attachVideo } = useExclusiveVideo({
+    priority: PLAYBACK_PRIORITY.story,
+    wants: heroCovered && inView,
+  })
+
+  /* --- The hero's backdrop, seen through this section's glass -------------- */
 
   /*
-    The single place playback is decided.
+    A third observation of the same box, at a third distance, and each answers a
+    question the other two cannot: `inView` is "may my video decode" at a fifth of
+    the section, and this is "is the hero's footage still being looked at" from
+    400px out.
 
-    Both gates in one expression, because they are one question — "should the story video
-    be running right now?" — and splitting them across two effects is how the two ends
-    drift apart.
+    The distances are the reason these are not one observation. Playback wants the
+    section committed to the screen; the glass starts sampling the footage at the
+    section's very first visible pixel, and the layer it samples has to already
+    exist by then — so this one is the default `amount: 0` with a margin either
+    side, which is as early and as late as either edge can be answered.
 
-    play() returns a promise that rejects if the element is torn down or interrupted
-    mid-call; it is caught and dropped because there is nothing useful to do about it and
-    an unhandled rejection is noise.
+    Reported through an effect rather than during render because it is a parent's
+    state being written: HomePage owns the flag, since it is the only component that
+    knows this section and the hero are on the same page. The callback is a setState
+    function and therefore stable, so this fires on the two crossings and nothing
+    else.
   */
-  const syncPlayback = useCallback(() => {
-    const video = videoRef.current
-    if (!video) return
+  const glassInReach = useInView(aboutRef, { margin: GLASS_REACH_MARGIN })
 
-    if (!shouldPlayRef.current) {
-      if (!video.paused) video.pause()
-      return
-    }
-
-    if (video.paused) {
-      const played = video.play()
-      if (played) played.catch(() => {})
-    }
-  }, [])
-
-  /* Follows both gates in both directions, so scrolling back up reverses cleanly. */
   useEffect(() => {
-    syncPlayback()
-  }, [shouldPlay, syncPlayback])
-
-  /*
-    The one video element, handed up by CssLens.
-
-    CssLens renders it without `autoPlay`, so this is the only thing that ever starts it —
-    and it will not, until the hero's own video has stopped. Syncing on arrival is what
-    covers the element turning up when the page is already past both gates.
-  */
-  const handleVideo = useCallback(
-    (element) => {
-      videoRef.current = element
-      if (element) syncPlayback()
-    },
-    [syncPlayback],
-  )
+    onGlassVisibilityChange?.(glassInReach)
+  }, [glassInReach, onGlassVisibilityChange])
 
   const reveal = shouldReduceMotion
     ? {}
@@ -323,7 +344,7 @@ function About() {
           <div className={styles.circle} ref={circleRef}>
             <CssLens
               videoSrc={storyVideo}
-              onVideo={handleVideo}
+              onVideo={attachVideo}
               pointer={pointer}
               showLens={showLens}
               wakeRef={lensWake}

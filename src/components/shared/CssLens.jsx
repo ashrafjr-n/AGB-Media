@@ -22,11 +22,14 @@ import styles from './CssLens.module.css'
   either WebGL or a second decoded copy of the video inside the lens, and the second copy
   is exactly the simultaneous decode the rest of this page is built to avoid.
 
-  So this is a *lit* glass disc rather than a refracting one: a backdrop blur softens what
-  is behind it, a radial highlight sits on it, an SVG turbulence displacement warps that
-  highlight and the rim into something organic rather than a perfect circle of gradient,
-  and two offset tinted layers stand in for the colour fringing. It reads as glass. It
-  does not bend the picture.
+  So this is a *frosted* glass disc rather than a refracting one: a backdrop blur diffuses
+  what is behind it, a saturate pass keeps that diffused footage looking like footage, a
+  soft radial highlight and a flat white tint give the pane a body, and an inset shadow
+  gives it thickness. It reads as glass. It does not bend the picture.
+
+  It is also a PERFECT CIRCLE, which an earlier pass of it was not — see the note on .lens
+  in CssLens.module.css for the SVG turbulence displacement that used to warp its edge and
+  why nothing here may distort geometry again.
 */
 
 /*
@@ -58,14 +61,6 @@ const FOLLOW_LERP = 0.12
   the loop ends until the next pointer move wakes it.
 */
 const SETTLE_PX = 0.1
-
-/*
-  The filter's id, referenced from `filter: url(...)` on .lens in CssLens.module.css and
-  kept in step with it by hand — a filter id is a document-wide reference rather than a
-  class, so CSS Modules neither hashes it nor knows about it. The same two-places-one-string
-  arrangement FluidBar.jsx has.
-*/
-const FILTER_ID = 'css-lens-distortion'
 
 /* Used when no pointer ref is supplied — the disc simply rests at the centre. */
 const CENTRED_POINTER = { current: { x: 0, y: 0 } }
@@ -263,71 +258,26 @@ function CssLens({ videoSrc, onVideo, pointer, showLens = true, wakeRef }) {
         aria-hidden="true"
       />
 
+      {/*
+        Two nested elements rather than one, because the follow loop owns the outer one's
+        `transform` outright — it writes it directly to the node every frame it moves, so
+        nothing else may put a style on that element. The disc's own appearance lives on
+        the inner one.
+
+        There used to be more here: a third wrapper carrying a counter-scale for the
+        scroll-zoom, and an inline <svg> defining the turbulence filter that warped the
+        disc's edge. Both are gone, so this branch is a single element and needs no
+        fragment around it.
+      */}
       {showLens && (
-        <>
-          {/*
-            The turbulence that gives the disc its organic edge.
-
-            NOT SHARED WITH THE OTHER THREE, and for the reason stated at each of them:
-            feTurbulence's baseFrequency is in user-space units rather than units of the
-            element, so a field tuned for one box size produces a visibly different
-            texture on another. This is a 140px disc; the ticker's field is tuned for a
-            ~1500px strip and would be a single smooth push across this one.
-
-            Static seed, no <animate>: the texture is frozen, like every other surface on
-            the site except the ticker's water. An animated seed would also re-run the
-            turbulence every frame, which is by far the most expensive part of the filter.
-
-            colour-interpolation-filters="sRGB" is not optional — the default linearRGB
-            reinterprets the displacement map's channels and shifts where the field pushes.
-            The region is widened well past the element so the displacement has material to
-            pull from at the edges and the outer glow is not clipped by the filter box.
-          */}
-          <svg className={styles.defs} aria-hidden="true" focusable="false">
-            <filter
-              id={FILTER_ID}
-              x="-30%"
-              y="-30%"
-              width="160%"
-              height="160%"
-              colorInterpolationFilters="sRGB"
-            >
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.03 0.03"
-                numOctaves="2"
-                seed="5"
-                result="noise"
-              />
-              <feDisplacementMap
-                in="SourceGraphic"
-                in2="noise"
-                scale="12"
-                xChannelSelector="R"
-                yChannelSelector="G"
-              />
-            </filter>
-          </svg>
-
-          {/*
-            Two nested elements rather than one, because the follow loop owns the outer
-            one's `transform` outright — it writes it directly to the node every frame it
-            moves, so nothing else may put a style on that element. The disc's own
-            appearance lives on the inner one.
-
-            There used to be a third wrapper above these, carrying a counter-scale that
-            held the disc at its resting size while the scroll-zoom magnified the frame
-            around it. There is no zoom and nothing scales this subtree, so it went with it.
-          */}
-          <div
-            className={styles.follow}
-            ref={attachFollow}
-            style={{ '--lens-size': `${LENS_SIZE}px` }}
-            aria-hidden="true"
-          >
-            <div className={styles.lens} />
-          </div>
-        </>
+        <div
+          className={styles.follow}
+          ref={attachFollow}
+          style={{ '--lens-size': `${LENS_SIZE}px` }}
+          aria-hidden="true"
+        >
+          <div className={styles.lens} />
+        </div>
       )}
     </div>
   )
