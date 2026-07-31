@@ -1,10 +1,13 @@
 import { useState } from 'react'
 
+import useScrollPosition, {
+  isPastFirstViewport,
+} from '../hooks/useScrollPosition'
 import Header from '../components/Header/Header'
 import Hero from '../components/Hero/Hero'
 import About from '../components/About/About'
 import Founder from '../components/Founder/Founder'
-import styles from './HomePage.module.css'
+import WhyAgb from '../components/WhyAgb/WhyAgb'
 
 function HomePage() {
   /*
@@ -45,9 +48,35 @@ function HomePage() {
   */
   const [storyHalfVisible, setStoryHalfVisible] = useState(false)
 
+  /*
+    THE SECOND HALF OF THE HEADER'S ANSWER, and the fix for it vanishing again at the
+    Founder.
+
+    `storyHalfVisible` is an intersection, which is a WINDOW and not a threshold: it is
+    true while at least half of the Story section is on screen, so it turns true on the
+    way in — and false again the moment that section has scrolled away, which is exactly
+    where the Founder begins. On its own it hides the header for the whole rest of the
+    page.
+
+    Or-ing it with "the hero is behind us" turns the pair into a threshold. The union is
+    continuous rather than merely adjacent, and that is worth being explicit about: the
+    Story section begins one viewport down, so it reaches half-visible at half a
+    viewport of scrolling — before this flag flips at one — and it stays half-visible
+    well past that point. Whatever the section's real height, the two windows overlap
+    and the header cannot flicker in the seam between them.
+
+    THE ONE THING THIS DELIBERATELY DOES NOT DO is latch permanently. Scrolling back up
+    into the hero hides the header again, and that is not the bug being fixed here: the
+    hero carries its own in-flow header, the fixed pill would land on top of its logo
+    and nav, and "the two headers are never on screen together" is the invariant the
+    whole arrangement exists to keep (CLAUDE.md §4). Once past the hero the header is
+    visible for the remainder of the page, in both directions, which is what was asked.
+  */
+  const heroBehind = useScrollPosition(isPastFirstViewport)
+
   return (
     <>
-      <Header visible={storyHalfVisible} />
+      <Header visible={storyHalfVisible || heroBehind} />
       <main>
         <Hero sampledBelow={storyGlassVisible} />
         <About
@@ -64,16 +93,12 @@ function HomePage() {
         <Founder />
 
         {/*
-          Placeholder for the section after the founder.
-
-          aria-hidden while there is nothing in it: an empty landmark announces itself for
-          no reason. Drop that along with the placeholder class when real content arrives.
+          The closing section, in the slot the empty `.placeholder` used to hold — the
+          one that existed so the Founder had somewhere to scroll away to. It has real
+          content now, so the placeholder and its stylesheet are gone; WhyAgb carries the
+          `position: relative` + --z-base that slot has always needed.
         */}
-        <section
-          className={styles.placeholder}
-          id="next-section"
-          aria-hidden="true"
-        />
+        <WhyAgb />
       </main>
     </>
   )

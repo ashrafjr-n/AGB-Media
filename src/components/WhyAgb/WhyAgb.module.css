@@ -1,0 +1,252 @@
+/*
+  The closing section: six reasons, set as numbered editorial rows.
+
+  It takes over the slot the empty `.placeholder` held, and it inherits that element's
+  one structural requirement along with the position. `position: relative` + --z-base is
+  not cosmetic: Hero's `.backdrop` is `position: fixed` at `z-index: 0`, and a positioned
+  box at z-index 0 paints above every static in-flow block in the same stacking context,
+  so a static section here would be drawn *underneath* the hero's video whatever colour
+  it was given. Hero now stops rendering that backdrop once the Story section has left
+  (CLAUDE.md §7), so there is nothing behind this to fight — but the rule is what makes
+  the section correct on its own terms rather than correct because of a threshold in
+  another component, and it is the state the page falls back to for the frame after a
+  scroll restoration.
+
+  FLAT --color-black, and no texture of its own. `body::after` in global.css already lays
+  film grain over the entire viewport, so a `.noise-overlay` here would be the same
+  texture twice on one surface. The site's other raised treatments are glass over
+  *footage*; there is no footage under this section, and glass over flat black is just a
+  lighter flat black. Nothing is added.
+
+  No `min-block-size`. The placeholder needed one because it was empty and existed only
+  to give the Founder somewhere to scroll away to; six rows of content set their own
+  height.
+*/
+.why {
+  position: relative;
+  z-index: var(--z-base);
+
+  padding-block: var(--space-3xl);
+  padding-inline: var(--container-padding);
+
+  background-color: var(--color-black);
+}
+
+.inner {
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+}
+
+/* --- Opening -------------------------------------------------------------- */
+
+/*
+  --space-2xl below the heading pair, which is the same gap About puts between its title
+  and the body beneath it. The list's own first hairline sits at the end of this space,
+  so the rule reads as the heading's underline rather than as the first row's ceiling.
+*/
+.opening {
+  margin-block-end: var(--space-2xl);
+}
+
+/*
+  The site's micro-label, at the same 0.65rem / 0.28em as About's — see the note there
+  for why both values sit outside the shared scales. Kept identical on purpose: three
+  sections now open with this mark and they must read as one device.
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  /* Tight to the heading it labels — the two are one unit. */
+  margin-block-end: var(--space-2xs);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+/* flex-shrink so a 5px item with no content cannot collapse in a tight column. */
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/*
+  --text-3xl rather than the --text-4xl About opens with, and the difference is the copy
+  rather than the hierarchy: About's title is two words and this is a full sentence of
+  about ninety characters. At the top of the scale it would set as a wall.
+
+  The measure is what makes it a statement rather than a paragraph. 22ch at this size
+  holds it to three or four lines whatever the window, and `text-wrap: balance` from
+  global.css evens them out. line-height under the global --leading-tight for the same
+  reason About's title runs at 0.95: a multi-line display heading wants to read as a
+  block, not as a ladder.
+*/
+.title {
+  max-inline-size: 22ch;
+
+  font-size: var(--text-3xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/* --- The list ------------------------------------------------------------- */
+
+/*
+  Hairlines, not boxes. Every row carries a rule on its block-start and the last carries
+  one on its block-end, so the set is bounded top and bottom and every division between
+  rows is a single shared line — the row above owns it, the row below sits on it.
+
+  --glass-border is the same 0.08 warm white that edges every pane on the site. It is the
+  right token even with no glass here: this is the site's hairline weight, and a rule at
+  full --color-text would read as a table.
+*/
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: grid;
+  /*
+    Stacked below 48rem: numeral, then the heading pair, then the description. The
+    numeral leads rather than sitting beside the title because at this width it is the
+    only thing holding the row's inline start, and a row whose first line is the number
+    reads as an entry in a list.
+  */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2xs);
+
+  padding-block: var(--space-lg);
+  border-block-start: 1px solid var(--glass-border);
+}
+
+.item:last-child {
+  border-block-end: 1px solid var(--glass-border);
+}
+
+/*
+  The index, and the only gold in the row.
+
+  Large and quiet: 45% of the accent, which on this ground is present enough to be the
+  first thing the eye lands on in a row and far too dim to compete with the title beside
+  it. Deriving it with color-mix rather than writing a fourth rgba() keeps the accent
+  sampled from the logo in exactly one place, which is the same thing Founder.module.css
+  does with its own golds (CLAUDE.md §2).
+
+  --font-weight-light at this size, not the heading weights. A heavy numeral reads as a
+  score; a light one reads as a folio, which is what this is.
+
+  `font-variant-numeric: tabular-nums` so 01 through 06 occupy identical width and the
+  six numerals sit on one vertical edge. Clash Display may not carry the feature, in
+  which case this costs nothing — every digit in 0-6 is already the same width in most
+  geometric faces.
+*/
+.index {
+  color: color-mix(in srgb, var(--color-gold) 45%, transparent);
+  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem);
+  font-weight: var(--font-weight-light);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.heading {
+  min-inline-size: 0;
+}
+
+/*
+  The per-row tag. Smaller and dimmer than the section's own eyebrow, and without the
+  gold dot — the numeral is already this row's accent mark, and a second one on the same
+  line would be two bullets for one item.
+
+  It is absent on the rows where it would repeat the title; see WhyAgb.jsx. The rows
+  stay aligned because the numeral, not this, is what sets each row's top edge.
+*/
+.label {
+  margin-block-end: var(--space-3xs);
+
+  color: var(--color-text-subtle);
+  font-size: 0.6rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/*
+  --text-xl, which until now was a rung of the type scale nothing used. It is the right
+  step: a clear tier below the section title and clearly above the description, which is
+  exactly the three-level hierarchy the row needs. Weight comes from global.css, where h3
+  is --font-weight-bold (600).
+*/
+.name {
+  font-size: var(--text-xl);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/*
+  Quiet body text, matching the register About's paragraph and the Founder's bio use:
+  light weight, muted colour, relaxed leading. --text-sm rather than --text-base because
+  it is a caption to the title beside it rather than running copy.
+*/
+.description {
+  max-inline-size: 46ch;
+
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  /*
+    Three columns from here up: the numeral, the heading pair, and the description.
+
+    `auto` for the numeral so the column is exactly as wide as two digits — it is a fixed
+    string, and a track sized to it cannot drift. The other two take an explicit 2:3
+    ratio for the same reason About's row does: left to `auto` and `1fr` the description
+    would absorb every spare pixel on a wide window and the titles would sit in a column
+    narrower than the text explaining them. Both are minmax(0, …) so neither can be
+    forced past its share by its own content.
+
+    `align-items: start` keeps all three on the row's top edge, which is what makes the
+    numerals line up down the page regardless of how many lines a row takes.
+  */
+  .item {
+    grid-template-columns: auto minmax(0, 2fr) minmax(0, 3fr);
+    align-items: start;
+    gap: var(--space-xl);
+
+    padding-block: var(--space-xl);
+  }
+
+  /*
+    Optical alignment, not metric. The numeral's line-height is 1 against a heading whose
+    cap-height starts lower in its own line box, so setting both to the same top edge
+    leaves the number looking a fraction high. A small nudge down puts the two on the
+    same visual line.
+  */
+  .index {
+    padding-block-start: 0.15em;
+  }
+}
+
+@media (min-width: 64rem) {
+  .item {
+    gap: var(--space-2xl);
+  }
+}
