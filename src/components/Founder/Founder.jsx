@@ -304,18 +304,38 @@ function Founder() {
           </h2>
 
           {/*
+            THE FRAME IS WHAT CLIPS THE PORTRAIT, and it exists for that alone — the
+            image used to carry its own height and radius with nothing around it.
+
+            It is there to close a hairline of dark ground that showed down the image's
+            trailing edge. The cause is that this column is an `fr` track, so its width
+            is routinely fractional (~361.6px at a 1024px window), and an image sized at
+            100% of it ends on a half pixel: the browser antialiases that last column,
+            the image's own alpha falls off across it, and the section shows through as a
+            thin dark line. It appeared on the right and not the left because the track
+            *starts* on a whole pixel and only its end is fractional.
+
+            The fix is to let the image overhang its box by 1px on every side and have
+            this element clip it back (see .portrait-frame / .portrait). The clip then
+            cuts through opaque pixels instead of landing on the image's own edge, which
+            is the difference between a soft edge and a see-through one. Nothing about
+            the portrait's size or position changes — the frame is exactly the box the
+            image used to be.
+
             Lazy and async-decoded. The section is in normal flow well below the fold on
             every path now, so `loading="lazy"` genuinely defers the fetch until it is
             near the viewport; `decoding="async"` keeps the 205KB decode off the frame it
             lands on.
           */}
-          <img
-            className={styles.portrait}
-            src={portrait}
-            alt="Abdullah Ghayfan"
-            loading="lazy"
-            decoding="async"
-          />
+          <div className={styles['portrait-frame']}>
+            <img
+              className={styles.portrait}
+              src={portrait}
+              alt="Abdullah Ghayfan"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
         </div>
 
         <div className={styles.profile}>

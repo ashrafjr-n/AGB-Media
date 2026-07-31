@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi'
 
-import useScrollPosition, {
-  isPastFirstViewport,
-} from '../../hooks/useScrollPosition'
 import navLinks from '../../data/navLinks'
 import styles from './Header.module.css'
 
@@ -43,36 +40,33 @@ function NavLink({ to, label, onClick, duration }) {
   )
 }
 
-function Header() {
+/**
+ * @param {object} props
+ * @param {boolean} [props.visible]
+ *   Whether the header is due on screen. It is **the Story section's midpoint**,
+ *   observed against that section's own box and handed down through HomePage.jsx —
+ *   see HEADER_REVEAL_AMOUNT in About.jsx for why the cue lives there.
+ *
+ *   This used to be read here, from `useScrollPosition(isPastFirstViewport)`: one
+ *   scrolled viewport, which is the end of the hero. The header consequently arrived
+ *   only once the Story section had taken the screen outright, and it now arrives at
+ *   that section's halfway mark instead — earlier, and tied to a real element rather
+ *   than to a multiple of the viewport that only matches while nothing overflows.
+ *
+ *   Defaults to `false` so a header rendered without the prop stays hidden rather
+ *   than appearing over the hero, which is the one arrangement this site never has.
+ */
+function Header({ visible = false }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
   /*
-    This header is suppressed for the whole of the first screen: the hero carries
-    its own in-flow header over the footage (Hero/HeroHeader.jsx), and the two must
-    never be on screen together. It slides in only once the hero is fully behind
-    the viewport.
-
-    `isPastFirstViewport` is the same threshold Hero.jsx uses to decide the hero
-    is covered and pause the video — the hero is exactly 100svh, so one scrolled
-    viewport *is* the end of the hero. It is now literally the same function
-    rather than a matching comparison, so the reveal and the video pause cannot
-    disagree by a frame.
-
-    Passing it as a selector is also what keeps this header off the scroll path:
-    the hook stores the projected boolean, so React bails out of every frame in
-    between and the two navs, the drawer and the turbulence filter are reconciled
-    twice a pass instead of sixty times a second.
-  */
-  const isPastHero = useScrollPosition(isPastFirstViewport)
-
-  /*
     A drawer left open while the header is hidden would reopen mid-air on the way
-    back down, so scrolling back into the hero closes it.
+    back down, so scrolling back up past the cue closes it.
   */
   useEffect(() => {
-    if (!isPastHero) setIsMenuOpen(false)
-  }, [isPastHero])
+    if (!visible) setIsMenuOpen(false)
+  }, [visible])
 
   /*
     0.18s is --duration-fast, the timing the bar's corner radius now runs at —
@@ -97,9 +91,9 @@ function Header() {
     */
     <header
       className={styles.header}
-      data-hidden={isPastHero ? 'false' : 'true'}
+      data-hidden={visible ? 'false' : 'true'}
       data-menu-open={isMenuOpen ? 'true' : 'false'}
-      inert={!isPastHero}
+      inert={!visible}
     >
       <div className={styles.bar}>
         {/*

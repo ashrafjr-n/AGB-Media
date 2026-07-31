@@ -255,7 +255,8 @@
 /*
   Raw image: no radius, no frame, no card, no shadow. The clean edge against the blurred
   backdrop is the whole effect, and anything drawn around it would turn the portrait into
-  a component.
+  a component. This element is not a frame in that sense — it draws nothing, it only
+  clips, and it carries the box the image itself used to have.
 
   A fixed height, because the file's natural one was by itself enough to make the section
   unfittable. It gives up height first on a short window, which is right for the one block
@@ -265,12 +266,45 @@
   radius scale: --radius-md is 8px and --radius-lg is 16px, and neither is near enough to
   pass for the value asked for. Adding a token for one image would be worse than this.
 */
-.portrait {
-  display: block;
+.portrait-frame {
+  overflow: hidden;
   inline-size: 100%;
   block-size: clamp(8rem, 28vh, 22rem);
-  object-fit: cover;
   border-radius: 0.75rem;
+}
+
+/*
+  ONE PIXEL LARGER THAN ITS FRAME, ON EVERY SIDE, and clipped back by it — which is the
+  whole fix for the dark hairline that ran down the portrait's trailing edge.
+
+  The column is an `fr` track, so its width is fractional at most window sizes (~361.6px
+  at 1024px). At `inline-size: 100%` the image's right edge landed mid-pixel, the browser
+  antialiased that column, and the image's own alpha fell off across it — so the
+  section's ground showed through as a thin dark line. The left edge was crisp because
+  the track begins on a whole pixel; only its end was fractional, which is exactly why
+  the seam was one-sided.
+
+  `calc(100% + 2px)` with `margin: -1px` puts the image's real edges 1px outside the
+  frame in all four directions, so the rounded clip cuts through opaque pixels rather
+  than landing on the raster's own boundary. A partly-covered pixel then blends image
+  against background instead of revealing it. The block axis gets the same treatment
+  because the height is a vh-based clamp and the frame's origin is fractional too.
+
+  `max-inline-size: none` is REQUIRED, not tidiness: global.css sets `img { max-width:
+  100% }`, which would clamp the width straight back to the frame's and silently undo
+  all of this.
+
+  The visible crop is unchanged to within half a percent — object-fit re-covers a box
+  2px wider and the frame takes the 2px back — so the portrait's size and position are
+  exactly what they were.
+*/
+.portrait {
+  display: block;
+  inline-size: calc(100% + 2px);
+  max-inline-size: none;
+  block-size: calc(100% + 2px);
+  margin: -1px;
+  object-fit: cover;
 }
 
 /*

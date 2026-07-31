@@ -10,10 +10,11 @@ import styles from './HeroHeader.module.css'
   The hero's own header, and deliberately NOT the site header.
 
   It is an ordinary in-flow element at the top of the hero section: it sits over the
-  video backdrop, scrolls away with the hero, and is gone once the Story section
-  covers it. The fixed site header (Header/Header.jsx) is suppressed for exactly as
-  long as this one is on screen, so the page never shows two headers at once — see
-  the `data-hidden` handling there.
+  video backdrop, scrolls away with the hero, and is off screen after roughly 120px of
+  scrolling. The fixed site header (Header/Header.jsx) does not appear until half of the
+  Story section is on screen — half a viewport — so the two are never on screen at once,
+  with a wide margin rather than a shared threshold. See the `data-hidden` handling
+  there, and HEADER_REVEAL_AMOUNT in About.jsx for what sets it.
 
   It lives in the Hero directory rather than getting its own top-level component
   folder because it has no life outside the hero; both files sit beside Hero's, per
@@ -73,9 +74,14 @@ function HeroHeader() {
   const shouldReduceMotion = useReducedMotion()
 
   /*
-    Read once per mount and held in a ref. Hero re-renders on every frame of a
-    scroll (it watches viewportProgress to gate video playback) and re-renders this
-    child with it, so a plain read would be re-evaluated mid-entrance.
+    Read once per mount and held in a ref.
+
+    Hero used to re-render on every frame of a scroll and re-render this child with it,
+    which is what made a plain read of the flag dangerous mid-entrance. It no longer
+    does — it subscribes to a boolean through useScrollPosition's selector and renders
+    twice a pass — so this is now belt and braces rather than the fix it was. It costs
+    nothing and keeps the read independent of how often the parent renders, which is not
+    a property this file should have to depend on.
   */
   const playEntrance = useRef(!entrancePlayed).current
 
@@ -173,10 +179,12 @@ function HeroHeader() {
       >
         {navLinks.map(({ label, to, featured }) =>
           /*
-            The `featured` entry renders as the site's one filled button — solid gold,
-            rounded, near-black label — instead of a plain nav link. Base plus exactly
-            one variant from shared/Button.module.css, and a local class carrying only
-            spacing; no visual property belongs here.
+            The `featured` entry renders as the site's one high-emphasis button — glass
+            over a frozen turbulence texture, with a gold light travelling its rim —
+            instead of a plain nav link. It was a solid gold fill with a near-black label
+            before the glass pass. Base plus exactly one variant from
+            shared/Button.module.css, and a local class carrying only spacing; no visual
+            property belongs here.
 
             A plain <Link>, not a motion one: the parent nav already animates the whole
             row, and a motion child would compound both transforms and multiply both

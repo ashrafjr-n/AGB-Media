@@ -240,8 +240,10 @@
   The canvas takes the same slot those layers had — absolute, inset, z-index -1 against
   the `isolation: isolate` above — so nothing about the strip's own box changed.
 
-  Note that --glass-sheen and --glass-sheen-deep are still referenced by the glass
-  buttons in shared/Button.module.css; only this surface stopped using them.
+  Note that --glass-sheen-deep is still referenced by the glass buttons in
+  shared/Button.module.css. --glass-sheen itself is not referenced anywhere any more —
+  this surface was its last call site — and it is listed with the other unreferenced
+  tokens in CLAUDE.md §7 rather than deleted.
 */
 
 /* --- Ticker content ------------------------------------------------------- */

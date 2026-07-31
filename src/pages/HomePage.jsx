@@ -30,12 +30,30 @@ function HomePage() {
   */
   const [storyGlassVisible, setStoryGlassVisible] = useState(true)
 
+  /*
+    WHEN THE FIXED SITE HEADER IS DUE — the Story section's own halfway mark, reported
+    from that section because it is measured against that section's box.
+
+    It is wired here for the same reason the flag above is: Header and About are
+    siblings that know nothing of each other, and this page is the only thing that knows
+    they are on the same screen. Header used to answer this itself, from a scroll
+    threshold; the note on its `visible` prop has the before and after.
+
+    Starts `false`, the opposite of the flag above, because the two are wrong in
+    opposite directions: an unwanted frame of a hidden video layer costs nothing, and an
+    unwanted frame of the site header would flash it over the hero.
+  */
+  const [storyHalfVisible, setStoryHalfVisible] = useState(false)
+
   return (
     <>
-      <Header />
+      <Header visible={storyHalfVisible} />
       <main>
         <Hero sampledBelow={storyGlassVisible} />
-        <About onGlassVisibilityChange={setStoryGlassVisible} />
+        <About
+          onGlassVisibilityChange={setStoryGlassVisible}
+          onHalfVisibleChange={setStoryHalfVisible}
+        />
 
         {/*
           A sibling of About rather than a child of it. It used to be rendered from inside

@@ -69,16 +69,43 @@ const PLAYBACK_AMOUNT = 0.2
 */
 const GLASS_REACH_MARGIN = '400px 0px'
 
+/*
+  How much of this section has to be on screen before the fixed site header arrives.
+
+  The handoff used to be `isPastFirstViewport` — one scrolled viewport, which is the end
+  of the hero — so the header appeared only once this section had taken the screen
+  outright. It now arrives at this section's own halfway mark instead, which is a good
+  deal earlier: half of a 100vh section is on screen from half a viewport of scrolling.
+
+  Measured against THIS BOX rather than as a multiple of the viewport, and that is the
+  point of doing it here at all. `min-block-size: 100vh` is a floor — the section is
+  taller than a screen whenever the copy needs it to be — so a scroll threshold written
+  in viewport heights would drift from the section's real midpoint on exactly the windows
+  where it is least like one viewport.
+
+  It cannot bring the two headers on screen together: the hero's own header is in flow at
+  the very top of the page and is gone after roughly 120px of scrolling, where this fires
+  at half a viewport.
+*/
+const HEADER_REVEAL_AMOUNT = 0.5
+
 /**
+ * Two of this section's three observations of itself are reported upward rather than
+ * used here, because what they gate belongs to other components. Both are wired in
+ * HomePage.jsx, which is the only thing that knows those components are on the same
+ * page as this one.
+ *
  * @param {object} props
  * @param {(visible: boolean) => void} [props.onGlassVisibilityChange]
  *   Reports whether this section's frosted ground is near enough to the viewport to
  *   be showing the hero's fixed footage through it. This section is the only thing
  *   on the page that samples that backdrop, so the answer is what decides whether
- *   Hero renders it at all — see HomePage.jsx, which is where the two are wired
- *   together, and the gate in Hero.jsx.
+ *   Hero renders it at all — see the gate in Hero.jsx.
+ * @param {(halfVisible: boolean) => void} [props.onHalfVisibleChange]
+ *   Reports whether half of this section is on screen, which is when the fixed site
+ *   header is due — see HEADER_REVEAL_AMOUNT above and Header.jsx.
  */
-function About({ onGlassVisibilityChange }) {
+function About({ onGlassVisibilityChange, onHalfVisibleChange }) {
   /*
     Read here for the LENS alone — the reveal ladder carries its own copy of this
     check inside useSectionReveal.
@@ -236,13 +263,24 @@ function About({ onGlassVisibilityChange }) {
     wants: heroCovered && inView,
   })
 
-  /* --- The hero's backdrop, seen through this section's glass -------------- */
+  /* --- What this section's position tells the rest of the page ------------- */
 
   /*
-    A third observation of the same box, at a third distance, and each answers a
-    question the other two cannot: `inView` is "may my video decode" at a fifth of
-    the section, and this is "is the hero's footage still being looked at" from
-    400px out.
+    THREE OBSERVATIONS OF ONE BOX, at three distances, and each answers a question the
+    others cannot. `inView` above is "may my video decode", at a fifth of the section.
+    `glassInReach` is "is the hero's footage still being looked at", from 400px out.
+    `halfVisible` is "is the site header due", at the section's midpoint.
+
+    They are separate observers rather than one with several thresholds because they are
+    read as three independent booleans and IntersectionObserver reports a threshold
+    crossing, not which threshold: collapsing them would mean deriving three states from
+    one ratio on every crossing, which is more code and one shared failure. Three
+    observers on one element is cheap — the browser batches them off the main thread and
+    none of them reads layout.
+  */
+
+  /*
+    "Is the hero's footage still being looked at", from 400px out.
 
     The distances are the reason these are not one observation. Playback wants the
     section committed to the screen; the glass starts sampling the footage at the
@@ -261,6 +299,13 @@ function About({ onGlassVisibilityChange }) {
   useEffect(() => {
     onGlassVisibilityChange?.(glassInReach)
   }, [glassInReach, onGlassVisibilityChange])
+
+  /* The site header's cue — see HEADER_REVEAL_AMOUNT. */
+  const halfVisible = useInView(aboutRef, { amount: HEADER_REVEAL_AMOUNT })
+
+  useEffect(() => {
+    onHalfVisibleChange?.(halfVisible)
+  }, [halfVisible, onHalfVisibleChange])
 
   /*
     The reveal ladder, one rung per block: label, heading, body, button, then the

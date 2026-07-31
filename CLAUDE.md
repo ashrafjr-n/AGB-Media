@@ -22,7 +22,7 @@ Single source of truth for every task in this repository. Read this before writi
 | Routing | React Router 7 (`BrowserRouter`) | one route today; see below |
 | Styling | **CSS Modules only** | tokens in `variables.css`, base in `global.css` |
 | DOM motion | **Framer Motion 12 — the only animation library** | every animation gates on `useReducedMotion()` |
-| WebGL | **none.** | There is no WebGL, no canvas and no 3D library on this site. The Story circle's lens is `shared/CssLens.jsx` — a div. `ogl` is still installed and used by nothing; §6 |
+| WebGL | **none.** | There is no WebGL, no canvas and no 3D library on this site, and none is installed. The Story circle's lens is `shared/CssLens.jsx` — a div. |
 | Icons | `react-icons` (Heroicons `hi` outline set) | never hand-build an SVG — §5 |
 | Type | Clash Display via Fontshare | sole typeface, §3 |
 | Lint | `oxlint` (`npm run lint`) | `.oxlintrc.json`: react hooks rules only |
@@ -38,15 +38,15 @@ Single source of truth for every task in this repository. Read this before writi
 | File | What it is |
 | --- | --- |
 | `App.jsx` | Router shell. One route. |
-| `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`, `Founder`, placeholder). Holds one piece of state — whether About's glass is still near enough to be showing the hero's fixed footage — because it is the only component that knows both sections exist. See §7 "The fixed backdrop is dropped once nothing samples it". |
-| `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden for the whole hero via `data-hidden` + `inert`. See §4 "The two headers". |
+| `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`, `Founder`, placeholder). Holds **two booleans**, both reported by `About` and both consumed by a component that knows nothing of it: whether the Story glass is still showing the hero's fixed footage (→ `Hero`'s `sampledBelow`, §7) and whether the Story section is half on screen (→ `Header`'s `visible`, §4). This page is the wiring because it is the only thing that knows those components share a screen. |
+| `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden via `data-hidden` + `inert` until its `visible` prop says otherwise; it reads no scroll position of its own. See §4 "The two headers". |
 | `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`, and carries `data-offscreen` at the same threshold to stop the animations inside it — see §7. Takes one prop, `sampledBelow`, which extends how long the backdrop is *rendered* past that — §7 again. |
 | `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
-| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. Reveals on the shared ladder in `useSectionReveal`. Its ground is a **100vh** `::before`, not the section's own background — §7. Reports its own position to `HomePage` through `onGlassVisibilityChange`, because it is the only thing on the page that samples the hero's fixed backdrop — §7. |
+| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. Reveals on the shared ladder in `useSectionReveal`. Its ground is a **100vh** `::before`, not the section's own background — §7. **Observes its own box three times** — at `0.2` for its video, at 400px of margin for the hero's backdrop (`onGlassVisibilityChange`, §7), and at `0.5` for the site header's arrival (`onHalfVisibleChange`, §4). The last two are reported to `HomePage` rather than used here. |
 | `components/shared/Button.module.css` | **The** button definition — base + **two** glass variants. A module with no `.jsx` sibling, on purpose. |
 | `components/shared/FluidBar.jsx` | The hero ticker's water — three drifting gradient masses under an SVG turbulence displacement. **Pure markup + CSS: no canvas, no WebGL, no JS.** The only genuinely moving surface on the site. |
 | `components/shared/CssLens.jsx` | The Story circle: the looping `<video>`, plus a 140px frosted-glass disc that follows the pointer over it. Pure DOM — a `backdrop-filter: blur() saturate()`, a white tint, a soft radial highlight, a thin rim and one inset shadow. A **perfect circle at every moment**; nothing distorts its geometry. Takes a `pointer` ref (not props) so mousemove does not re-render it, and a `wakeRef` so About can restart its follow loop. **It does not bend the footage** — see §7. |
-| `components/Founder/Founder.jsx` | The founder's page-within-a-section — an ordinary section after About, whose **four areas** reveal on the shared ladder (intro, career line, photo strip, works strip). Its ground is `story.webm` again: a `<video>` filling **one screen** under a frosted pane of `--section-glass-fill` / `--section-glass-blur`, both at a negative `z-index` so the in-flow copy stays on top. Registers with `useExclusiveVideo` — see §7. Runs **two** LogoLoops, deliberately opposed in direction. |
+| `components/Founder/Founder.jsx` | The founder's page-within-a-section — an ordinary section after About, whose **four areas** reveal on the shared ladder (intro, career line, photo strip, works strip). Its ground is `story.webm` again: a `<video>` filling **one screen** under a frosted pane of `--section-glass-fill` / `--section-glass-blur`, both at a negative `z-index` so the in-flow copy stays on top. Registers with `useExclusiveVideo` — see §7. Runs **two** LogoLoops, deliberately opposed in direction. The portrait sits in a `.portrait-frame` that exists only to clip it — §7. |
 | `components/shared/LogoLoop.jsx` | The continuously scrolling strip — **of stills or of text**, one entry being either `{ src, alt }` or `{ label }`. CSS animation, JS only measures. Stops via `data-paused` when its own `IntersectionObserver` says it is off screen; the `paused` prop is part of its contract but no caller passes it today — see §7. |
 | `hooks/useExclusiveVideo.js` | The page-wide **one-video-at-a-time** registry. Module-scoped claims, one `resolve()` that pauses every loser before playing the winner, and a DEV-only assertion that the invariant holds. `PLAYBACK_PRIORITY` names the order. Hero is deliberately not a claimant — see §7. |
 | `hooks/useSectionReveal.js` | **The** scroll-in entrance, as a ladder of steps. Both scrolling sections reveal from it, so retuning the feel is one edit rather than two that drift. Returns `revealAt(step)` — steps are indices, not seconds — and carries its own `prefers-reduced-motion` branch, so call sites never check. See §4 Motion. |
@@ -228,12 +228,17 @@ src/
     About/
       About.jsx
       About.module.css
+    Founder/
+      Founder.jsx
+      Founder.module.css
     shared/                 # reusable primitives
       Button.module.css     # THE button definition — no .jsx sibling, on purpose
       FluidBar.jsx          # the ticker's water: markup + CSS, no canvas
       CssLens.jsx           # the story circle: the video, and a glass disc over it
       LogoLoop.jsx          # the founder's scrolling strips — stills, and titles
   pages/                    # route-level components
+    HomePage.jsx            # wires About's two reports to Hero and Header
+    HomePage.module.css
   styles/
     variables.css           # design tokens ONLY
     global.css              # reset, base element styles, noise overlay
@@ -246,6 +251,9 @@ src/
     navLinks.js             # the nav model, shared by BOTH headers
   assets/
     videos/story.webm       # bundled; hero.webm is in public/, see Assets
+    abdullah/               # the portrait, plus six 1280x720 originals nothing imports
+      strip/                # 640x360 cuts of those six — what LogoLoop actually shows
+    images/                 # empty, and the one .gitkeep still doing its job
 public/
   assets/images/agb-logo.png
   assets/videos/hero.webm   # served from a stable path so index.html can preload it
@@ -258,7 +266,7 @@ public/
 ### Styling
 
 - **CSS Modules only** (`Component.module.css`). No utility-class frameworks.
-- Tailwind is intentionally **not active** — its Vite plugin is removed and its `@import` deleted, because its `@layer base` preflight collides with our own reset. Do not re-enable it.
+- Tailwind is intentionally **not active** — it is uninstalled, its Vite plugin is absent and its `@import` deleted, because its `@layer base` preflight collides with our own reset. Do not re-enable it.
 - Global tokens in `variables.css`; global resets and base element styles in `global.css`. `global.css` imports `variables.css` and is imported once by `main.jsx`.
 - **No inline styles** unless the value is genuinely dynamic (a computed transform, a runtime color).
 
@@ -285,14 +293,18 @@ There are **two** headers, and they are never on screen at the same time.
 | | `Header/Header.jsx` | `Hero/HeroHeader.jsx` |
 | --- | --- | --- |
 | Position | `fixed`, floating glass pill | **in flow**, inside `.hero`, scrolls away with it |
-| Visible | only once the hero is behind you | only while you are in the hero |
+| Visible | from the Story section's midpoint down | only while you are in the hero |
 | Layout | logo left, nav right, capped pill width | logo hard against the inline start, nav hard against the inline end, full bleed, no `--container-max` cap |
 | Children | logo, nav, mobile toggle + drawer | **two only** — logo and nav. There is no separate CTA: the nav's `featured` entry renders as the filled button |
 | Block alignment | centred in the pill | **top-aligned**; the nav sits flush at the row's top with no offset of its own, and the logo takes a small negative `margin-block-start` so it stays the higher of the two |
 | Logo | `2.25rem` / `2.625rem` | far larger: `5.5rem` / `6.5rem`, inset from the bled edge by `--space-sm` / `--space-md` |
 | Nav underline | Framer Motion variants | CSS `scaleX` on `::after` |
 
-**The handoff is a single threshold: `isPastFirstViewport`, exported from `useScrollPosition.js`.** The hero is exactly `100svh`, so one scrolled viewport *is* the end of the hero. `Hero.jsx` gates its video playback on it, `Header.jsx` gates its own visibility on it, and `About.jsx` gates the story video on it — all three pass it to the hook as a **selector**, so they share one function rather than three copies of `viewportProgress >= 1`, and none of them re-renders on the frames in between. A fourth consumer should pass the same selector, not write the comparison out again.
+**The two are separated by a wide margin, not by a shared threshold.** `HeroHeader` is in flow at the top of the page and is off screen after roughly 120px of scrolling. `Header` does not appear until **half of the Story section is on screen** — half a viewport — so there is about half a screen of scrolling in which neither is visible, and no arrangement in which both are.
+
+**The site header's cue is `HEADER_REVEAL_AMOUNT` in `About.jsx`** — `useInView(aboutRef, { amount: 0.5 })`, reported up through `HomePage.jsx` and passed to `Header` as its `visible` prop. It is measured against **that section's own box**, deliberately: `.about` is `min-block-size: 100vh`, a floor rather than a height, so a threshold written in viewport multiples drifts from the section's real midpoint on exactly the windows where the section is not one viewport tall.
+
+It used to be `isPastFirstViewport` — the header arrived only once the Story section had taken the screen outright. **That export still exists and is still shared, but it is now purely the video threshold**: `Hero.jsx` pauses its backdrop on it, and `About.jsx` and `Founder.jsx` fold it into their own playback intent. All three pass it to the hook as a **selector**, so they share one function rather than three copies of `viewportProgress >= 1`, and none of them re-renders on the frames in between. A new *video* consumer should pass the same selector; anything that wants a **section's** geometry should observe that section, not add a viewport multiple.
 
 - The site header hides via `data-hidden` on its root, a **CSS transition** (`opacity` + `translateY(-100%)` + `pointer-events: none`) rather than a Framer animation: it is a two-state toggle, not choreography, and CSS transitions are already covered by the `prefers-reduced-motion` block in `global.css`. This matches how `data-menu-open` already drives the pill's corners.
 - It also carries **`inert`** while hidden. `pointer-events: none` alone still leaves the links in the tab order, so an invisible nav would be focusable over the hero.
@@ -341,17 +353,30 @@ That is the whole runtime. **There is no 3D or WebGL library in this project.** 
 
 **Framer Motion is the only animation library, full stop** — see §4 Motion. The one thing outside it is CssLens's follow loop, which is a bare `requestAnimationFrame` writing a `transform`; it is not a second animation system, and the argument for it is at the file.
 
-**`ogl` is fully unused** and has been for some time. It was the WebGL layer behind `shared/Grainient.jsx`, which was deleted. The package is still in `package.json` and can be uninstalled.
+**`ogl`, `tailwindcss` and `@tailwindcss/vite` were uninstalled on 2026-07-31.** `ogl` was the WebGL layer behind the deleted `shared/Grainient.jsx` and nothing had imported it since; the Tailwind pair had been disconnected from the build for as long. None of them was ever in the bundle, so removing them changed the output by zero bytes — the saving is install footprint and one less thing to mistake for a live dependency.
 
-`tailwindcss` and `@tailwindcss/vite` remain in `package.json` but are **disconnected from the build**. They can be uninstalled by the user at any time.
+`@types/react` and `@types/react-dom` stay. This is a JS project with no TypeScript, so nothing consumes them at build time — they are there for editor IntelliSense against the JSDoc the hooks are annotated with, and they cost nothing shipped.
 
 `oxlint` is the linter (`npm run lint`). `.oxlintrc.json` enables the `react` and `oxc` plugins with `react/rules-of-hooks` as an error and `react/only-export-components` as a warning — nothing else. It is not a formatter, and there is no Prettier config; match the surrounding file's style by hand.
 
 ---
 
-## 7. Unused, and stale — as of 2026-07-30
+## 7. Unused, and stale — as of 2026-07-31
 
-A cleanup pass on 2026-07-30 cleared this section. Everything it used to list — `Grainient.jsx` and its stylesheet, `story.png`, `zero.png`, the `.button-quiet` and `.button-reveal` variants, the `--color-raised` / `--color-navy` / `--color-surface` / `--text-5xl` / `--duration-morph` / `--shadow-gold` / `--z-modal` tokens, the vestigial `data-docked` attribute, and four stale comments — has been deleted or fixed. Lint is clean and the build passes.
+A second cleanup pass ran on 2026-07-31. What it found and did:
+
+- **`ogl`, `tailwindcss`, `@tailwindcss/vite` uninstalled.** None was imported by anything; none was in the bundle. Output unchanged to the byte — see §6.
+- **Four redundant `.gitkeep` files removed** (`hooks/`, `data/`, `components/shared/`, `assets/videos/`), each in a directory that has held real files for some time. `src/assets/images/.gitkeep` **stays**: that directory is genuinely empty, because the logo is served from `public/`. A stray `.DS_Store` under `src/assets/abdullah/` went with them.
+- **Four stale comments fixed**, all of which had become actively misleading: `useScrollPosition.js` naming the site header as a consumer it no longer has; `Hero.module.css` claiming `--glass-sheen` was still referenced by the glass buttons; `HeroHeader.jsx` describing Hero as re-rendering every scroll frame (it has not since the selector landed) and the Contact button as a solid gold fill (it has been glass since the glass pass).
+- **Audited and found clean:** every class in every CSS Module is referenced by its component (checked mechanically, comments stripped); every `addEventListener` is removed on cleanup and every scroll listener is `passive`; every `will-change` is paired with a rule that drops it when the animation stops; no effect has a wrong dependency array; no orphaned components, assets or refs remain from the zoom-transition removal or the FluidLens→CssLens migration.
+
+**Fifteen design tokens in `variables.css` are unreferenced, and are deliberately kept:** `--color-gold-deep`, `--color-border`, `--color-border-subtle`, `--color-overlay`, `--color-glass`, `--glass-sheen`, `--glass-sheen-warm`, `--header-blur`, `--text-lg`, `--text-xl`, `--text-2xl`, `--tracking-widest`, `--radius-sm`, `--duration-slow`, `--ease-in-out`. They are listed here rather than deleted, per this section's own rule. Most are **rungs of a scale** — deleting the unused steps of a type, radius or easing ramp leaves a ramp with holes in it, which is worse than an unused custom property that costs nothing at runtime. The palette entries are the same argument: they are what a new surface is built from. `--glass-sheen` is the newest arrival, orphaned when the hero ticker moved to `FluidBar`; `--color-glass` and `--header-blur` were orphaned when the header pill went to white glass.
+
+**The `src/assets/abdullah/00X.jpg` originals (1.8 MB) are unimported and stay that way.** Nothing references them, so Vite never bundles them; they are the source the 640×360 strip cuts came from and are there to re-cut from — see the Assets table in §1.
+
+---
+
+An earlier pass on 2026-07-30 cleared this section. Everything it used to list — `Grainient.jsx` and its stylesheet, `story.png`, `zero.png`, the `.button-quiet` and `.button-reveal` variants, the `--color-raised` / `--color-navy` / `--color-surface` / `--text-5xl` / `--duration-morph` / `--shadow-gold` / `--z-modal` tokens, the vestigial `data-docked` attribute, and four stale comments — has been deleted or fixed. Lint is clean and the build passes.
 
 **`--shadow-soft` was on that list and is NOT unused** — `About.module.css` applies it to the story circle, where it registers properly now that the section is glass rather than flat black. It was kept.
 
@@ -382,6 +407,16 @@ Each ground is now a layer pinned to the top of its section at a flat **`block-s
 
 - **Founder** uses two absolutely positioned layers at `z-index: -2` / `-1`, contained because `.founder` is a stacking context (`position: relative` + `--z-base`).
 - **About uses `.about::before` with no z-index at all**, and `.inner` takes `position: relative` so the copy paints over it. It cannot use a negative index: that only stays inside a section that is a stacking context, and the moment `.about` has a z-index its glass is a member of *that* context rather than a box painting in document order against the hero's fixed backdrop — which is the one thing About's glass has to reach. The Founder can afford it because what its glass samples is a sibling inside the section.
+
+### The founder's portrait is clipped by a frame, not sized by itself — 2026-07-31
+
+A dark hairline ran down the **trailing edge** of the portrait. It was not in the source (a clean 1280×720 with a soft vignette, measured) and not a `cover` failure — the image is proportionally wider than its box, so it crops horizontally and always covered.
+
+It was **fractional layout**. `.identity` is an `fr` track, so its width is routinely fractional (~361.6px at a 1024px window); an image at `inline-size: 100%` of that ends on a half pixel, the browser antialiases the last column, and the image's own alpha falls off across it — so the section's ground shows through. The **one-sidedness is the tell**: the track starts on a whole pixel and only its end is fractional, so only the trailing edge could produce it.
+
+The fix is a `.portrait-frame` that carries the box the image used to have — the height clamp, the radius, `overflow: hidden` — with `.portrait` sized `calc(100% + 2px)` on both axes at `margin: -1px`. The image overhangs 1px on every side and the clip cuts through opaque pixels instead of landing on the raster's own boundary. **`max-inline-size: none` on the image is required, not tidy**: `global.css` sets `img { max-width: 100% }`, which would clamp the width straight back and silently undo it. The visible crop is unchanged to within half a percent.
+
+The same reasoning applies to any full-width image in an `fr` track. There is exactly one on the site.
 
 ### The fixed backdrop is dropped once nothing samples it — 2026-07-31
 
