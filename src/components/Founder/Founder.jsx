@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 
 import useExclusiveVideo, {
   PLAYBACK_PRIORITY,
@@ -7,6 +7,7 @@ import useExclusiveVideo, {
 import useScrollPosition, {
   isPastFirstViewport,
 } from '../../hooks/useScrollPosition'
+import useSectionReveal from '../../hooks/useSectionReveal'
 import storyVideo from '../../assets/videos/story.webm'
 import LogoLoop from '../shared/LogoLoop'
 import styles from './Founder.module.css'
@@ -42,7 +43,8 @@ import work007 from '../../assets/abdullah/strip/007.jpg'
   It used to be a tenant of About's scroll-zoom stage — pinned across the Story section's
   runway and faded up over the finished zoom, painting no ground of its own because the
   blurred frozen frame behind it *was* its background. That whole transition is gone, so
-  this now owns its own ground and arrives with a plain whileInView reveal.
+  this now owns its own ground, and its four areas arrive one after another on the ladder
+  the Story section uses — see useSectionReveal.
 
   The ground is that same footage again, built rather than inherited: a <video> filling
   the section under a frosted pane of --section-glass-fill and --section-glass-blur, which
@@ -78,18 +80,63 @@ const milestones = [
   'Today leads AGB Media as founder and creative visionary',
 ]
 
-/* Two notes on one line, in the same register as the career strip above them. */
-const notes = [
-  {
-    label: 'Awards & Honours',
-    value: 'listed with years and granting bodies',
-  },
-  {
-    label: 'Contribution',
-    value:
-      'supporting artists, creating opportunities, developing Qatari theatre',
-  },
-]
+/*
+  The body of work, as one continuous line of titles — television first, then theatre,
+  then cinema, which is the order the work was given in and roughly its weight.
+
+  It replaces the "Awards & Honours" / "Contribution" pair that used to close the
+  section. Those were two labels over two summaries of things not actually listed; this
+  is the list, and a scrolling line holds thirty-one titles in the height the two notes
+  took.
+
+  TITLES ARE TRANSLITERATED OR TRANSLATED, never both, and the choice is per title
+  rather than by rule: a name carries over (Al Dana, Jameela, Boudariya) and a phrase
+  translates (The Golden Shoe, Who Laughs Last), because a transliterated phrase reads as
+  noise to an English reader and a translated name stops being the name of the work. The
+  site is English throughout (CLAUDE.md §1) — there is no Arabic anywhere in this file.
+
+  Categories are deliberately not labelled. The strip is a single flowing line and a
+  heading inside it would break the rhythm for information the titles carry well enough
+  in aggregate; if the sections ever need naming, they want a different component.
+*/
+const works = [
+  /* Television */
+  'Al Dana',
+  'Fayez Al-Toosh',
+  "Al Ta'iha",
+  'Adventures of Saadoun',
+  'Mohsen Minkum wa Fikum',
+  'Al Nas Al Tayyebin',
+  'Ahlam Al Busata',
+  'Afwan Sayyidi Al-Walid',
+  '29 Salfa wa Salfa',
+  'Al Dalloub',
+  'Jameela',
+  'Bait Al Mughtani',
+  'Al Sidra',
+
+  /* Theatre */
+  'Min Fawq Ha Allah Allah',
+  'Boudariya',
+  'Al Mahara: Queen of Ancient Times',
+  'The Lost Treasure in the Land of Wonders',
+  'Al Mutaraqishoon',
+  'Who Laughs Last',
+  'Ya Layl Ya Layl',
+  'The Golden Shoe',
+  'Antar and Abla',
+  'Al Munaqasha',
+  'Mawwal Al Farah wal Huzn',
+  'Official Records',
+  'Mazloum Dhulm Mazloum',
+  'Hammam Al Mahabba',
+  'The Elephant O King of Time',
+  'Rahma and the Enchanted Forest',
+  "Hal Al Shakl Ya Za'faran",
+
+  /* Cinema */
+  'Aqarib Al Saa',
+].map((title) => ({ label: title }))
 
 /*
   Alt text is deliberately generic: these are production stills whose subjects are not
@@ -123,15 +170,22 @@ const PRELOAD_MARGIN = '400px 0px'
 
 function Founder() {
   /*
-    The global prefers-reduced-motion rule in global.css governs CSS animations only;
-    Framer drives this inline, so the preference has to be honoured in JS. When reduced,
-    the section renders in place with no transform to animate back from.
+    The reveal ladder, one rung per area: the intro block, the career line, the work
+    strip, then the titles. It replaces a single reveal on the section itself, and the
+    swap is worth stating because the old comment argued for that: four areas arriving
+    in sequence would supposedly read as "the page assembling itself".
 
-    The section reveals as one block rather than in a stagger like About's — it is a
-    dense screen of small type, and four ladders arriving in sequence would read as the
-    page assembling itself rather than as content appearing.
+    What made that true was the *distance* — the section moved 24px as one slab. At the
+    12px this ladder travels, in 0.09s steps that overlap each other, the areas land as
+    one gesture with a direction to it rather than as four events. The shared hook is
+    what keeps it identical to About's; see useSectionReveal for the timings and for the
+    reduced-motion branch, which is why there is no preference check in this file.
+
+    It also takes the entrance off the section element itself, which is a small win the
+    glass cares about: an animating `opacity` on <section> isolates the whole subtree
+    while it runs, and the ground below is now the only thing in here that never fades.
   */
-  const shouldReduceMotion = useReducedMotion()
+  const revealAt = useSectionReveal()
 
   /* --- The background video ---------------------------------------------- */
 
@@ -194,22 +248,12 @@ function Founder() {
     video.load()
   }, [nearView, videoRef])
 
-  const reveal = shouldReduceMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 24 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, amount: 0.2 },
-        transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-      }
-
   return (
-    <motion.section
+    <section
       className={styles.founder}
       id="founder"
       ref={sectionRef}
       aria-labelledby="founder-name"
-      {...reveal}
     >
       {/*
         The ground: the same footage the Story circle shows, filling the section behind
@@ -242,21 +286,21 @@ function Founder() {
       <div className={styles.glass} aria-hidden="true" />
 
       {/* --- Hero block: the name and portrait against the profile ------------ */}
-      <div className={styles.intro}>
+      <motion.div className={styles.intro} {...revealAt(0)}>
         <div className={styles.identity}>
           {/*
             An h2, matching About's — both are top-level sections under the hero's
             sr-only h1, and neither is subordinate to the other.
 
-            Two spans rather than a <br>: the break is typographic rather than a break in
-            the sentence, and the second line carries the accent colour, so each line
-            needs something to hang a rule on.
+            ONE LINE, with a real space in the markup rather than two block spans. It was
+            stacked, which meant the two halves were separate rows and the space between
+            them was a `gap`; set side by side, the surname is simply the second word of
+            the heading and the only thing it needs is the accent colour. The size is
+            what absorbs the change — see the clamp on .name, which had to come down for
+            sixteen characters to hold a single line in a 2fr column.
           */}
           <h2 className={styles.name} id="founder-name">
-            <span className={styles['name-line']}>Abdullah</span>
-            <span className={`${styles['name-line']} ${styles['name-accent']}`}>
-              Ghayfan
-            </span>
+            Abdullah <span className={styles['name-accent']}>Ghayfan</span>
           </h2>
 
           {/*
@@ -300,10 +344,10 @@ function Founder() {
             ))}
           </dl>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- Career: one flowing line ---------------------------------------- */}
-      <div className={styles.career}>
+      <motion.div className={styles.career} {...revealAt(1)}>
         <p className={`${styles.eyebrow} ${styles['career-label']}`}>Career</p>
 
         {/*
@@ -319,14 +363,20 @@ function Founder() {
             </li>
           ))}
         </ol>
-      </div>
+      </motion.div>
 
       {/* --- The work: full bleed, continuously scrolling --------------------- */}
-      <div className={styles.strip}>
+      <motion.div className={styles.strip} {...revealAt(2)}>
         <LogoLoop
           logos={workImages}
           speed={60}
-          direction="left"
+          /*
+            LEFT TO RIGHT, and it is the opposite of the titles below on purpose: two
+            strips running the same way read as one mechanism repeated, where two running
+            against each other read as a page with depth to it. This is the one that
+            changed direction; keep them opposed if either is ever retuned.
+          */
+          direction="right"
           /*
             A CSS length rather than a number, which LogoLoop accepts so that a strip
             inside a fixed-height section can scale with the viewport instead of pinning
@@ -334,7 +384,15 @@ function Founder() {
           */
           logoHeight="clamp(5rem, 15vh, 9.5rem)"
           gap={16}
-          pauseOnHover={true}
+          /*
+            NEVER pauses. The photographs are the section's one piece of continuous
+            motion and the cursor spends most of its time in the middle of the page,
+            which is exactly where this strip is — so pausing on hover stopped it for
+            reasons that had nothing to do with wanting it stopped. The titles below keep
+            the behaviour, where it is useful: they are text, and stopping to read one is
+            a real intent.
+          */
+          pauseOnHover={false}
           /*
             fadeOut is deliberately left off. .strip masks its own edges instead, which
             removes the pixels rather than painting a gradient over them — so the images
@@ -343,18 +401,33 @@ function Founder() {
           */
           ariaLabel="AGB Media productions"
         />
-      </div>
+      </motion.div>
 
-      {/* --- Closing: both notes on one line ---------------------------------- */}
-      <dl className={styles.closing}>
-        {notes.map((note) => (
-          <div className={styles.note} key={note.label}>
-            <dt className={styles['note-label']}>{note.label}</dt>
-            <dd className={styles['note-value']}>{note.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </motion.section>
+      {/* --- The body of work, as a line of titles ---------------------------- */}
+      <motion.div className={styles.works} {...revealAt(3)}>
+        <LogoLoop
+          logos={works}
+          /*
+            Slower than the photographs, because these are words. 60px/s is a comfortable
+            pace for a picture arriving and leaving; at that speed a title is gone before
+            it can be read, and a strip nobody can read is decoration wearing the clothes
+            of information.
+          */
+          speed={30}
+          /* Right to left, against the photo strip above — see the note there. */
+          direction="left"
+          /*
+            Wider than the photo strip's, and it sets the rhythm of the whole line: the
+            gap sits on both sides of each separator dot (LogoLoop.module.css), so this
+            is the space around the dot rather than merely between titles.
+          */
+          gap={20}
+          /* Text, so stopping to read one is a real intent — see the strip above. */
+          pauseOnHover={true}
+          ariaLabel="Selected works of Abdullah Ghayfan"
+        />
+      </motion.div>
+    </section>
   )
 }
 

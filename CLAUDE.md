@@ -42,13 +42,14 @@ Single source of truth for every task in this repository. Read this before writi
 | `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden for the whole hero via `data-hidden` + `inert`. See §4 "The two headers". |
 | `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`, and carries `data-offscreen` at the same threshold to stop the animations inside it — see §7. Takes one prop, `sampledBelow`, which extends how long the backdrop is *rendered* past that — §7 again. |
 | `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
-| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. The reference implementation for `whileInView` reveals. Reports its own position to `HomePage` through `onGlassVisibilityChange`, because it is the only thing on the page that samples the hero's fixed backdrop — §7. |
+| `components/About/About.jsx` | The "Our Story" section — a micro-label eyebrow with a gold dot, a `--text-4xl` `h2`, **one** paragraph in a local `storyParagraph` string, a `.button-glass` CTA to `/about`, and the circular video window beside it. Owns the section-wide `mousemove` that drives the lens. Reveals on the shared ladder in `useSectionReveal`. Its ground is a **100vh** `::before`, not the section's own background — §7. Reports its own position to `HomePage` through `onGlassVisibilityChange`, because it is the only thing on the page that samples the hero's fixed backdrop — §7. |
 | `components/shared/Button.module.css` | **The** button definition — base + **two** glass variants. A module with no `.jsx` sibling, on purpose. |
 | `components/shared/FluidBar.jsx` | The hero ticker's water — three drifting gradient masses under an SVG turbulence displacement. **Pure markup + CSS: no canvas, no WebGL, no JS.** The only genuinely moving surface on the site. |
 | `components/shared/CssLens.jsx` | The Story circle: the looping `<video>`, plus a 140px frosted-glass disc that follows the pointer over it. Pure DOM — a `backdrop-filter: blur() saturate()`, a white tint, a soft radial highlight, a thin rim and one inset shadow. A **perfect circle at every moment**; nothing distorts its geometry. Takes a `pointer` ref (not props) so mousemove does not re-render it, and a `wakeRef` so About can restart its follow loop. **It does not bend the footage** — see §7. |
-| `components/Founder/Founder.jsx` | The founder's page-within-a-section — an ordinary section after About, arriving with a single `whileInView` reveal. Its ground is `story.webm` again: a `<video>` filling the section under a frosted pane of `--section-glass-fill` / `--section-glass-blur`, both at a negative `z-index` so the in-flow copy stays on top. Registers with `useExclusiveVideo` — see §7. |
-| `components/shared/LogoLoop.jsx` | The continuously scrolling strip of production stills. CSS animation, JS only measures. Stops via `data-paused` when its own `IntersectionObserver` says it is off screen; the `paused` prop is part of its contract but no caller passes it today — see §7. |
+| `components/Founder/Founder.jsx` | The founder's page-within-a-section — an ordinary section after About, whose **four areas** reveal on the shared ladder (intro, career line, photo strip, works strip). Its ground is `story.webm` again: a `<video>` filling **one screen** under a frosted pane of `--section-glass-fill` / `--section-glass-blur`, both at a negative `z-index` so the in-flow copy stays on top. Registers with `useExclusiveVideo` — see §7. Runs **two** LogoLoops, deliberately opposed in direction. |
+| `components/shared/LogoLoop.jsx` | The continuously scrolling strip — **of stills or of text**, one entry being either `{ src, alt }` or `{ label }`. CSS animation, JS only measures. Stops via `data-paused` when its own `IntersectionObserver` says it is off screen; the `paused` prop is part of its contract but no caller passes it today — see §7. |
 | `hooks/useExclusiveVideo.js` | The page-wide **one-video-at-a-time** registry. Module-scoped claims, one `resolve()` that pauses every loser before playing the winner, and a DEV-only assertion that the invariant holds. `PLAYBACK_PRIORITY` names the order. Hero is deliberately not a claimant — see §7. |
+| `hooks/useSectionReveal.js` | **The** scroll-in entrance, as a ladder of steps. Both scrolling sections reveal from it, so retuning the feel is one edit rather than two that drift. Returns `revealAt(step)` — steps are indices, not seconds — and carries its own `prefers-reduced-motion` branch, so call sites never check. See §4 Motion. |
 | `hooks/useMediaQuery.js` | Subscribes to a media query from JS, for the case a CSS breakpoint cannot reach: deciding whether to **mount** at all. Exists for the lens, from when that meant a WebGL context, a model fetch and a video texture that `display: none` would still have paid for. It is far cheaper to mount now, but the gate is kept: a pointer-following disc has almost nowhere to travel in a ~300px circle and there is usually no pointer to follow. |
 | `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. **One module-scoped listener and one `scrollY` read per frame** shared by every consumer, so a fourth costs nothing. Takes an **optional selector**, which narrows what is stored in state so a consumer that only wants a threshold does not re-render on every scroll frame; all three current consumers pass the file's own `isPastFirstViewport` export, which *is* the header and video-gate threshold rather than a matching copy of it. |
 | `data/navLinks.js` | The nav model, shared by both headers. `Contact` carries `featured: true`. |
@@ -88,7 +89,7 @@ Four surfaces carry it, and they are meant to read as one material at different 
 | Hero metadata ticker | `shared/FluidBar.jsx` | Three drifting gradient masses under a turbulence displacement. **The only thing on the site that genuinely flows.** |
 | Hero nav "Contact" | `.button-featured` | The same material held still — a *frozen* turbulence texture — plus a gold light travelling the rim. |
 | Site header pill | `Header.module.css` | Frozen turbulence again, lighter, built up from white rather than down from the ground. |
-| Story section ground | `About.module.css` | Viewport-wide frosted glass: `--section-glass-fill` over a `backdrop-filter` that blurs the hero's fixed footage through it. |
+| Story section ground | `About.module.css` | Frosted glass, **exactly one screen tall**: `--section-glass-fill` over a `backdrop-filter` that blurs the hero's fixed footage through it. A `::before`, not the section's own background — §7. |
 
 Two rules hold this together, and both are load-bearing:
 
@@ -231,13 +232,14 @@ src/
       Button.module.css     # THE button definition — no .jsx sibling, on purpose
       FluidBar.jsx          # the ticker's water: markup + CSS, no canvas
       CssLens.jsx           # the story circle: the video, and a glass disc over it
-      LogoLoop.jsx          # the founder's scrolling strip of stills
+      LogoLoop.jsx          # the founder's scrolling strips — stills, and titles
   pages/                    # route-level components
   styles/
     variables.css           # design tokens ONLY
     global.css              # reset, base element styles, noise overlay
   hooks/
     useExclusiveVideo.js    # the page-wide one-video-at-a-time registry
+    useSectionReveal.js     # THE scroll-in entrance, shared by both sections
     useMediaQuery.js        # for mount/skip decisions a CSS breakpoint cannot make
     useScrollPosition.js
   data/                     # static content (copy, project lists)
@@ -264,13 +266,17 @@ public/
 
 ### Motion
 
-Framer Motion is the only animation library. Section reveals use `whileInView` with `viewport={{ once: true, amount: 0.3 }}` so content animates a single time on first scroll-in. `About.jsx` is the reference.
+Framer Motion is the only animation library.
+
+**Every scroll-in reveal on the site comes from `hooks/useSectionReveal.js`, and a new section reveals from it too.** It is one ladder — `revealAt(0)`, `revealAt(1)`, … — with the travel (12px), the duration (0.58s), the stagger (0.09s), the easing (`[0.16, 1, 0.3, 1]`, a long flat-tailed decelerating curve) and `viewport: { once: true, amount: 0.25 }` all set in that one file. Steps are **indices, not delays**, so re-ordering a ladder is renumbering it. Do not write a `whileInView` transition inline in a section — two sections tuned separately stop reading as one gesture, which is the whole reason this was hoisted out of `About.jsx` and `Founder.jsx`.
+
+`once: true` is not a preference: it is what stops a ladder replaying on every scroll past. The hook also carries the `prefers-reduced-motion` branch (it returns `{}` per step, so elements render in their final state with no `initial`), which is why no call site checks the preference for a reveal.
 
 **The hero's entrance is different, and deliberately so:** it is mount-triggered (`initial`/`animate`, never `whileInView`) because it should fire on page load rather than on scroll-in, and it must play **once per session**. `HeroHeader.jsx` guards it with a module-scoped `entrancePlayed` flag; when set, `rise()` returns no animation props at all, so elements render in their natural resting state with no `initial` to animate back from. (It lives in `HeroHeader.jsx` rather than `Hero.jsx` because the hero body is empty — the header is the only animated content in the hero.)
 
 Two things about that flag are load-bearing. It lives at **module scope**, not in state: any remount replays the entrance from the top (routing away and back is the obvious case), and a flag inside the component would be reset by exactly that. (`Hero` no longer re-renders on every scroll frame — it subscribes to a boolean through `useScrollPosition`'s selector — so `HeroHeader` is no longer re-rendered per frame either. The flag is still read into a `useRef` rather than inline, which costs nothing and keeps the read independent of render count.) And it latches on **animation completion, not on mount** — StrictMode deliberately mounts, unmounts and remounts every component in development, so a mount-latched flag would be set by that throwaway first mount and would suppress the entrance before anyone saw it.
 
-**Every Framer Motion animation must gate on `useReducedMotion()`.** The `@media (prefers-reduced-motion: reduce)` block in `global.css` governs **CSS** animations and transitions only — it has no effect on animations Framer Motion drives inline through JS. When the hook returns `true`, render the element in its final state with no transform. See `About.jsx` for the established pattern.
+**Every Framer Motion animation must gate on `useReducedMotion()`.** The `@media (prefers-reduced-motion: reduce)` block in `global.css` governs **CSS** animations and transitions only — it has no effect on animations Framer Motion drives inline through JS. When the hook returns `true`, render the element in its final state with no transform. Scroll-in reveals get this for free from `useSectionReveal`; anything else — the lens's follow loop, the hero's entrance — checks for itself.
 
 ### The two headers
 
@@ -365,6 +371,17 @@ Consequences worth knowing:
 - **`.circle` draws the circle again.** The round clip, rim, fill and shadow moved back onto it from `.zoom-layer`, which existed only to give the zoom an untransformed parent to measure. It takes `--shadow-soft` as the token, so **the project no longer duplicates a design token's numbers anywhere**.
 - **`Founder` is a sibling, not a child.** It renders from `HomePage.jsx` after `<About />`, paints its own opaque `--color-black` ground, and arrives with an ordinary `whileInView` reveal. It is `position: relative` + `--z-base` for the same reason `.about` and `.placeholder` are: Hero's fixed `.backdrop` at `z-index: 0` would otherwise paint over a static in-flow section.
 - **The story video's second gate changed** — see below.
+
+### Both section grounds are exactly one screen tall — 2026-07-31
+
+`min-block-size: 100vh` is a **floor, not a height**. Both scrolling sections are centred inside that floor and both overflow it on a short window, and their backgrounds used to grow with them — About's glass was the section's own `background-color` + `backdrop-filter`, and the Founder's `<video>` and `.glass` were `inset: 0`. That meant a 16:9 source stretched over an ever-taller box, and a viewport-wide backdrop-filter re-blurring more area than a screen.
+
+Each ground is now a layer pinned to the top of its section at a flat **`block-size: 100vh`**, and content that overflows runs past the bottom of it. On About that lands on the page's own `--color-black`; on the Founder it lands on `.founder`'s opaque `--color-black`, which is why that fill alone stays full height.
+
+**The two are built differently, and neither may take the other's form:**
+
+- **Founder** uses two absolutely positioned layers at `z-index: -2` / `-1`, contained because `.founder` is a stacking context (`position: relative` + `--z-base`).
+- **About uses `.about::before` with no z-index at all**, and `.inner` takes `position: relative` so the copy paints over it. It cannot use a negative index: that only stays inside a section that is a stacking context, and the moment `.about` has a z-index its glass is a member of *that* context rather than a box painting in document order against the hero's fixed backdrop — which is the one thing About's glass has to reach. The Founder can afford it because what its glass samples is a sibling inside the section.
 
 ### The fixed backdrop is dropped once nothing samples it — 2026-07-31
 

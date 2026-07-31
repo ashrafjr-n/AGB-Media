@@ -85,17 +85,30 @@
 
   A stacking context is NOT a backdrop root, so .glass's backdrop-filter still reaches the
   video beneath it. What would break that is a `filter`, a `mask`, `isolation: isolate` or
-  a permanent `opacity < 1` on .founder — the section's entrance animates opacity, but
-  that only isolates the subtree while it runs, and the video is *inside* the subtree, so
-  the glass keeps sampling exactly what it is meant to.
+  an `opacity < 1` on .founder itself. Nothing animates the section any more — the
+  entrance moved onto the four content areas individually (see the ladder in Founder.jsx),
+  so the two layers here never fade at all and the question of what an animating opacity
+  would isolate no longer arises. Putting a reveal back on <section> would raise it again:
+  it was safe then only because the video sits *inside* the subtree being isolated.
+*/
+/*
+  BOTH LAYERS ARE EXACTLY ONE SCREEN TALL, pinned to the top of the section, where they
+  used to be `inset: 0` and therefore however tall the section turned out to be.
+
+  `min-block-size: 100vh` on .founder is a floor, not a height: on a short window the
+  four areas push well past it, and the video and its pane grew with them — a background
+  of no fixed height, stretching a 16:9 source over an ever-taller box and blurring the
+  whole of it. They are now a fixed screen-sized ground that content scrolls past, which
+  is the same treatment .about::before takes. Anything below the fold falls onto
+  .founder's own opaque --color-black, which is why that fill stays full height.
 */
 .backdrop {
   position: absolute;
-  inset: 0;
+  inset-block-start: 0;
+  inset-inline: 0;
   z-index: -2;
 
-  inline-size: 100%;
-  block-size: 100%;
+  block-size: 100vh;
   /* A 16:9 source filling a viewport-tall box: crop, never letterbox or stretch. */
   object-fit: cover;
 }
@@ -123,8 +136,12 @@
 */
 .glass {
   position: absolute;
-  inset: 0;
+  inset-block-start: 0;
+  inset-inline: 0;
   z-index: -1;
+
+  /* One screen, matching .backdrop exactly — see the note there. */
+  block-size: 100vh;
 
   background-color: var(--section-glass-fill);
   /* -webkit- prefix for Safari, which still requires it — as in About and Header. */
@@ -197,9 +214,22 @@
 }
 
 /*
-  clamp(2rem, 4vw, 3.2rem) as specified, written literally rather than mapped onto the
-  shared scale: --text-3xl is the nearest step and tops out a full rem higher, which
-  would let the name outweigh About's section title on a wide window.
+  ONE LINE — "Abdullah Ghayfan" side by side, where it was stacked in two block spans.
+
+  The size is what pays for that, and it had to come down: clamp(2rem, 4vw, 3.2rem) was
+  set for eight characters a row, and sixteen at 3.2rem is about 430px against a 2fr
+  column that is 432px at --container-max. It would have fitted on precisely no window.
+
+  clamp(1.5rem, 3vw, 2.5rem) is measured against the narrowest the column ever gets,
+  which is NOT the phone — a single-column phone layout gives the name the full content
+  width. It is just above 48rem, where the two-column grid takes hold and the 2fr track
+  is only ~270px: 3vw is 23px there, so the 1.5rem floor holds and the name sets at
+  ~180px. It has room at every width from there up.
+
+  `white-space: nowrap` states the intent rather than merely hoping the arithmetic
+  holds. With the clamp above there is comfortable slack at every breakpoint, so it
+  never has anything to prevent; if the name is ever changed to something longer, this
+  is what will make the overflow obvious instead of silently letting it wrap again.
 
   Weight is --font-weight-heavy (700), NOT the 800 first asked for, and the difference is
   nil on screen. global.css requests 200–700 from Fontshare and Clash Display arrives as
@@ -207,19 +237,15 @@
   down to 700 — identical rendering from a value that lies about what is loaded (§3).
 */
 .name {
-  display: flex;
-  flex-direction: column;
+  display: block;
+  white-space: nowrap;
 
-  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
   font-weight: var(--font-weight-heavy);
-  /* Under 1, so the two lines read as one block rather than a ladder. */
+  /* Under 1: the heading is one line now, and this keeps its box tight to the type. */
   line-height: 0.95;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
-}
-
-.name-line {
-  display: block;
 }
 
 .name-accent {
@@ -453,60 +479,63 @@
   );
 }
 
-/* --- Area 4: closing notes, on one line ---------------------------------- */
+/* --- Area 4: the body of work, as a scrolling line of titles -------------- */
 
 /*
-  Both notes on a single line in the same register as the career strip, where they were
-  a two-column block with an eyebrow and a paragraph each. The labels carry the gold and
-  an em dash rather than sitting above their text, which is what collapses four lines to
-  one without losing which half is which.
+  Where "Awards & Honours" and "Contribution" used to close the section — two labels
+  over two summaries of things the page never actually listed. This is the list: every
+  title, running as one continuous line under the photographs.
+
+  It is the same LogoLoop the strip above uses, given text entries instead of images,
+  and it runs the OTHER WAY. Two strips scrolling in the same direction read as one
+  mechanism used twice; opposed, they read as two planes of a section that has depth.
+  The direction is set at the call site — keep the two opposed if either is retuned.
+
+  --logo-loop-label-size is LogoLoop's own hook for the type size and defaults to
+  --text-xs (0.75rem), which is what this wants; it is named here rather than set so the
+  dial is findable from the section that owns the look.
+
+  The colour is set here and inherited into the strip's labels, because the ground is
+  this section's business and not the shared component's: --founder-text-mid is
+  --color-text at 55%, quiet enough to sit under the photographs without competing with
+  the career line, which is at --color-text-subtle (40%) above them.
 */
-.closing {
+.works {
   flex: 0 0 auto;
 
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  column-gap: var(--space-2xs);
-  row-gap: 0.15rem;
+  /*
+    Less air than .strip takes above it. The photographs need separating from the career
+    line because they are a different kind of object; this is small type following a wall
+    of images, and the change in scale is already the separation.
+  */
+  margin-block-start: clamp(0.75rem, 2vh, 1.25rem);
+  /* Matching .strip's inline inset exactly, so the two lines share an edge. */
+  margin-inline: clamp(1rem, 4vw, 3rem);
 
-  inline-size: 100%;
-  max-inline-size: var(--container-max);
-  margin-inline: auto;
-  padding-inline: var(--container-padding);
-}
+  color: var(--founder-text-mid);
 
-.note {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3xs);
-}
+  /*
+    The same mask as .strip, and for the same reason: a gradient painted *in a colour*
+    would be a pair of dark smudges over a blurred video, where a mask removes the pixels
+    and lets the titles dissolve into whatever is behind them.
 
-/* The same dot as the career line, between the two notes rather than within them. */
-.note + .note::before {
-  content: '·';
-  margin-inline-end: var(--space-2xs);
-  color: var(--founder-gold-soft);
-}
-
-.note-label {
-  color: var(--founder-gold-soft);
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.08em;
-}
-
-/* The em dash belongs to the label, not the copy, so it is drawn rather than typed. */
-.note-label::after {
-  content: ' —';
-}
-
-.note-value {
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-light);
-  line-height: 1.7;
-  color: var(--color-text-subtle);
+    Narrower than the photo strip's 60px — a title cut off mid-fade is harder to read
+    than a photograph cut off mid-fade is to see, so the run-in is shorter.
+  */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 40px,
+    black calc(100% - 40px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 40px,
+    black calc(100% - 40px),
+    transparent
+  );
 }
 
 /* --- Breakpoints ---------------------------------------------------------- */
@@ -533,13 +562,15 @@
     72px on a 900px-tall window against the ~108px actually needed, and barely half of it
     at 720px. Mirroring the two values instead holds the alignment at every size.
 
-    The 1.9 is the name's own `line-height: 0.95` times its two lines. If either the font
-    size, the line-height, or the number of lines in .name changes, this has to change
-    with it — they are the only three things it depends on.
+    The 0.95 is the name's own `line-height: 0.95` times its ONE line — it was 1.9 for
+    two, and it halved when "Abdullah Ghayfan" went onto a single row. The clamp is the
+    name's own, and has to stay a copy of it. If the font size, the line-height, or the
+    number of lines in .name changes, this changes with it: they are the only three
+    things it depends on.
   */
   .profile {
     padding-block-start: calc(
-      clamp(2rem, 4vw, 3.2rem) * 1.9 + clamp(0.4rem, 1.2vh, 0.9rem)
+      clamp(1.5rem, 3vw, 2.5rem) * 0.95 + clamp(0.4rem, 1.2vh, 0.9rem)
     );
   }
 }

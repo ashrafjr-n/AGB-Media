@@ -15,8 +15,17 @@
   a paused frame". Showing the footage through is now the entire point. The old rule was
   right about the mechanism and is simply no longer the goal.
 
+  IT IS EXACTLY ONE SCREEN TALL, AND IT IS A PSEUDO-ELEMENT — see .about::before below.
+  The glass used to be the section's own `background-color` plus `backdrop-filter`, which
+  meant it was however tall the section turned out to be: `min-block-size: 100vh` is a
+  floor, not a height, and on a short window the copy pushes past it. The ground is now a
+  layer of its own, pinned to the top of the section at a flat 100vh, and content that
+  overflows simply runs past the bottom of it onto the page's own --color-black. That is
+  the intent — the frosted panel is a fixed screen-sized surface, not a skin on a box of
+  unknown height.
+
   How it works: --section-glass-fill is --color-black at 0.75, and the backdrop-filter
-  blurs everything painted beneath this element. That reaches the hero's video because
+  blurs everything painted beneath that layer. That reaches the hero's video because
   nothing between here and the document root establishes a backdrop root — no ancestor
   carries filter, opacity, mask, contain or isolation — and because `.backdrop` sits at
   z-index 0 in the root stacking context while this section is positioned at z-index
@@ -24,6 +33,14 @@
   load-bearing now in a way they were not when this was opaque: adding `isolation:
   isolate` or an opacity to <main>, or giving this section a z-index below the
   backdrop's, would each silently flatten the glass to a plain dark panel.
+
+  THIS SECTION MUST STAY AT `z-index: auto`, and that is why the ground below is a
+  z-index-less pseudo-element rather than a layer at `z-index: -1` like the Founder's.
+  A negative index only stays inside its section if the section is a stacking context,
+  which would mean giving this one a z-index — and the moment it has one, its glass is
+  a member of that context rather than a box painting in document order against the
+  hero's fixed backdrop. The Founder can do it because what its glass samples is a
+  sibling *inside* the section; this one has to reach outside itself.
 
   Note the blur sees the footage *already scrimmed* — Hero's .backdrop-overlay is inside
   the fixed backdrop at --color-scrim (0.25) — so the effective darkening is the two
@@ -86,6 +103,30 @@
   padding-block-start: calc(var(--header-height) + var(--space-2xs));
   padding-block-end: var(--space-sm);
   padding-inline: var(--container-padding);
+}
+
+/*
+  THE GROUND: one screen of frosted glass, pinned to the top of the section.
+
+  `block-size: 100vh` rather than `inset: 0` is the whole point — the panel is exactly a
+  screen tall whatever the section grows to. `100vh` and not `100svh`, deliberately, and
+  the two disagree on mobile: the section's own floor is 100vh, so matching it is what
+  keeps the panel and the section the same height in the case that matters.
+
+  `inset-inline: 0` against the section's padding box, which is its border box here, so
+  the glass is full bleed while the copy stays inside --container-padding.
+
+  No z-index, and see the note above for why it must stay that way. Without one this
+  paints in the positioned-boxes layer in tree order: after Hero's fixed `.backdrop`,
+  which is where the footage it filters comes from, and before .inner, which is the
+  first thing in this section that also positions itself.
+*/
+.about::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 100vh;
 
   /*
     -webkit- prefix for Safari, which still requires it for backdrop-filter — the same
@@ -105,6 +146,15 @@
   at 48rem, which is the same threshold About.jsx gates the lens on.
 */
 .inner {
+  /*
+    Positioned for one reason: the ground above is an absolutely positioned
+    pseudo-element, and positioned boxes paint over static in-flow content whatever the
+    source order says. Without this the whole section would be behind its own glass.
+    `z-index: auto` is enough — tree order does the rest, and see the note on .about for
+    why nothing here may take a real z-index.
+  */
+  position: relative;
+
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;

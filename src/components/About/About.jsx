@@ -10,6 +10,7 @@ import useScrollPosition, {
 import useExclusiveVideo, {
   PLAYBACK_PRIORITY,
 } from '../../hooks/useExclusiveVideo'
+import useSectionReveal from '../../hooks/useSectionReveal'
 import storyVideo from '../../assets/videos/story.webm'
 import CssLens from '../shared/CssLens'
 import buttonStyles from '../shared/Button.module.css'
@@ -79,9 +80,12 @@ const GLASS_REACH_MARGIN = '400px 0px'
  */
 function About({ onGlassVisibilityChange }) {
   /*
-    The global prefers-reduced-motion rule in global.css only governs CSS
-    animations; Framer Motion drives these inline, so the preference has to be
-    honoured in JS. When reduced, the section simply renders in place.
+    Read here for the LENS alone — the reveal ladder carries its own copy of this
+    check inside useSectionReveal.
+
+    The global prefers-reduced-motion rule in global.css only governs CSS animations,
+    and neither of these is one: the ladder is driven inline by Framer, and the lens is
+    a rAF loop writing a transform. Both have to honour the preference in JS.
   */
   const shouldReduceMotion = useReducedMotion()
   const isWideEnoughForLens = useMediaQuery(LENS_MIN_WIDTH)
@@ -258,20 +262,14 @@ function About({ onGlassVisibilityChange }) {
     onGlassVisibilityChange?.(glassInReach)
   }, [glassInReach, onGlassVisibilityChange])
 
-  const reveal = shouldReduceMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 24 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, amount: 0.3 },
-        transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-      }
-
-  /* Stagger by delaying each block against the same base transition. */
-  const revealAt = (delay) =>
-    shouldReduceMotion
-      ? {}
-      : { ...reveal, transition: { ...reveal.transition, delay } }
+  /*
+    The reveal ladder, one rung per block: label, heading, body, button, then the
+    circle. The steps are indices rather than delays — the timing, the travel, the
+    easing and the once-only viewport all live in useSectionReveal, which the Founder
+    reveals from too so the two sections read as one gesture. It carries its own
+    reduced-motion branch, so there is nothing to check here.
+  */
+  const revealAt = useSectionReveal()
 
   return (
     <section
@@ -288,7 +286,7 @@ function About({ onGlassVisibilityChange }) {
             the type scale. Neither carries the accent — the only gold on this side is
             the dot before the label and the hairline down the paragraph.
           */}
-          <motion.p className={styles.eyebrow} {...reveal}>
+          <motion.p className={styles.eyebrow} {...revealAt(0)}>
             Who We Are
           </motion.p>
 
@@ -298,7 +296,7 @@ function About({ onGlassVisibilityChange }) {
             heading is plain text and .title-accent is deleted rather than left as a
             class that only sets the colour it already inherits.
           */}
-          <motion.h2 className={styles.title} {...revealAt(0.08)}>
+          <motion.h2 className={styles.title} {...revealAt(1)}>
             Our Story
           </motion.h2>
 
@@ -307,7 +305,7 @@ function About({ onGlassVisibilityChange }) {
             owns the measure, the inline-start inset and the gold hairline that runs
             down it, and it is also the reveal step in the stagger ladder.
           */}
-          <motion.div className={styles.body} {...revealAt(0.16)}>
+          <motion.div className={styles.body} {...revealAt(2)}>
             <p>{storyParagraph}</p>
           </motion.div>
 
@@ -318,7 +316,7 @@ function About({ onGlassVisibilityChange }) {
           <MotionLink
             to="/about"
             className={`${buttonStyles.button} ${buttonStyles['button-glass']} ${styles.cta}`}
-            {...revealAt(0.24)}
+            {...revealAt(3)}
           >
             <span>Discover Our Story</span>
             <HiOutlineArrowNarrowRight size={20} aria-hidden="true" />
@@ -335,7 +333,7 @@ function About({ onGlassVisibilityChange }) {
           order, which keeps the reading and tab order copy-first; the stacked layout
           puts the circle on top with `order` instead — see About.module.css.
         */}
-        <motion.div className={styles.visual} {...revealAt(0.32)}>
+        <motion.div className={styles.visual} {...revealAt(4)}>
           {/*
             The circle itself: the round clip, the rim, the fill and the shadow, with
             CssLens filling it absolutely. It is also the frame of reference the

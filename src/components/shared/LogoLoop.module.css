@@ -104,6 +104,44 @@
 }
 
 /*
+  A text cell, for a strip of titles rather than of stills.
+
+  It sets shape and not colour: `color: inherit` hands that to the calling section, which
+  is the only thing that knows what the strip sits on. Size is a custom property with a
+  default so a caller can retune it in its own stylesheet without this file growing a
+  prop for it.
+
+  `white-space: nowrap` is load-bearing rather than cosmetic. The track is
+  `inline-size: max-content` and the loop's shift is one measured sequence width — a
+  title that wrapped would change that width as the container resized, and the strip
+  would drift out of register with its own copies.
+*/
+.label {
+  display: block;
+  white-space: nowrap;
+
+  color: inherit;
+  font-size: var(--logo-loop-label-size, var(--text-xs));
+  font-weight: var(--font-weight-light);
+  line-height: 1.7;
+  letter-spacing: var(--tracking-wide);
+}
+
+/*
+  The separator, drawn on EVERY label rather than between adjacent ones.
+
+  A `+` rule cannot work here: the copies are separate <ul>s, so the first title of each
+  would lose its dot and the strip would show a gap once per sequence width — precisely
+  the seam the whole measure-and-translate approach exists to hide. Leading the dot
+  rather than trailing it also means the strip never ends on one mid-scroll.
+*/
+.label::before {
+  content: '·';
+  margin-inline-end: var(--logo-loop-gap);
+  color: var(--color-gold);
+}
+
+/*
   The edge fades, painted in whatever colour the caller passes. They sit above the track
   and take no pointer events, so hovering near an edge still pauses the strip.
 */

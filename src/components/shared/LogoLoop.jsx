@@ -3,7 +3,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './LogoLoop.module.css'
 
 /*
-  A continuously scrolling horizontal strip of images.
+  A continuously scrolling horizontal strip of images — or of text.
+
+  AN ENTRY IS EITHER `{ src, alt }` OR `{ label }`, and that is the one extension to the
+  contract below. The Founder runs two of these strips: production stills above, and the
+  founder's body of work as a line of titles below. They are the same mechanism —
+  measure one copy, translate by exactly its width, repeat — and the only thing that
+  differs is what a cell contains, so a second component would have been a copy of this
+  file with the <img> swapped out. `logoHeight` simply has nothing to size on a text
+  strip; every other prop means what it means.
 
   Written to the prop contract the caller asked for — logos, speed, direction,
   logoHeight, gap, pauseOnHover, fadeOut, fadeOutColor, ariaLabel — so a different
@@ -135,28 +143,46 @@ function LogoLoop({
       aria-hidden={copyIndex > 0 ? 'true' : undefined}
     >
       {logos.map((logo, index) => (
-        <li className={styles.item} key={`${copyIndex}-${logo.src ?? index}`}>
+        <li
+          className={styles.item}
+          key={`${copyIndex}-${logo.src ?? logo.label ?? index}`}
+        >
           {/*
-            `decoding="async"` so a photograph arriving mid-scroll is decoded off the
-            main thread rather than blocking the frame it lands on. Every copy points at
-            the same handful of files, so the decode happens once per image however many
-            copies the track ends up holding.
+            A text cell. It carries no alt-text distinction because the copies are
+            already aria-hidden at the <ul> above, so the titles are announced exactly
+            once however many copies the track ends up holding.
 
-            `loading="lazy"` on the copies only. The first sequence carries the real alt
-            text and is the one that has to be measured — the ResizeObserver above reads
-            its width to compute the loop's shift, and a lazy image has no width until it
-            loads, so deferring it would leave the strip motionless behind a measurement
-            that never arrives. The copies exist purely to fill the track and can turn up
-            whenever they turn up.
+            The separator dot is drawn by the stylesheet on *every* label rather than
+            between adjacent ones: the copies are separate lists, so a `+` rule would
+            drop the dot at each seam and put a visible hole in an otherwise even
+            rhythm — once every sequence width, which is the one place a loop must not
+            show itself.
           */}
-          <img
-            className={styles.image}
-            src={logo.src}
-            alt={copyIndex === 0 ? (logo.alt ?? '') : ''}
-            draggable="false"
-            decoding="async"
-            loading={copyIndex === 0 ? undefined : 'lazy'}
-          />
+          {logo.label !== undefined ? (
+            <span className={styles.label}>{logo.label}</span>
+          ) : (
+            /*
+              `decoding="async"` so a photograph arriving mid-scroll is decoded off the
+              main thread rather than blocking the frame it lands on. Every copy points
+              at the same handful of files, so the decode happens once per image however
+              many copies the track ends up holding.
+
+              `loading="lazy"` on the copies only. The first sequence carries the real
+              alt text and is the one that has to be measured — the ResizeObserver above
+              reads its width to compute the loop's shift, and a lazy image has no width
+              until it loads, so deferring it would leave the strip motionless behind a
+              measurement that never arrives. The copies exist purely to fill the track
+              and can turn up whenever they turn up.
+            */
+            <img
+              className={styles.image}
+              src={logo.src}
+              alt={copyIndex === 0 ? (logo.alt ?? '') : ''}
+              draggable="false"
+              decoding="async"
+              loading={copyIndex === 0 ? undefined : 'lazy'}
+            />
+          )}
         </li>
       ))}
     </ul>
