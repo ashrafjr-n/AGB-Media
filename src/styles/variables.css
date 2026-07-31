@@ -81,6 +81,27 @@
   --section-glass-fill: rgba(1, 1, 1, 0.75);
 
   /*
+    THE LIGHT VARIANT OF THE SAME SURFACE — the pair to --section-glass-blur-light.
+
+    0.4 against the strong version's 0.75, for a ground whose job is the opposite way
+    round: where the strong pair exists to put *text* over moving footage and the footage
+    is atmosphere, this one exists to show a still image that is worth looking at and
+    only softens it enough to read over. The Founder's studio still is the first user.
+
+    IT IS A SECOND TOKEN RATHER THAN A NEW VALUE ON THE FIRST, deliberately. The strong
+    pair is still the right treatment for a video ground and is meant to stay available
+    for the next section that wants one — retuning this must not quietly restyle that.
+
+    Both are --color-black at an alpha and are hand-maintained copies of the ground tone,
+    like every other entry in this group: when --color-black moves, these move with it.
+
+    Do not push this far below 0.4 without re-checking contrast against the image behind
+    it. The Founder's small type is deliberately low-alpha (0.4–0.7 of --color-text), so
+    the fill is most of what separates it from a bright patch of backdrop.
+  */
+  --section-glass-fill-light: rgba(1, 1, 1, 0.4);
+
+  /*
     Gold at very low alpha — a tint that warms a surface without colouring it.
     The quiet button's hover fill; deliberately weak enough that it reads as the
     panel catching light rather than as a filled state.
@@ -218,6 +239,21 @@
     About.module.css before raising it.
   */
   --section-glass-blur: 20px;
+
+  /*
+    The light variant, and the pair to --section-glass-fill-light.
+
+    7px against 20px. The strong value is tuned to take the *detail* out of moving
+    footage so the ground reads as one material; this one is tuned to leave the detail in
+    — a still image with a subject in it, softened just enough that type sits on top of
+    it rather than in it. At 20px the Founder's studio still was an amber smear.
+
+    It is also a good deal cheaper. A backdrop-filter's cost scales with the blur radius
+    as well as the area, so the viewport-wide surface using this is the less expensive of
+    the two by some margin — worth knowing, since CLAUDE.md §7 names the strong one as
+    among the most expensive declarations in the project.
+  */
+  --section-glass-blur-light: 7px;
 
   /*
     The two bands that drift through the white glass: a cool highlight and a warm

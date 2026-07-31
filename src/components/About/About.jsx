@@ -63,9 +63,10 @@ const PLAYBACK_AMOUNT = 0.2
   section's exact edges — would put a re-created compositor layer and the glass that
   samples it on the same frame.
 
-  400px, the same lead the Founder's video preload uses, for the same reason: it is
-  roughly half a laptop viewport, which is a comfortable fraction of a second of
-  scrolling rather than the quarter-second 200px buys.
+  400px, which is roughly half a laptop viewport — a comfortable fraction of a second of
+  scrolling, where the 200px this started at was closer to a quarter of one and often
+  landed after the thing it was meant to lead. It was the Founder's video preload margin
+  too, until that section stopped having a video.
 */
 const GLASS_REACH_MARGIN = '400px 0px'
 
@@ -250,10 +251,13 @@ function About({ onGlassVisibilityChange, onHalfVisibleChange }) {
     like its video running right now?" — and splitting them is how the two ends drift
     apart.
 
-    It is an *intent*, not a decision. The Founder section asks the same question about
-    its own background, and the two windows overlap at the boundary; useExclusiveVideo
-    arbitrates and guarantees only one of them is ever actually decoding. This section
-    holds the higher priority — the argument is at PLAYBACK_PRIORITY.
+    It is an *intent* rather than a decision, and it still goes through
+    useExclusiveVideo even though this is now the page's ONLY claimant. The Founder used
+    to ask the same question about its own background over an overlapping range, and the
+    registry existed to resolve the two; its ground is a still image now. What the hook
+    still buys here is a declarative play/pause and the DEV assertion that the invariant
+    holds — and it is where a second video ground would register. See the note at the top
+    of that file for why it was kept rather than unwound.
 
     CssLens renders its `<video>` without `autoPlay`, so `attachVideo` is the only thing
     that ever starts it, and it will not until the hero's own video has stopped.

@@ -1,14 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion } from 'framer-motion'
 
-import useExclusiveVideo, {
-  PLAYBACK_PRIORITY,
-} from '../../hooks/useExclusiveVideo'
-import useScrollPosition, {
-  isPastFirstViewport,
-} from '../../hooks/useScrollPosition'
 import useSectionReveal from '../../hooks/useSectionReveal'
-import storyVideo from '../../assets/videos/story.webm'
+import backdrop from '../../assets/images/f.png'
 import LogoLoop from '../shared/LogoLoop'
 import styles from './Founder.module.css'
 
@@ -46,11 +39,21 @@ import work007 from '../../assets/abdullah/strip/007.jpg'
   this now owns its own ground, and its four areas arrive one after another on the ladder
   the Story section uses — see useSectionReveal.
 
-  The ground is that same footage again, built rather than inherited: a <video> filling
-  the section under a frosted pane of --section-glass-fill and --section-glass-blur, which
-  is the identical treatment About gives the hero's backdrop. It is a second <video>
-  element pointing at the same file, and it is arbitrated so that it and the Story
-  circle's copy are never decoding at the same moment — see useExclusiveVideo.js.
+  THE GROUND IS A STILL IMAGE, and it used to be footage.
+
+  It was a second <video> element pointing at story.webm — the same file the Story circle
+  shows — under the same 0.75 fill and 20px blur About lays over the hero. All of that is
+  gone: the ground is a studio still (f.png) under the LIGHT glass pair,
+  --section-glass-fill-light and --section-glass-blur-light, because the two grounds are
+  doing opposite jobs. The strong pair exists to make moving footage into atmosphere
+  behind text; this image has a subject in it, and at 0.75 and 20px it was an amber
+  smear. It is now softened just enough to read over.
+
+  What went with the video, and none of it is missed: this section no longer registers a
+  claim with useExclusiveVideo, no longer watches its own visibility to decide when to
+  play, and no longer warms a preload 400px early. There is one <video> left below the
+  hero — the Story circle's — so the page-wide arbitration now has a single claimant; see
+  the note at the top of useExclusiveVideo.js for why the registry is kept anyway.
 */
 
 const bio =
@@ -147,27 +150,6 @@ const workImages = [work002, work003, work004, work005, work006, work007].map(
   (src, index) => ({ src, alt: `AGB Media production still ${index + 1}` }),
 )
 
-/*
-  How much of the section has to be on screen before its background video is allowed to
-  run. The same fifth About uses, so the two sections ask the same question of themselves
-  and the arbitration in useExclusiveVideo.js is comparing like with like.
-*/
-const PLAYBACK_AMOUNT = 0.2
-
-/*
-  How early the file starts downloading, as an IntersectionObserver root margin.
-
-  400px rather than the section's own edge, so the fetch and the first decode happen while
-  the founder is still below the fold and the video has something to show the moment it
-  arrives. In practice this is almost always instant anyway: it is the *same file* the
-  Story circle has been streaming, so it comes out of the HTTP cache — the margin is
-  insurance for the visitor who jumps straight down the page.
-
-  Roughly half a laptop viewport of lead, where the 200px this started at was closer to a
-  quarter of a second of scrolling and often landed after the section did.
-*/
-const PRELOAD_MARGIN = '400px 0px'
-
 function Founder() {
   /*
     The reveal ladder, one rung per area: the intro block, the career line, the work
@@ -187,101 +169,38 @@ function Founder() {
   */
   const revealAt = useSectionReveal()
 
-  /* --- The background video ---------------------------------------------- */
-
-  const sectionRef = useRef(null)
-
-  /*
-    Two observations of the same box, because they answer two different questions at two
-    different distances: `nearView` is "start fetching", 400px out; `inView` is "start
-    playing", once a fifth of the section is genuinely on screen.
-  */
-  const nearView = useInView(sectionRef, { margin: PRELOAD_MARGIN })
-  const inView = useInView(sectionRef, { amount: PLAYBACK_AMOUNT })
-
-  /*
-    Belt and braces on the page-wide rule, and cheap: useScrollPosition shares one
-    listener and one scroll read across every consumer, and the selector keeps this to two
-    renders per pass rather than one per frame.
-
-    The founder cannot be a fifth on screen while the hero is still playing — it is two
-    viewports further down — so this is never the gate that decides anything. It is here
-    so that "the hero and this can never both be decoding" is provable from this file
-    rather than inferred from the page's height.
-  */
-  const heroCovered = useScrollPosition(isPastFirstViewport)
-
-  /*
-    Intent, not a decision. The Story section asks for the same file over an overlapping
-    range — at the boundary a fifth of both sections is on screen — and useExclusiveVideo
-    resolves that to exactly one decoding element. This section holds the LOWER priority:
-    its footage is under a 20px blur and a 0.75 scrim, where a frozen frame is very hard
-    to tell from a moving one, and the Story circle's is not. The argument is at
-    PLAYBACK_PRIORITY.
-  */
-  const { attachVideo, videoRef } = useExclusiveVideo({
-    priority: PLAYBACK_PRIORITY.founder,
-    wants: heroCovered && inView,
-  })
-
-  /*
-    Promoting the element from `preload="none"` to a real fetch, once — and the reason the
-    attribute starts at "none" at all.
-
-    Left at the default, this <video> would begin buffering the moment it mounts, which is
-    during first paint, competing with the hero's 3.7MB for the first screen's bandwidth
-    while sitting four viewports below the fold. `none` means the browser touches the
-    network only when told to.
-
-    `load()` rather than setting `.preload` alone: raising the attribute is a hint that
-    browsers are free to ignore, while load() restarts the resource selection algorithm
-    and reliably begins fetching. It is safe here precisely because it *resets* the
-    element — nothing has played yet, so there is no playhead to lose. The `preload`
-    guard is what keeps it to once; without it a section scrolled past twice would reset
-    a video that by then has a playhead worth keeping.
-  */
-  useEffect(() => {
-    const video = videoRef.current
-    if (!nearView || !video || video.preload === 'auto') return
-
-    video.preload = 'auto'
-    video.load()
-  }, [nearView, videoRef])
-
   return (
     <section
       className={styles.founder}
       id="founder"
-      ref={sectionRef}
       aria-labelledby="founder-name"
     >
       {/*
-        The ground: the same footage the Story circle shows, filling the section behind
-        everything else.
+        The ground: a studio still, filling the section behind everything else.
 
-        No `autoPlay` and `preload="none"`, both deliberate and both explained above — the
-        element is inert until useExclusiveVideo hands it the page's one playback slot.
-        `muted` is not a preference: an unmuted play() without a user gesture is refused
-        outright, and this one is never started by a gesture.
+        `alt=""` rather than a description, and that is the correct markup rather than a
+        shortcut — an empty alt is what marks an image as decorative, and this one carries
+        no information the section does not already state in words. It needs no
+        aria-hidden alongside it; the empty alt is the whole announcement.
 
-        aria-hidden because it is decoration with no information in it, and the section is
-        already labelled by the founder's name.
+        `loading="lazy"` genuinely defers this one: the section is three viewports below
+        the fold on every path, and at 3.3MB it is the largest thing on the page after the
+        two videos — it must not compete with the hero for the first screen's bandwidth.
+        `decoding="async"` keeps a 2122x1186 decode off the frame it lands on.
       */}
-      <video
-        ref={attachVideo}
+      <img
         className={styles.backdrop}
-        src={storyVideo}
-        loop
-        muted
-        playsInline
-        preload="none"
-        aria-hidden="true"
+        src={backdrop}
+        alt=""
+        loading="lazy"
+        decoding="async"
       />
 
       {/*
-        The frosted pane between the footage and the copy — the same two tokens About
-        uses on its own ground, so the two sections read as one material rather than as
-        two treatments that happen to be dark.
+        The frosted pane between the image and the copy — the LIGHT pair of the section
+        glass tokens, not the pair About uses. The two grounds want opposite things: About
+        is filtering moving footage down into atmosphere, and this is a still with a
+        subject in it that is meant to stay readable. See .glass in the stylesheet.
       */}
       <div className={styles.glass} aria-hidden="true" />
 

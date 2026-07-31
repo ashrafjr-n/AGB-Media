@@ -24,13 +24,14 @@ function readViewport() {
 /* --- One listener, one read per frame, however many consumers -------------- */
 
 /*
-  Module scope on purpose. Three components read scroll position — Hero, About and
-  Founder, all three of them gating video playback — and a listener per consumer
-  meant three `window.scrollY` reads per frame instead of one.
+  Module scope on purpose. Three components read scroll position — Hero and About
+  gating video playback, HomePage deciding when the site header is due — and a
+  listener per consumer meant three `window.scrollY` reads per frame instead of one.
 
-  The site header was a fourth until its cue moved onto the Story section's own box
-  (see Header.jsx). Nothing here changed with it: this file was already shared, and
-  a consumer leaving costs the others nothing.
+  Two consumers have left since: the site header, when its cue moved onto the Story
+  section's own box (Header.jsx), and Founder, when its background stopped being a
+  video. Nothing here changed with either — this file was already shared, and a
+  consumer leaving costs the others nothing.
 
   That is not just three property accesses. Reading `scrollY` can force the
   browser to flush pending layout before it can answer, so each read lands after
@@ -86,10 +87,11 @@ function subscribe(subscriber) {
  * The threshold the page's video handoff shares: the hero is covered.
  *
  * Exported as one function rather than written out at each call site because the
- * comparisons have to be identical — the hero's video pausing, the story video
- * being allowed to start and the founder's being allowed to start are one event
- * seen from three files, and three copies of `>= 1` are three chances for them to
- * stop being. The hero is exactly 100svh, so one scrolled viewport is the end of it.
+ * comparisons have to be identical — the hero's video pausing and the story video
+ * being allowed to start are one event seen from two files, and two copies of
+ * `>= 1` are two chances for them to stop being. The hero is exactly 100svh, so
+ * one scrolled viewport is the end of it. (Founder folded this in as well until
+ * its background stopped being a video.)
  *
  * The site header used to reveal on this too. It does not any more: its cue is the
  * Story section's own midpoint, measured against that section's box rather than

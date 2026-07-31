@@ -36,6 +36,18 @@
 
       The trade: no content hash, so a replacement uploaded under the same name can be
       served from cache. Rename the file (and this line) when the footage changes.
+
+      CHROME LOGS A WARNING ON THIS LINE and it is expected, not a bug to chase:
+      "<link rel=preload> uses an unsupported `as` value". Chrome does not implement
+      preload for `as="video"` — media is fetched with range requests that the preload
+      cache cannot serve — so in Chrome this tag is a no-op and the fetch simply starts
+      when Hero mounts. It is kept because it costs nothing, it is honoured by engines
+      that do implement it, and hero.webm has to live in public/ regardless for the
+      reasons above. Deleting it is a one-line change if the console noise is not worth
+      it; deleting it does NOT let hero.webm move back into src/assets.
+
+      It is also the ONLY preload link in the project. The Founder section never had
+      one — its video warmed up from JS, and that section has no video at all now.
     -->
     <link
       rel="preload"

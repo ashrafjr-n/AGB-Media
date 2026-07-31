@@ -3,15 +3,26 @@ import { useCallback, useEffect, useRef } from 'react'
 /**
  * ONE VIDEO DECODES AT A TIME, ACROSS THE WHOLE PAGE.
  *
- * Two sections carry footage — the Story circle and the Founder's background —
- * and both want to run while they are on screen. Their "on screen" windows
- * genuinely overlap: the sections are adjacent and each is at least 100vh, so at
- * the boundary a fifth of both is visible at once. A per-section effect cannot
- * resolve that, because neither knows about the other; the last one to run its
- * effect would win, which is a different answer depending on render order.
+ * THERE IS ONE CLAIMANT TODAY — the Story circle — and this file is kept anyway.
+ * That is a decision rather than an oversight, so here is the reasoning.
  *
- * So the decision is made here, in one place, from all the claims at once. The
- * hero is deliberately NOT a claimant — its exclusivity is structural rather
+ * It was built to arbitrate two: the Story circle and the Founder's background,
+ * adjacent sections each at least 100vh, so at the boundary a fifth of both was
+ * on screen and both wanted the same file playing. A per-section effect cannot
+ * resolve that — neither knows about the other, and the last one to run its
+ * effect wins, which is a different answer depending on render order. The
+ * Founder's ground became a still image, so its claim went with the video.
+ *
+ * What is left still earns its place. With one claimant this is a declarative
+ * play/pause — "this section would like its video running" instead of an effect
+ * calling play() and pause() by hand — and it keeps the DEV assertion that the
+ * page's invariant actually holds. More to the point, a second video ground is
+ * expected (the strong section-glass tokens exist for exactly that), and the
+ * arbitration is the part that would have to be rebuilt from scratch rather than
+ * re-derived. Deleting it would be throwing away the answer to a question the
+ * page is going to ask again.
+ *
+ * The hero is deliberately NOT a claimant — its exclusivity is structural rather
  * than arbitrated, and the note on `wants` below says why.
  *
  * Module scope, like useScrollPosition's listener: the registry has to outlive
@@ -20,22 +31,17 @@ import { useCallback, useEffect, useRef } from 'react'
 const claims = new Set()
 
 /**
- * Lower wins. Document order, and the tie-break is argued rather than incidental.
+ * Lower wins, in document order. One entry today.
  *
- * When the Story section and the Founder overlap, the Story keeps the video. Its
- * footage is on screen SHARP — a circular window with only a 140px lens disc
- * over part of it — so a frozen frame there is immediately visible. The
- * Founder's copy of the same footage sits under a 20px blur and a 0.75 scrim,
- * where a still frame and a moving one are very hard to tell apart. Freeze the
- * one nobody can see freezing.
- *
- * The consequence, stated so it is not re-derived as a bug: scrolling down, the
- * Founder's background is still until the Story section has mostly left. That is
- * the same trade the hero → Story handover already makes, for the same reason.
+ * The Founder held `founder: 1` until its ground became a still image. The rule
+ * that ordered the two is worth keeping written down, because it is the rule a
+ * second entry should be argued against rather than simply appended to: the
+ * section whose footage is on screen SHARP outranks one showing it under a blur
+ * and a scrim, because a frozen frame is obvious in the first and very hard to
+ * spot in the second. Freeze the one nobody can see freezing.
  */
 export const PLAYBACK_PRIORITY = {
   story: 0,
-  founder: 1,
 }
 
 /**
@@ -115,7 +121,7 @@ function assertSinglePlayback() {
  *   with no knowledge of the other sections. Nothing here overrides it upward:
  *   a claimant that does not want to play never plays, whatever the others do.
  *
- *   Both current callers fold `isPastFirstViewport` into this, which is what
+ *   The one current caller folds `isPastFirstViewport` into this, which is what
  *   keeps the HERO exclusive without it being a claimant at all: the hero's
  *   `<video>` runs only while that threshold is false (Hero.jsx pauses on it),
  *   and neither claimant will ask for playback until it is true. The two states
@@ -124,7 +130,7 @@ function assertSinglePlayback() {
  * @returns {{ attachVideo: (element: HTMLVideoElement | null) => void, videoRef: React.RefObject<HTMLVideoElement | null> }}
  *   `attachVideo` goes on the element's `ref`. It is a stable identity, so React
  *   never detaches and reattaches it. `videoRef` is the same element for callers
- *   that need it for something else — the Founder's preload warm-up does.
+ *   that need it for something else.
  */
 function useExclusiveVideo({ priority, wants }) {
   const videoRef = useRef(null)
@@ -182,7 +188,7 @@ function useExclusiveVideo({ priority, wants }) {
     resolve()
   }, [])
 
-  return { attachVideo, videoRef }
+  return { attachVideo }
 }
 
 export default useExclusiveVideo

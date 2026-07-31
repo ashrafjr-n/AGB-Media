@@ -4,11 +4,11 @@ import { useReducedMotion } from 'framer-motion'
 /*
   THE SITE'S ONE ENTRANCE, as a ladder of steps.
 
-  Two sections reveal on scroll — the Story section and the Founder — and they are meant
-  to feel like the same gesture happening twice, not two animations that happen to use
-  Framer. A shared step function is what guarantees that: retuning the feel is one edit
-  here rather than two edits that drift, and a third section gets the established motion
-  for free.
+  Three sections reveal on scroll — the Story section, the Founder and WhyAgb — and they
+  are meant to feel like the same gesture happening three times, not three animations that
+  happen to use Framer. A shared step function is what guarantees that: retuning the feel
+  is one edit here rather than three edits that drift, and a fourth section gets the
+  established motion for free.
 
   It deliberately does NOT cover the hero, which is mount-triggered, plays once per
   session and is argued in HeroHeader.jsx. This is scroll-triggered only.

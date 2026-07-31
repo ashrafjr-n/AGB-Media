@@ -96,11 +96,20 @@
   used to be `inset: 0` and therefore however tall the section turned out to be.
 
   `min-block-size: 100vh` on .founder is a floor, not a height: on a short window the
-  four areas push well past it, and the video and its pane grew with them — a background
-  of no fixed height, stretching a 16:9 source over an ever-taller box and blurring the
-  whole of it. They are now a fixed screen-sized ground that content scrolls past, which
-  is the same treatment .about::before takes. Anything below the fold falls onto
-  .founder's own opaque --color-black, which is why that fill stays full height.
+  four areas push well past it, and the backdrop and its pane grew with them — a
+  background of no fixed height, stretching a wide source over an ever-taller box and
+  blurring the whole of it. They are now a fixed screen-sized ground that content scrolls
+  past, which is the same treatment .about::before takes. Anything below the fold falls
+  onto .founder's own opaque --color-black, which is why that fill stays full height.
+
+  `inline-size: 100%` IS REQUIRED and is not the no-op it looks like. This is a replaced
+  element, and an absolutely positioned replaced element with `inline-size: auto` takes
+  its INTRINSIC width — the insets do not size it, they only place it, and CSS resolves
+  the over-constraint by ignoring the end inset. `img { max-width: 100% }` in global.css
+  hides that on any window narrower than the source, which is most of them; past 2122px
+  the image would stop short and leave a strip of bare --color-black down the inline end.
+  The rule carried this until the block-size went to 100vh and it was dropped with the
+  `block-size: 100%` beside it.
 */
 .backdrop {
   position: absolute;
@@ -108,31 +117,44 @@
   inset-inline: 0;
   z-index: -2;
 
+  inline-size: 100%;
   block-size: 100vh;
   /* A 16:9 source filling a viewport-tall box: crop, never letterbox or stretch. */
   object-fit: cover;
 }
 
 /*
-  The frosted pane, and deliberately the same two tokens .about uses on its own ground:
-  --section-glass-fill (--color-black at 0.75) over --section-glass-blur (20px). The two
-  sections are meant to read as one material at two places on the page, so this is the
-  one case where duplicating a treatment is the point — if the Story ground is retuned,
-  retune this with it.
+  The frosted pane, on the LIGHT pair of the section glass tokens —
+  --section-glass-fill-light (0.4) over --section-glass-blur-light (7px), where this used
+  to take the same 0.75 and 20px .about lays over the hero's footage.
 
-  COST, stated because CLAUDE.md calls About's copy of this the most expensive declaration
-  in the project and this is a second one. It is cheaper than About's in the way that
-  matters: About's has to reach *outside* itself, through the document to the hero's fixed
-  footage, so backdrop-filter is the only mechanism that can do it. Here the only thing
-  behind the glass is .backdrop, a sibling — so if this ever reads as heavy on a mid-range
-  machine, the drop-in replacement is `filter: blur()` on .backdrop itself (scaled up a
-  few percent so its own blurred edges stay outside the box) plus a flat fill here, which
-  blurs one element instead of resampling the composited backdrop. The result is visually
-  the same. It is written this way because matching About exactly is worth more than the
-  saving until the saving is measured.
+  THE TWO SECTIONS ARE NO LONGER MEANT TO MATCH, and that is the change. They did while
+  both grounds were the same moving footage: one material in two places, retune one and
+  retune the other. This ground is now a still photograph of a studio — a subject, not
+  atmosphere — and the strong pair reduced it to an amber smear. The light pair softens it
+  only as far as type needs to sit on top of it.
 
-  The two sections are never both fully on screen, but they do overlap at the boundary,
-  so for part of one scroll there are two viewport-wide backdrop-filters live at once.
+  The strong tokens are untouched and still belong to a *video* ground. A future section
+  that wants one takes --section-glass-fill / --section-glass-blur and gets exactly what
+  About has; nothing here has been redefined out from under it.
+
+  CONTRAST, measured rather than assumed, because a lighter fill is the one change that
+  can quietly break this section's type. The image is very dark almost everywhere (median
+  relative luminance 0.005) but carries a lit lamp and a warm glow at its upper right. The
+  blown-out core sits outside --container-max on every window and is cropped away entirely
+  on narrower ones, but the glow's edge does reach the inline end of the profile column.
+  Over that worst patch and at this fill, the name holds ~6:1 and the facts ~3.9:1, while
+  the smallest muted type falls to ~2.3:1 and the gold micro-labels to ~1.3:1 — the gold
+  loses because it is warm text on a warm highlight, which no fill alpha really fixes
+  (it was still only 1.8:1 at 0.75). Over the other ~95% of the section everything is far
+  above AA. --section-glass-fill-light is the dial if that trade needs revisiting.
+
+  COST. This is much the cheaper of the two viewport-wide backdrop-filters now: a filter's
+  cost scales with radius as well as area, and this one runs at roughly a third of About's.
+  If it ever still reads as heavy, the drop-in replacement is `filter: blur()` on .backdrop
+  itself (scaled up a few percent so its own blurred edges stay outside the box) plus a
+  flat fill here — the only thing behind this glass is a sibling, so unlike About's it does
+  not need backdrop-filter to reach out through the document at all.
 */
 .glass {
   position: absolute;
@@ -143,10 +165,10 @@
   /* One screen, matching .backdrop exactly — see the note there. */
   block-size: 100vh;
 
-  background-color: var(--section-glass-fill);
+  background-color: var(--section-glass-fill-light);
   /* -webkit- prefix for Safari, which still requires it — as in About and Header. */
-  -webkit-backdrop-filter: blur(var(--section-glass-blur));
-  backdrop-filter: blur(var(--section-glass-blur));
+  -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
+  backdrop-filter: blur(var(--section-glass-blur-light));
 }
 
 /* --- The eyebrow ---------------------------------------------------------- */
