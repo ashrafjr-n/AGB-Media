@@ -15,14 +15,16 @@
   a paused frame". Showing the footage through is now the entire point. The old rule was
   right about the mechanism and is simply no longer the goal.
 
-  IT IS EXACTLY ONE SCREEN TALL, AND IT IS A PSEUDO-ELEMENT — see .about::before below.
-  The glass used to be the section's own `background-color` plus `backdrop-filter`, which
-  meant it was however tall the section turned out to be: `min-block-size: 100vh` is a
-  floor, not a height, and on a short window the copy pushes past it. The ground is now a
-  layer of its own, pinned to the top of the section at a flat 100vh, and content that
-  overflows simply runs past the bottom of it onto the page's own --color-black. That is
-  the intent — the frosted panel is a fixed screen-sized surface, not a skin on a box of
-  unknown height.
+  THE GROUND IS A PSEUDO-ELEMENT, AND IT COVERS THE WHOLE SECTION — see .about::before
+  below. It was the section's own `background-color` plus `backdrop-filter`; it then spent
+  a while pinned to the top of the section at a flat 100vh, on the argument that a floor of
+  100vh should not be mistaken for a height. That was right about the floor and wrong about
+  the fix: this section has no background of its own, so whatever the panel does not cover
+  is not dark, it is *nothing*, and the hero's fixed footage showed through it raw. The
+  panel is the section's full height again, by `block-size: 100%` rather than by being the
+  section's own fill — which is the part that has to stay a separate layer, because an
+  opaque background on .about itself would be painted underneath this glass and would be
+  what the glass sampled.
 
   How it works: --section-glass-fill is --color-black at 0.75, and the backdrop-filter
   blurs everything painted beneath that layer. That reaches the hero's video because
@@ -46,15 +48,17 @@
   the fixed backdrop at --color-scrim (0.25) — so the effective darkening is the two
   compounded, not 0.75 alone.
 
-  THIS SECTION IS WHAT KEEPS THAT BACKDROP ALIVE. Hero renders its fixed video only
-  while the hero itself is on screen or while this section is within 400px of it —
-  everything below paints an opaque ground, so past here the layer was a full-viewport
-  4K texture held in the compositor for nobody. About.jsx reports its own position for
-  that gate and HomePage.jsx wires the two together. The consequence for this rule: the
-  glass has footage to sample for exactly as long as it can show any, and if this
-  section is ever made to reach further — a taller box, a sticky child, a parallax —
-  the margin in About.jsx has to grow with it or the footage will cut to flat black at
-  the edge.
+  THIS SECTION IS WHAT KEEPS THAT BACKDROP ALIVE, and it is the ONLY thing that does.
+  Hero renders its fixed video while the hero itself is on screen, or while this section
+  is — from 400px before its top edge arrives to the moment its bottom edge leaves, and
+  not a pixel further. Everything below paints an opaque ground at --z-base, so past this
+  section the layer was a full-viewport 4K texture held in the compositor for nobody.
+  About.jsx reports its own position for that gate and HomePage.jsx wires the two
+  together. The consequence for this rule: the glass has footage to sample for exactly as
+  long as it can show any, which is why the panel below has to be the section's real
+  height — a ground that stops short does not fall back to black, it falls back to bare
+  footage. If this section is ever made to reach further — a sticky child, a parallax —
+  the lead-in margin in About.jsx has to grow with it.
 
   COST. This is the most expensive declaration in the project. A viewport-sized
   backdrop-filter re-blurs the full frame as the section scrolls, on top of a 4K decode
@@ -106,12 +110,28 @@
 }
 
 /*
-  THE GROUND: one screen of frosted glass, pinned to the top of the section.
+  THE GROUND: frosted glass covering the WHOLE section.
 
-  `block-size: 100vh` rather than `inset: 0` is the whole point — the panel is exactly a
-  screen tall whatever the section grows to. `100vh` and not `100svh`, deliberately, and
-  the two disagree on mobile: the section's own floor is 100vh, so matching it is what
-  keeps the panel and the section the same height in the case that matters.
+  IT WAS A FLAT `block-size: 100vh`, AND THAT WAS A HOLE. `min-block-size: 100vh` on
+  .about is a floor, not a height — on a phone the stacked layout (a ~300px circle, then
+  the full copy column) comes to roughly 930px against an 844px screen, so the section is
+  taller than one viewport and the last ~90px of it had no ground at all. .about paints no
+  background of its own (it must not — see the note above; an opaque fill here would be
+  painted *under* this pseudo-element and the glass would sample it instead of the hero's
+  footage), so that band was raw, unfrosted, unscrimmed hero video showing through the
+  bottom of the Story section, immediately above the Founder. It reads exactly like a
+  fixed video that has failed to scroll away, because that is what it is.
+
+  `block-size: 100%` resolves against .about's padding box, so the panel is now the
+  section's full height however tall the copy makes it, and there is no band left for the
+  backdrop to show through. `min-block-size: 100vh` is kept beside it so the panel still
+  fills the screen if the section's own floor is ever removed.
+
+  What that costs, stated because it reverses an earlier decision: on the windows where
+  the section overflows, the backdrop-filter now covers a taller box than the viewport.
+  Only the on-screen part is ever rasterised, so the per-frame cost is unchanged; what
+  grows is the region the compositor may allocate for. That is the right trade against a
+  visible strip of bare footage.
 
   `inset-inline: 0` against the section's padding box, which is its border box here, so
   the glass is full bleed while the copy stays inside --container-padding.
@@ -126,7 +146,8 @@
   position: absolute;
   inset-block-start: 0;
   inset-inline: 0;
-  block-size: 100vh;
+  block-size: 100%;
+  min-block-size: 100vh;
 
   /*
     -webkit- prefix for Safari, which still requires it for backdrop-filter — the same

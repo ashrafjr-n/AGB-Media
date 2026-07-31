@@ -56,19 +56,36 @@ const PLAYBACK_AMOUNT = 0.2
   How far outside the viewport this section still counts as "showing the hero's
   footage through my glass", as an IntersectionObserver root margin.
 
-  This is the one thing keeping Hero's fixed backdrop alive below the hero, so the
-  margin is deliberately generous in both directions: it brings the backdrop back
-  well before any of this section's glass can show it, and holds it a little past
-  the section's bottom edge on the way down. The alternative — reporting on the
-  section's exact edges — would put a re-created compositor layer and the glass that
-  samples it on the same frame.
+  ASYMMETRIC, AND THE ASYMMETRY IS THE POINT. `top right bottom left`, and the two block
+  edges answer opposite questions:
 
-  400px, which is roughly half a laptop viewport — a comfortable fraction of a second of
-  scrolling, where the 200px this started at was closer to a quarter of one and often
-  landed after the thing it was meant to lead. It was the Founder's video preload margin
-  too, until that section stopped having a video.
+  - `bottom: 400px` is the LEAD-IN. Scrolling down, this section enters the expanded root
+    400px before its top edge reaches the screen, so Hero's fixed layer is re-created and
+    has its texture back well before any of this glass can sample it. Reporting on the
+    exact edge would put a fresh compositor layer and the backdrop-filter that reads it on
+    the same frame. 400px is roughly half a laptop viewport; the 200px this started at was
+    often still landing after the thing it was meant to lead.
+
+  - `top: 0` is the CUTOFF, and it was 400px, which is the bug. A symmetric margin held
+    Hero's full-viewport 4K layer alive for the first 400px of the Founder — a section
+    that carries its own viewport-wide backdrop-filter — so for that stretch the page
+    composited the most expensive layer on the site underneath the second most expensive,
+    for something no longer capable of being seen. The cutoff now lands exactly on this
+    section's own bottom edge.
+
+  THE CUTOFF IS INVISIBLE BY CONSTRUCTION, which is why it can be this tight. At the
+  crossing this section shows zero pixels, and everything below it — Founder, then WhyAgb —
+  paints an opaque --color-black at --z-base, above the backdrop's z-index 0. There is no
+  scroll position past this edge at which the layer could be seen whether it exists or not.
+
+  What the tight edge trades, so it is not re-derived as a fault: scrolling back UP into
+  this section, the layer is restored on the same crossing rather than ahead of it, so a
+  fast flick can show one frame in which the first sliver of this section's glass blurs the
+  page's own --color-black instead of the footage. --section-glass-fill is that same black
+  at 0.75, so the difference across a few dozen pixels at the very top of the screen is
+  slight. Widening `top` again is what would trade it back, at the cost above.
 */
-const GLASS_REACH_MARGIN = '400px 0px'
+const GLASS_REACH_MARGIN = '0px 0px 400px 0px'
 
 /*
   How much of this section has to be on screen before the fixed site header arrives.

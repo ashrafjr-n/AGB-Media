@@ -208,12 +208,21 @@ function Hero({ sampledBelow = false }) {
           "fetch enough to know what it is" — which for the section that IS the first
           screen is what we mean. It pairs with the preload link in index.html: the link
           starts the request early, this keeps it going.
+
+          NO `autoPlay`, and its absence is deliberate. The effect above is what starts
+          this video, on mount and on every crossing after it, so the attribute was
+          duplicating the one case they agree on — and disagreeing on the one they do not.
+          On a reload part-way down the page `isHeroCovered` is already true at first
+          render (useScrollPosition reads the real offset in its lazy initialiser), so the
+          effect's first act is to pause; `autoPlay` beat it to the element and spent a
+          decode on a 4K frame behind an opaque section before anything could stop it.
+          Starting playback from one place means the hero plays exactly when the hero is
+          on screen, from any entry point.
         */}
         <video
           ref={videoRef}
           className={styles['backdrop-video']}
           src={HERO_VIDEO}
-          autoPlay
           loop
           muted
           playsInline

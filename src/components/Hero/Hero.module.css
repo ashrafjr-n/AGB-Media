@@ -81,9 +81,16 @@
 
   What it trades, so it is not filed as a bug later: taking the element out of the tree
   and putting it back can cost a frame before the paused video paints its held frame
-  again. That is why the gate is driven by an observation with 400px of margin either
-  side (About.jsx) rather than by the section's exact edge — by the time anything can
-  see this again it has had most of a second of scrolling to come back.
+  again. That is why the observation driving the gate carries 400px of LEAD-IN — it is
+  the `bottom` half of the root margin in About.jsx, and by the time anything can see
+  this again it has had most of a second of scrolling to come back.
+
+  The other half of that margin is 0. The gate used to be symmetric, which held this
+  layer alive for the first 400px of the Founder — underneath that section's own
+  viewport-wide backdrop-filter, for something nothing could see. It now goes at the
+  Story section's exact bottom edge, which is invisible because every section below that
+  edge paints an opaque --color-black at --z-base, above this element's z-index 0. See
+  GLASS_REACH_MARGIN in About.jsx for the full argument.
 
   It cannot fire while any of the hero is on screen: the flag it is driven by is
   `!isHeroCovered || sampledBelow`, and isHeroCovered is a full scrolled viewport
