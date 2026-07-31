@@ -143,34 +143,33 @@
 }
 
 /*
-  THE FROSTED PANE, and it is the Founder's pane: the same --section-glass-fill-light (0.4)
-  over the same --section-glass-blur-light (7px), on the same one-screen box pinned to the
-  section's edge. Identical on both sides of the boundary is the point — glass is part of
-  what the eye compares across a join, and a different fill or radius here would draw a
-  line along the very seam the images exist to hide. The two are one decision in two files.
+  THE FROSTED PANE, and it is literally the Founder's pane — the same rule, not a matching
+  copy of it. The fill, the blur and the deliberate absence of any gradient, blend mode or
+  element opacity live in shared/SectionGlass.module.css and are composed in here; that file
+  is the single source of truth for the treatment and carries the argument for each value.
 
-  IT IS ALSO WHAT MAKES THE COPY READABLE, which is why it is here at all rather than being
-  left off a photograph that is dark almost everywhere. why.webp carries a large lit AGB
-  wordmark straight through the middle of the section — exactly where the grid's right
+  That the two sections agree is the whole point, and composing is what makes it structural
+  rather than a convention someone has to remember. The two grounds are halves of one image
+  meeting at this section's top edge, and glass is part of what the eye compares across a
+  join: a different fill or radius on this side would draw a line along the very seam the
+  images exist to hide. What stays local here is only structure — which edge the pane is
+  pinned to, how tall it is, its depth, and that it takes no pointer events.
+
+  IT IS ALSO WHAT MAKES THE COPY READABLE, which is why the pane is here at all rather than
+  being left off a photograph that is dark almost everywhere. why.webp carries a large lit
+  AGB wordmark straight through the middle of the section — exactly where the grid's right
   column sits — and it is the brightest thing in either half. Measured on the visible crop
-  at 1440x900, composited under this fill: the ground runs at relative luminance 0.002
+  at 1440x900, composited under this pane: the ground runs at relative luminance 0.002
   through the median and 0.055 at the 99th percentile, peaking at 0.18 on the wordmark's
   specular edge. Against that 99th percentile the heading and the cell titles hold ~8:1 and
   the muted descriptions ~4.3:1; on the peak itself the white type is still ~4.2:1 and the
   descriptions ~2.7:1 across a few hundred pixels of a section that is above AA everywhere
-  else. Without the pane the same peak puts white type at 1.4:1. --section-glass-fill-light
-  is the dial, and turning it means turning the Founder's with it.
-
-  COST, stated because CLAUDE.md §7 counts these: this is a third viewport-wide
-  backdrop-filter. It is the cheap variant — 7px against About's 20px, and a filter's cost
-  scales with radius as well as area — and like the Founder's it only has to reach a
-  sibling, so if the closing sections ever feel heavy the drop-in is `filter: blur()` on
-  `.backdrop` plus a flat fill here. That swap is not free of consequences at this seam:
-  a filtered element's own edges blur outward, so it would need inflating past the section
-  box, and inflating it changes the rendered width — which is what the crop above is built
-  to hold constant. Both halves would have to be inflated by the same amount, together.
+  else. Without the pane the same peak puts white type at 1.4:1. The fill is the dial, and
+  it is now shared — turning it turns the Founder's with it, which is intended.
 */
 .glass {
+  composes: pane from '../shared/SectionGlass.module.css';
+
   position: absolute;
   /* Pinned to the section's start, matching .backdrop exactly — see the note there. */
   inset-block-start: 0;
@@ -181,11 +180,6 @@
 
   /* One screen, matching .backdrop exactly — see the note there. */
   block-size: 100vh;
-
-  background-color: var(--section-glass-fill-light);
-  /* -webkit- prefix for Safari, which still requires it — as in About and the Founder. */
-  -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
-  backdrop-filter: blur(var(--section-glass-blur-light));
 }
 
 /* --- Content -------------------------------------------------------------- */

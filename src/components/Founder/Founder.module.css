@@ -190,49 +190,33 @@
 }
 
 /*
-  The frosted pane, on the LIGHT pair of the section glass tokens —
-  --section-glass-fill-light (0.4) over --section-glass-blur-light (7px), where this used
-  to take the same 0.75 and 20px .about lays over the hero's footage.
+  The frosted pane. THE PANE'S OPTICS ARE NOT WRITTEN HERE — the fill, the blur and the
+  deliberate absence of any gradient, blend mode or element opacity all live in
+  shared/SectionGlass.module.css, which WhyAgb composes from too. That file is the single
+  source of truth for the treatment, and its comment carries the argument for each value.
 
-  THE TWO SECTIONS ARE NO LONGER MEANT TO MATCH, and that is the change. They did while
-  both grounds were the same moving footage: one material in two places, retune one and
-  retune the other. This ground is now a still photograph of a studio — a subject, not
-  atmosphere — and the strong pair reduced it to an amber smear. The light pair softens it
-  only as far as type needs to sit on top of it.
+  It is shared because these two sections carry two halves of one image across their
+  boundary, and glass is part of what the eye compares at a join: a different fill or blur
+  on the far side would draw a line at the one place the images are trying not to have one.
+  Composing means there is no far side to disagree — there is one rule. What stays local is
+  everything structural: which edge the pane is pinned to, how tall it is, and where it sits
+  in this section's stacking order.
 
-  The strong tokens are untouched and still belong to a *video* ground. A future section
-  that wants one takes --section-glass-fill / --section-glass-blur and gets exactly what
-  About has; nothing here has been redefined out from under it.
-
-  IT ALSO HAS TO MATCH WhyAgb'S EXACTLY, which is new. The two sections now carry two
-  halves of one image across their shared boundary, and glass is part of what the eye
-  compares there: a different fill or a different blur radius on the far side would draw a
-  line along the join at the one place the images are trying not to have one. The values
-  are the same two tokens in both files — change one and change the other.
-
-  CONTRAST, measured rather than assumed, because a lighter fill is the one change that
-  can quietly break this section's type. Measured on the visible crop at 1440x900 (the top
-  159 of 680 source rows are cropped away, which takes most of the lamp with them),
-  composited under this fill: the ground is at relative luminance 0.002 through the median
-  and 0.039 at the 99th percentile — a lit floor, a rim of the lamp, and its reflections.
-  Over that 99th-percentile brightness the name holds ~8:1 and the bio and facts ~3.7:1,
-  while the career line falls to ~2.7:1 and the gold micro-labels to ~1.6:1. The gold loses
-  because it is warm text on a warm highlight, which no fill alpha really fixes (it was
-  still only 1.8:1 at 0.75 under the previous image). Over the ~95% of the section that is
-  at 0.015 or below, everything is far above AA. --section-glass-fill-light is the dial if
-  that trade needs revisiting — but see the paragraph above before turning it.
-
-  COST. This is one of the two cheap viewport-wide backdrop-filters — a filter's cost
-  scales with radius as well as area, and this and WhyAgb's both run at roughly a third of
-  About's. If it ever reads as heavy, the drop-in replacement is `filter: blur()` on
-  .backdrop itself (scaled up a few percent so its own blurred edges stay outside the box)
-  plus a flat fill here — the only thing behind this glass is a sibling, so unlike About's
-  it does not need backdrop-filter to reach out through the document at all. THAT SWAP IS
-  NOT LOCAL ANY MORE: scaling .backdrop up changes its rendered width, and equal rendered
-  width on both sides of the section boundary is what the seam depends on. WhyAgb's ground
-  has to be inflated by the same amount in the same commit, or not at all.
+  CONTRAST, measured rather than assumed, because the fill is the one value that can quietly
+  break this section's type — and it is now a shared value, so a change here is a change in
+  WhyAgb too. Measured on the visible crop at 1440x900 (the top 159 of 680 source rows are
+  cropped away, which takes most of the lamp with them), composited under this pane: the
+  ground is at relative luminance 0.002 through the median and 0.039 at the 99th percentile
+  — a lit floor, a rim of the lamp, and its reflections. Over that 99th-percentile
+  brightness the name holds ~8:1 and the bio and facts ~3.7:1, while the career line falls
+  to ~2.7:1 and the gold micro-labels to ~1.6:1. The gold loses because it is warm text on a
+  warm highlight, which no fill alpha really fixes (it was still only 1.8:1 at 0.75 under
+  the previous image). Over the ~95% of the section that is at 0.015 or below, everything is
+  far above AA.
 */
 .glass {
+  composes: pane from '../shared/SectionGlass.module.css';
+
   position: absolute;
   /* Pinned to the section's end, matching .backdrop exactly — see the note there. */
   inset-block-end: 0;
@@ -241,11 +225,6 @@
 
   /* One screen, matching .backdrop exactly — see the note there. */
   block-size: 100vh;
-
-  background-color: var(--section-glass-fill-light);
-  /* -webkit- prefix for Safari, which still requires it — as in About and Header. */
-  -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
-  backdrop-filter: blur(var(--section-glass-blur-light));
 }
 
 /* --- The eyebrow ---------------------------------------------------------- */

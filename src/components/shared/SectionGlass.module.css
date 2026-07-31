@@ -1,0 +1,55 @@
+/*
+  THE SECTION-GLASS PANE — one definition, composed by the Founder and by WhyAgb.
+
+  A module with no `.jsx` sibling, the same deviation Button.module.css makes and for the
+  same reason: what is shared here is a surface, not a component. Both call sites need the
+  pane to be their own absolutely positioned layer with their own edge, depth and stacking,
+  and a wrapper component between them and the DOM would buy nothing.
+
+  WHY IT IS SHARED AT ALL, since both sides already referenced the same two tokens. The
+  values could not drift, but the *rule* could: nothing stopped one section acquiring a
+  gradient, a `mix-blend-mode`, an `opacity`, or the strong pair of tokens instead of the
+  light one, and the result would be a step in tone along a boundary the two images exist
+  to cross invisibly. There is now one rule, so there is nothing to diverge.
+
+  WHAT IT IS. The LIGHT pair of the section glass tokens — --section-glass-fill-light (a
+  flat rgba(1, 1, 1, 0.4), which is --color-black at 0.4) over --section-glass-blur-light
+  (7px). Deliberately nothing else: no gradient, no blend mode, no `opacity` on the element,
+  no second layer. A gradient or a blend would make the pane's effect depend on where in the
+  section a pixel is or on what is under it, and either one reintroduces exactly the
+  mismatch this file exists to prevent — the two halves meet at an edge where one section's
+  bottom must composite identically to the other's top.
+
+  THE STRONG PAIR IS NOT THIS. --section-glass-fill (0.75) / --section-glass-blur (20px)
+  belong to a *video* ground and are what About lays over the hero's footage; the Founder
+  took them while its ground was a second copy of story.webm and they reduced a photograph
+  to an amber smear. Do not reach for them here — see CLAUDE.md §2.
+
+  THE SOURCE IMAGES ARE NOT IDENTICAL, and that is the one thing this file deliberately
+  does NOT correct. Measured over the whole frame the two are close — median relative
+  luminance 0.0032 for founder.webp against 0.0029 for why.webp, 99th percentile 0.174
+  against 0.160 — and at the join itself they are as close as a cut through one picture
+  should be: the last row of founder.webp averages RGB(16.4, 11.1, 4.1) and the first row of
+  why.webp RGB(15.4, 10.1, 4.0). Where they differ is in the distribution of their bright
+  areas, and it is real: why.webp carries a large lit wordmark through its middle (peaking
+  at luminance 0.18 through this pane) while founder.webp's brightest survivors are the lamp
+  rim and the floor reflections at its upper right (peaking at 0.29). If the two sections
+  ever read as mismatched, THAT is where it comes from, and the fix belongs in the images —
+  re-grade or re-cut them. Splitting this rule in two to compensate would trade a difference
+  the eye can barely find in the middle of a section for a hard edge along the seam.
+
+  COST. Each call site is a viewport-wide backdrop-filter, and with About's there are three
+  on the page (CLAUDE.md §7). This is the cheap variant — 7px against About's 20, and a
+  filter's cost scales with radius as well as area. The drop-in saving is `filter: blur()`
+  on each section's own image plus a flat fill here, since unlike About's pane neither of
+  these has to reach out through the document to find what it blurs. That swap is no longer
+  local, though: a filtered element's edges blur outward, so the image would need inflating
+  past its box, and inflating it changes its rendered width — equal rendered width on both
+  sides is what the seam depends on. Both halves change together or neither does.
+*/
+.pane {
+  background-color: var(--section-glass-fill-light);
+  /* -webkit- prefix for Safari, which still requires it — as in About and Header. */
+  -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
+  backdrop-filter: blur(var(--section-glass-blur-light));
+}
