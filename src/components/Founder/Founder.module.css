@@ -92,35 +92,60 @@
   it was safe then only because the video sits *inside* the subtree being isolated.
 */
 /*
-  BOTH LAYERS ARE EXACTLY ONE SCREEN TALL, pinned to the top of the section, where they
+  BOTH LAYERS ARE EXACTLY ONE SCREEN TALL, pinned to the BOTTOM of the section, where they
   used to be `inset: 0` and therefore however tall the section turned out to be.
 
   `min-block-size: 100vh` on .founder is a floor, not a height: on a short window the
   four areas push well past it, and the backdrop and its pane grew with them — a
   background of no fixed height, stretching a wide source over an ever-taller box and
   blurring the whole of it. They are now a fixed screen-sized ground that content scrolls
-  past, which is the same treatment .about::before takes. Anything below the fold falls
-  onto .founder's own opaque --color-black, which is why that fill stays full height.
+  past, which is the same treatment .about::before takes. Anything outside that screen
+  falls onto .founder's own opaque --color-black, which is why that fill stays full height.
+
+  THE BOTTOM EDGE IS THE ANCHOR, and that is the change this image brought. founder.webp
+  and WhyAgb's why.webp are one continuous piece: the last row of this file is the row
+  above the first row of that one. The join therefore has to land exactly on the boundary
+  between the two sections, and the only way to guarantee that on a window where this
+  section overflows its floor is to pin the ground to the section's END rather than its
+  start. At exactly 100vh — every desktop, where the content fits — the two are the same
+  box; they differ only where the section grows, and there the difference is whether the
+  seam is right or whether a band of bare --color-black opens up in the middle of it.
+
+  THE CROP, which is the other half of the same promise. The two files share a width and
+  differ in height, so they line up with each other and with the viewport only while both
+  are drawn at the full width of the screen and neither is scaled to a different factor.
+  `object-fit: cover` on a box that is 100vw x 100vh does exactly that on any viewport
+  proportionally wider than the image (834x680, so wider than about 5:4 — every landscape
+  window): the fit is driven by width, the image is drawn at 100vw, and the excess height
+  is what gets cropped. `object-position: center bottom` decides which end pays: the top,
+  because the bottom is the half that continues into the next section.
+
+  The one case it cannot serve is a viewport TALLER than 5:4 — a portrait phone. There,
+  cover has to scale by height instead, and the image is wider than the screen: it crops
+  horizontally, which is the axis the seam needs. That is unavoidable rather than an
+  oversight — a 834x680 image cannot both fill a 390x844 box and show its full width — and
+  cover is still the right resolution of it, since the alternative is a band of bare ground
+  where the image runs out. Both halves stay centred on the inline axis, so the middle of
+  the join still matches and only the outer edges disagree.
 
   `inline-size: 100%` IS REQUIRED and is not the no-op it looks like. This is a replaced
   element, and an absolutely positioned replaced element with `inline-size: auto` takes
   its INTRINSIC width — the insets do not size it, they only place it, and CSS resolves
   the over-constraint by ignoring the end inset. `img { max-width: 100% }` in global.css
-  hides that on any window narrower than the source, which is most of them; past 2122px
+  hides that on any window narrower than the source, which is most of them; past 834px
   the image would stop short and leave a strip of bare --color-black down the inline end.
-  The rule carried this until the block-size went to 100vh and it was dropped with the
-  `block-size: 100%` beside it.
 */
 .backdrop {
   position: absolute;
-  inset-block-start: 0;
+  inset-block-end: 0;
   inset-inline: 0;
   z-index: -2;
 
   inline-size: 100%;
   block-size: 100vh;
-  /* A 16:9 source filling a viewport-tall box: crop, never letterbox or stretch. */
   object-fit: cover;
+  /* Keep the bottom — it is what continues into WhyAgb. See the note above. */
+  object-position: center bottom;
 }
 
 /*
@@ -138,16 +163,23 @@
   that wants one takes --section-glass-fill / --section-glass-blur and gets exactly what
   About has; nothing here has been redefined out from under it.
 
+  IT ALSO HAS TO MATCH WhyAgb'S EXACTLY, which is new. The two sections now carry two
+  halves of one image across their shared boundary, and glass is part of what the eye
+  compares there: a different fill or a different blur radius on the far side would draw a
+  line along the join at the one place the images are trying not to have one. The values
+  are the same two tokens in both files — change one and change the other.
+
   CONTRAST, measured rather than assumed, because a lighter fill is the one change that
-  can quietly break this section's type. The image is very dark almost everywhere (median
-  relative luminance 0.005) but carries a lit lamp and a warm glow at its upper right. The
-  blown-out core sits outside --container-max on every window and is cropped away entirely
-  on narrower ones, but the glow's edge does reach the inline end of the profile column.
-  Over that worst patch and at this fill, the name holds ~6:1 and the facts ~3.9:1, while
-  the smallest muted type falls to ~2.3:1 and the gold micro-labels to ~1.3:1 — the gold
-  loses because it is warm text on a warm highlight, which no fill alpha really fixes
-  (it was still only 1.8:1 at 0.75). Over the other ~95% of the section everything is far
-  above AA. --section-glass-fill-light is the dial if that trade needs revisiting.
+  can quietly break this section's type. Measured on the visible crop at 1440x900 (the top
+  159 of 680 source rows are cropped away, which takes most of the lamp with them),
+  composited under this fill: the ground is at relative luminance 0.002 through the median
+  and 0.039 at the 99th percentile — a lit floor, a rim of the lamp, and its reflections.
+  Over that 99th-percentile brightness the name holds ~8:1 and the bio and facts ~3.7:1,
+  while the career line falls to ~2.7:1 and the gold micro-labels to ~1.6:1. The gold loses
+  because it is warm text on a warm highlight, which no fill alpha really fixes (it was
+  still only 1.8:1 at 0.75 under the previous image). Over the ~95% of the section that is
+  at 0.015 or below, everything is far above AA. --section-glass-fill-light is the dial if
+  that trade needs revisiting — but see the paragraph above before turning it.
 
   COST. This is much the cheaper of the two viewport-wide backdrop-filters now: a filter's
   cost scales with radius as well as area, and this one runs at roughly a third of About's.
@@ -158,7 +190,8 @@
 */
 .glass {
   position: absolute;
-  inset-block-start: 0;
+  /* Pinned to the section's end, matching .backdrop exactly — see the note there. */
+  inset-block-end: 0;
   inset-inline: 0;
   z-index: -1;
 

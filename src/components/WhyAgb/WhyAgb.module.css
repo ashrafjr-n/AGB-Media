@@ -21,9 +21,22 @@
   screen from 1280x720 up. `min-block-size` rather than `block-size` so a phone — where six
   stacked cells are far taller than the screen — simply grows past it and scrolls.
 
-  FLAT --color-black under the field. `body::after` in global.css already lays film grain
-  over the entire viewport, so a `.noise-overlay` here would be the same texture twice on
-  one surface.
+  THE GROUND IS A PHOTOGRAPH, and it is the second half of the Founder's. `--color-black`
+  is still the true base and still the section's own `background-color`; what sits on it is
+  `.backdrop` — why.webp, the continuation of founder.webp — under `.glass`, the Founder's
+  own frosted pane at the Founder's own values.
+
+  IT REPLACED A BUILT LIGHT. What was here was four low-alpha radial gradients derived from
+  the accent tokens, a block-axis mask fading them out at both section edges so they could
+  not band along a join, and a grain layer whose job was to dither the ramps. All three are
+  gone together, and each for its own reason: the gradients because the image is the light
+  now, the mask because fading the ground out at the top edge is precisely what would break
+  a seam that is meant to continue, and the grain because a photograph does not band —
+  `body::after` still grains this section along with the rest of the page, and adding a
+  second local texture here and none in the Founder would put a step in the surface across
+  the very boundary the images exist to hide. --why-glow-warm and its three siblings went
+  with the gradients; --color-gold-deep is back to having no call site on the site, which
+  is the state CLAUDE.md §7 describes it as being deliberately kept in.
 */
 .why {
   /*
@@ -31,7 +44,14 @@
     to reach for if the section ever needs to breathe more or fit into less.
   */
   --why-pad: clamp(1.75rem, 5vh, 4.5rem);
-  --why-opening-gap: clamp(1.5rem, 4vh, 3.25rem);
+  /*
+    A step up the spacing scale: the ceiling was 3.25rem and is now --space-2xl, with the
+    vh term raised to match. The heading is a full sentence at --text-3xl and the grid
+    below it opens with a gold numeral; at the old gap the numeral row read as the
+    heading's fourth line. The floor stays --space-md so the section still fits one screen
+    at 1280x720 — verified, not assumed.
+  */
+  --why-opening-gap: clamp(var(--space-md), 4.75vh, var(--space-2xl));
   --why-row-gap: clamp(1.5rem, 3.6vh, 2.75rem);
   --why-column-gap: clamp(2rem, 6vw, 5.5rem);
 
@@ -52,6 +72,14 @@
     room than the number suggests. 5% lands near RGB(11, 7, 2). Above roughly 8% the
     wordmarks stop being texture and start being legible text behind the copy; below about
     3% they disappear on a bright panel. Re-measure rather than re-eyeball if this moves.
+
+    THE GROUND UNDER IT IS NO LONGER FLAT, and the value is left where it is anyway. Those
+    numbers were measured against a (1, 1, 1) section; the ground is now a frosted
+    photograph, which is still at luminance 0.002 through its median — so the stroke reads
+    exactly as before across most of the field and simply disappears where it crosses the
+    lit wordmark in the image. That is the right behaviour for a texture and not worth
+    correcting: raising the stroke so it survives the bright patch would make it legible
+    text everywhere else.
   */
   --why-field-stroke: color-mix(in srgb, var(--color-gold) 5%, transparent);
 
@@ -76,6 +104,109 @@
   background-color: var(--color-black);
 }
 
+/* --- The ground: the second half of the Founder's image -------------------- */
+
+/*
+  why.webp, drawn at the full width of the screen with its TOP edge on the section's top
+  edge — which is the whole design, because that edge is a cut through a larger picture
+  whose other side is the last row of the Founder's founder.webp.
+
+  THE CROP. The two files share a width (834) and differ in height (680 and 630), so they
+  line up with each other and with the viewport only while both are drawn at 100vw and
+  neither is scaled by a different factor. `object-fit: cover` on a 100vw x 100vh box does
+  exactly that on any viewport proportionally wider than the image — every landscape
+  window: the fit is driven by width, the image is drawn at 100vw, and the excess height is
+  cropped. `object-position: center top` decides which end pays, and here it is the BOTTOM,
+  the opposite of the Founder's, because the half that has to survive is the one nearest
+  the join. The two rules are mirror images and have to stay mirror images.
+
+  ONE SCREEN, pinned to the start of the section, mirroring the Founder's ground pinned to
+  the end of its own. `min-block-size: 100vh` on `.why` is a floor, not a height: on a
+  phone six stacked cells run well past it, and a ground at `inset: 0` would grow with them
+  — a taller box, a different cover scale, and therefore a different rendered width from
+  the Founder's, which is the one thing that breaks the seam. Anything past the first
+  screen falls onto `.why`'s own opaque --color-black.
+
+  The case neither half can serve is a viewport TALLER than the image's own 5:4 — a
+  portrait phone. Cover has to scale by height there, so the image is wider than the screen
+  and crops horizontally, which is the axis the seam needs. That is geometry rather than an
+  oversight, and cover is still the right answer to it: the alternative is a band of bare
+  ground where the image runs out. Both halves stay centred on the inline axis, so the
+  middle of the join still lines up and only the outer edges disagree.
+
+  `inline-size: 100%` is required for the same reason it is in Founder.module.css: an
+  absolutely positioned replaced element with `inline-size: auto` takes its intrinsic width,
+  and the insets only place it.
+
+  NOTHING HERE ANIMATES, AND IT IS A SIBLING OF `.field`, NOT ITS PARENT — the wordmark
+  keyframes and the pointer-follow both live inside `.field`, so neither can dirty this
+  element. It paints once and is never touched again.
+
+  z-index 0, the same as `.glass` and `.field`, so the three are same-layer boxes painting
+  in document order: this is written first in the JSX and is therefore behind both.
+  `.inner` is at --z-base above all of them.
+*/
+.backdrop {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 0;
+
+  pointer-events: none;
+
+  inline-size: 100%;
+  block-size: 100vh;
+  object-fit: cover;
+  /* Keep the top — it is what continues from the Founder. See the note above. */
+  object-position: center top;
+}
+
+/*
+  THE FROSTED PANE, and it is the Founder's pane: the same --section-glass-fill-light (0.4)
+  over the same --section-glass-blur-light (7px), on the same one-screen box pinned to the
+  section's edge. Identical on both sides of the boundary is the point — glass is part of
+  what the eye compares across a join, and a different fill or radius here would draw a
+  line along the very seam the images exist to hide. The two are one decision in two files.
+
+  IT IS ALSO WHAT MAKES THE COPY READABLE, which is why it is here at all rather than being
+  left off a photograph that is dark almost everywhere. why.webp carries a large lit AGB
+  wordmark straight through the middle of the section — exactly where the grid's right
+  column sits — and it is the brightest thing in either half. Measured on the visible crop
+  at 1440x900, composited under this fill: the ground runs at relative luminance 0.002
+  through the median and 0.055 at the 99th percentile, peaking at 0.18 on the wordmark's
+  specular edge. Against that 99th percentile the heading and the cell titles hold ~8:1 and
+  the muted descriptions ~4.3:1; on the peak itself the white type is still ~4.2:1 and the
+  descriptions ~2.7:1 across a few hundred pixels of a section that is above AA everywhere
+  else. Without the pane the same peak puts white type at 1.4:1. --section-glass-fill-light
+  is the dial, and turning it means turning the Founder's with it.
+
+  COST, stated because CLAUDE.md §7 counts these: this is a third viewport-wide
+  backdrop-filter. It is the cheap variant — 7px against About's 20px, and a filter's cost
+  scales with radius as well as area — and like the Founder's it only has to reach a
+  sibling, so if the closing sections ever feel heavy the drop-in is `filter: blur()` on
+  `.backdrop` plus a flat fill here. That swap is not free of consequences at this seam:
+  a filtered element's own edges blur outward, so it would need inflating past the section
+  box, and inflating it changes the rendered width — which is what the crop above is built
+  to hold constant. Both halves would have to be inflated by the same amount, together.
+*/
+.glass {
+  position: absolute;
+  /* Pinned to the section's start, matching .backdrop exactly — see the note there. */
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 0;
+
+  pointer-events: none;
+
+  /* One screen, matching .backdrop exactly — see the note there. */
+  block-size: 100vh;
+
+  background-color: var(--section-glass-fill-light);
+  /* -webkit- prefix for Safari, which still requires it — as in About and the Founder. */
+  -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
+  backdrop-filter: blur(var(--section-glass-blur-light));
+}
+
 /* --- The wordmark field --------------------------------------------------- */
 
 /*
@@ -94,9 +225,12 @@
   would mean a fourth row or a much larger cap, and at the moment the empty band is what
   gives the heading its air. Measured, not assumed — re-measure if the type size moves.
 
-  z-index 0 against `.inner`'s 1, both inside this section's own stacking context. It is
-  `position: absolute` and therefore paints above the section's background-color, which is
-  the whole point — the flat --color-black is what these outlines are drawn on.
+  z-index 0 against `.inner`'s 1, both inside this section's own stacking context. It shares
+  that 0 with `.backdrop` and `.glass` and is written after both in the JSX, so it paints on
+  top of them: the outlines are drawn on the frosted photograph rather than under it, and
+  they are not themselves blurred by the pane. That is deliberate — the field is a texture
+  laid ON the ground (CLAUDE.md §2), and a texture behind the glass would be part of the
+  ground instead, which is a different and much weaker thing.
 */
 .field {
   position: absolute;

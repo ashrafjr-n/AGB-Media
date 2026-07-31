@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 
 import useSectionReveal from '../../hooks/useSectionReveal'
+import backdrop from '../../assets/images/why.webp'
 import styles from './WhyAgb.module.css'
 
 /*
@@ -282,6 +283,41 @@ function WhyAgb() {
       onMouseMove={shouldReduceMotion ? undefined : handlePointerMove}
       onMouseLeave={shouldReduceMotion ? undefined : handlePointerLeave}
     >
+      {/*
+        THE GROUND, and it must stay FIRST — it, the pane below it and `.field` are all at
+        z-index 0, so document order is the only thing putting the image behind the glass
+        and both of them behind the wordmarks.
+
+        IT IS THE LOWER HALF OF A PAIR. why.webp continues the Founder's founder.webp: the
+        two share a source width and differ in height, and the first row of this file is the
+        row below the last row of that one. It replaces four radial gradients and a grain
+        layer that dithered them — that whole system is gone rather than layered under this,
+        because a photograph does not band and the gradients were an invented light where
+        there is now a real one. The crop arithmetic that keeps the join invisible is at
+        `.backdrop` in the stylesheet, and the matching half is in Founder.module.css.
+
+        `alt=""` marks it decorative, which it is — the section says everything it means to
+        say in words. `loading="lazy"` on a section four viewports down, `decoding="async"`
+        to keep the decode off the frame it lands on; the file is 25KB, so neither is
+        carrying much weight, but both are free.
+      */}
+      <img
+        className={styles.backdrop}
+        src={backdrop}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+
+      {/*
+        The frosted pane, and it is the Founder's pane at the Founder's values — the same
+        --section-glass-fill-light over the same --section-glass-blur-light. It has two jobs
+        and they happen to want the same number: it holds the copy above off a photograph
+        that has a lit wordmark through the middle of it, and it makes this side of the
+        section boundary the same material as the other side. See .glass in the stylesheet.
+      */}
+      <div className={styles.glass} aria-hidden="true" />
+
       {/*
         Purely atmospheric, and marked so: aria-hidden because a screen reader reaching
         nine copies of the company name between the heading and the list would be reading

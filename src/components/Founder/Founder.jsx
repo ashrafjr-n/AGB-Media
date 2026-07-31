@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 
 import useSectionReveal from '../../hooks/useSectionReveal'
-import backdrop from '../../assets/images/f.png'
+import backdrop from '../../assets/images/founder.webp'
 import LogoLoop from '../shared/LogoLoop'
 import styles from './Founder.module.css'
 
@@ -43,11 +43,19 @@ import work007 from '../../assets/abdullah/strip/007.jpg'
 
   It was a second <video> element pointing at story.webm — the same file the Story circle
   shows — under the same 0.75 fill and 20px blur About lays over the hero. All of that is
-  gone: the ground is a studio still (f.png) under the LIGHT glass pair,
+  gone: the ground is a studio still under the LIGHT glass pair,
   --section-glass-fill-light and --section-glass-blur-light, because the two grounds are
   doing opposite jobs. The strong pair exists to make moving footage into atmosphere
   behind text; this image has a subject in it, and at 0.75 and 20px it was an amber
   smear. It is now softened just enough to read over.
+
+  THE IMAGE IS HALF OF A PAIR. founder.webp and WhyAgb's why.webp are one continuous
+  piece cut in two — same source width, different heights — and the bottom edge of this
+  one is the top edge of that one. Everything about how the ground is laid out follows
+  from keeping that join invisible; the arithmetic is in .backdrop in the stylesheet, and
+  the matching half is in WhyAgb.module.css. The two grounds carry the same glass at the
+  same values for the same reason: a difference in fill or blur across the seam would
+  draw the line the images exist to hide.
 
   What went with the video, and none of it is missed: this section no longer registers a
   claim with useExclusiveVideo, no longer watches its own visibility to decide when to
@@ -176,17 +184,19 @@ function Founder() {
       aria-labelledby="founder-name"
     >
       {/*
-        The ground: a studio still, filling the section behind everything else.
+        The ground: a studio still, filling the section behind everything else, and the
+        upper half of the pair it forms with WhyAgb's — see the note at the top of this
+        file and the crop arithmetic at .backdrop.
 
         `alt=""` rather than a description, and that is the correct markup rather than a
         shortcut — an empty alt is what marks an image as decorative, and this one carries
         no information the section does not already state in words. It needs no
         aria-hidden alongside it; the empty alt is the whole announcement.
 
-        `loading="lazy"` genuinely defers this one: the section is three viewports below
-        the fold on every path, and at 3.3MB it is the largest thing on the page after the
-        two videos — it must not compete with the hero for the first screen's bandwidth.
-        `decoding="async"` keeps a 2122x1186 decode off the frame it lands on.
+        `loading="lazy"` still defers it — the section is three viewports below the fold on
+        every path — but it no longer has much to defer: this is 21KB of WebP where the PNG
+        it replaced was 3.3MB, so it has stopped being the largest thing on the page after
+        the two videos. `decoding="async"` keeps the decode off the frame it lands on.
       */}
       <img
         className={styles.backdrop}
