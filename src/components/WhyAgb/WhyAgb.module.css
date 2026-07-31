@@ -1,38 +1,207 @@
 /*
-  The closing section: six reasons, set as numbered editorial rows.
+  The closing section: six reasons in a 2 x 3 grid, over a drifting field of outlined
+  wordmarks.
 
-  It takes over the slot the empty `.placeholder` held, and it inherits that element's
-  one structural requirement along with the position. `position: relative` + --z-base is
-  not cosmetic: Hero's `.backdrop` is `position: fixed` at `z-index: 0`, and a positioned
-  box at z-index 0 paints above every static in-flow block in the same stacking context,
-  so a static section here would be drawn *underneath* the hero's video whatever colour
-  it was given. Hero now stops rendering that backdrop once the Story section has left
-  (CLAUDE.md §7), so there is nothing behind this to fight — but the rule is what makes
-  the section correct on its own terms rather than correct because of a threshold in
-  another component, and it is the state the page falls back to for the frame after a
-  scroll restoration.
+  It takes over the slot the empty `.placeholder` held, and it inherits that element's one
+  structural requirement along with the position. `position: relative` + --z-base is not
+  cosmetic: a positioned box at z-index 0 paints above every static in-flow block in the
+  same stacking context, so a static section here could be drawn *underneath* a positioned
+  sibling whatever colour it was given. The hero's footage is now scoped to a stage two
+  sections up and cannot reach this far (CLAUDE.md §7), so there is nothing behind this to
+  fight — but the rule is what makes the section correct on its own terms rather than
+  correct because of an arrangement elsewhere.
 
-  FLAT --color-black, and no texture of its own. `body::after` in global.css already lays
-  film grain over the entire viewport, so a `.noise-overlay` here would be the same
-  texture twice on one surface. The site's other raised treatments are glass over
-  *footage*; there is no footage under this section, and glass over flat black is just a
-  lighter flat black. Nothing is added.
+  It also makes this section a stacking context, which is what lets the wordmark field sit
+  at z-index 0 and the content at z-index 1 without either escaping into the page.
 
-  No `min-block-size`. The placeholder needed one because it was empty and existed only
-  to give the Founder somewhere to scroll away to; six rows of content set their own
-  height.
+  ONE SCREEN, the same way the Founder gets one: `min-block-size: 100vh` with the column
+  centred, and every value that owns real height written as a clamp with a vh middle term.
+  A layout tuned to look right at 900px tall overflows at 700 and floats at 1100; scaling
+  the block padding, the gaps and the numeral together keeps heading-plus-grid inside a
+  screen from 1280x720 up. `min-block-size` rather than `block-size` so a phone — where six
+  stacked cells are far taller than the screen — simply grows past it and scrolls.
+
+  FLAT --color-black under the field. `body::after` in global.css already lays film grain
+  over the entire viewport, so a `.noise-overlay` here would be the same texture twice on
+  one surface.
 */
 .why {
+  /*
+    Every value in the section that owns height, in one place. These are the first dials
+    to reach for if the section ever needs to breathe more or fit into less.
+  */
+  --why-pad: clamp(1.75rem, 5vh, 4.5rem);
+  --why-opening-gap: clamp(1.5rem, 4vh, 3.25rem);
+  --why-row-gap: clamp(1.5rem, 3.6vh, 2.75rem);
+  --why-column-gap: clamp(2rem, 6vw, 5.5rem);
+
+  /* The height the numeral needs above the title it sits behind. */
+  --why-numeral-lead: clamp(1.5rem, 3.4vh, 2.5rem);
+
+  /*
+    THE FIELD'S WEIGHT, and the one dial worth having a number for.
+
+    Measured rather than judged, because on a near-black ground the eye is a poor
+    instrument: at 7% the brightest rendered stroke pixel is RGB(15, 9, 2) against a
+    (1, 1, 1) section — a luminance step of about 1.5%, which looks far stronger in a dark
+    room than the number suggests. 5% lands near RGB(11, 7, 2). Above roughly 8% the
+    wordmarks stop being texture and start being legible text behind the copy; below about
+    3% they disappear on a bright panel. Re-measure rather than re-eyeball if this moves.
+  */
+  --why-field-stroke: color-mix(in srgb, var(--color-gold) 5%, transparent);
+
   position: relative;
   z-index: var(--z-base);
 
-  padding-block: var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  min-block-size: 100vh;
+  padding-block: var(--why-pad);
   padding-inline: var(--container-padding);
+
+  /*
+    The field's tracks are several times the viewport wide. This is what stops them
+    producing a horizontal scrollbar on the document — `.field` clips them too, and either
+    alone would do it, but the section is the box whose inline size is authoritative.
+  */
+  overflow: hidden;
 
   background-color: var(--color-black);
 }
 
+/* --- The wordmark field --------------------------------------------------- */
+
+/*
+  Three rows of outlined "AGB MEDIA", spread down the section behind everything else.
+
+  `justify-content: space-around` rather than `space-between`: between would pin the first
+  and last rows to the section's exact edges, where they would read as a border. Around
+  leaves half a gap top and bottom so the field looks like it continues past the section
+  rather than being framed by it.
+
+  z-index 0 against `.inner`'s 1, both inside this section's own stacking context. It is
+  `position: absolute` and therefore paints above the section's background-color, which is
+  the whole point — the flat --color-black is what these outlines are drawn on.
+*/
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+
+  overflow: hidden;
+  /* Full-bleed over the section; without this it would swallow every drag and click. */
+  pointer-events: none;
+  /* The field is not copy. Selecting the heading should not drag eighteen wordmarks in. */
+  user-select: none;
+}
+
+.field-row {
+  /* Each row clips its own track, so a track can never widen the flex column. */
+  overflow: hidden;
+}
+
+/*
+  THE TRACK, and the seamless loop.
+
+  `inline-size: max-content` so the box is exactly as wide as its two spans — this is what
+  makes `translateX(-50%)` mean "exactly one copy" without anyone measuring a glyph. The
+  two spans are identical strings, each ending in its own separator, so the track is
+  precisely two periods wide and the wrap point is invisible. See the note in WhyAgb.jsx
+  for why this is DOM text rather than an SVG.
+
+  ONLY `transform` IS ANIMATED, and there is nothing filtered above it — no ancestor here
+  carries a `filter`, so the transform is genuine compositor work rather than a repaint per
+  frame. That is the same category as `.button-glass`'s sheens, which CLAUDE.md §7
+  deliberately leaves running, and it is why there is no `will-change` here: an infinite
+  animation would never reach the rule that drops the hint again, and Chromium promotes an
+  element with an animating transform on its own.
+
+  `linear`, not an ease: any easing curve on an infinite loop puts a rhythm into what is
+  meant to be a constant drift, and the eye finds a rhythm immediately.
+
+  Reduced motion needs nothing here. The global block in global.css already forces
+  `animation-duration: 0.01ms` and `animation-iteration-count: 1` on every element, which
+  freezes these three rows — and because the loop is seamless, the frame it freezes on is
+  indistinguishable from the one it started on.
+*/
+.field-track {
+  display: flex;
+  inline-size: max-content;
+
+  animation-name: wordmark-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* animation-duration is set per row from WhyAgb.jsx — see the note there. */
+}
+
+/*
+  Rows 1 and 3 drift right-to-left, row 2 left-to-right. One pair of keyframes serves both:
+  the forward row runs the identical animation in reverse, which is exact by construction
+  and cannot drift from its opposite the way a second hand-written @keyframes block could.
+*/
+.field-track[data-direction='reverse'] {
+  animation-direction: normal;
+}
+
+.field-track[data-direction='forward'] {
+  animation-direction: reverse;
+}
+
+/*
+  Outline only: transparent fill with a hairline stroke. `-webkit-text-stroke` is
+  non-standard but is implemented in every current engine; where it is not, this is
+  transparent text with nothing to replace it and the field simply does not appear, which
+  is the right failure for a decorative layer.
+
+  The stroke colour is `--why-field-stroke`, a dial at the top of this file with the
+  measured numbers behind it. Gold rather than `--color-text`: white at this alpha reads as
+  a grey haze that belongs to no part of the palette, where the gold keeps the field inside
+  the site's one accent even when it is barely there.
+
+  `line-height: 1` and `display: block` so each row's box is the type's own height and the
+  flex column can space three of them evenly without inherited leading padding it out.
+*/
+.field-track span {
+  display: block;
+  /* Preserves the runs of spaces that separate the wordmarks, and never wraps. */
+  white-space: pre;
+
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 12vw, 10rem);
+  font-weight: var(--font-weight-heavy);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+
+  color: transparent;
+  -webkit-text-stroke: 1px var(--why-field-stroke);
+}
+
+/*
+  0 to -50% of a track that is exactly two copies wide: one full period, and the end state
+  is pixel-identical to the start.
+*/
+@keyframes wordmark-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* --- Content -------------------------------------------------------------- */
+
 .inner {
+  position: relative;
+  /* Above the field. Both are inside this section's stacking context. */
+  z-index: var(--z-base);
+
   inline-size: 100%;
   max-inline-size: var(--container-max);
   margin-inline: auto;
@@ -40,13 +209,8 @@
 
 /* --- Opening -------------------------------------------------------------- */
 
-/*
-  --space-2xl below the heading pair, which is the same gap About puts between its title
-  and the body beneath it. The list's own first hairline sits at the end of this space,
-  so the rule reads as the heading's underline rather than as the first row's ceiling.
-*/
 .opening {
-  margin-block-end: var(--space-2xl);
+  margin-block-end: var(--why-opening-gap);
 }
 
 /*
@@ -85,14 +249,19 @@
   rather than the hierarchy: About's title is two words and this is a full sentence of
   about ninety characters. At the top of the scale it would set as a wall.
 
-  The measure is what makes it a statement rather than a paragraph. 22ch at this size
-  holds it to three or four lines whatever the window, and `text-wrap: balance` from
-  global.css evens them out. line-height under the global --leading-tight for the same
-  reason About's title runs at 0.95: a multi-line display heading wants to read as a
-  block, not as a ladder.
+  The measure is 34ch, where it was 22. That is the one change the one-screen cap forced on
+  the heading: at 22ch this sets as four lines on a 1280px window, and four lines of a
+  48px display face is 200px of the 720px budget before the grid has started. 34ch holds it
+  to two or three lines at every desktop width and still reads as a statement rather than a
+  paragraph. `text-wrap: balance` is not set here — at three lines the browser's own
+  greedy break is even enough, and balance on a heading this long is a measurable layout
+  cost for a difference nobody sees.
+
+  line-height under the global --leading-tight for the same reason About's title runs at
+  0.95: a multi-line display heading wants to read as a block, not as a ladder.
 */
 .title {
-  max-inline-size: 22ch;
+  max-inline-size: 34ch;
 
   font-size: var(--text-3xl);
   line-height: 1.05;
@@ -100,96 +269,97 @@
   color: var(--color-text);
 }
 
-/* --- The list ------------------------------------------------------------- */
+/* --- The grid ------------------------------------------------------------- */
 
 /*
-  Hairlines, not boxes. Every row carries a rule on its block-start and the last carries
-  one on its block-end, so the set is bounded top and bottom and every division between
-  rows is a single shared line — the row above owns it, the row below sits on it.
+  Two columns, three rows, and a single hairline down the middle.
 
-  --glass-border is the same 0.08 warm white that edges every pane on the site. It is the
-  right token even with no glass here: this is the site's hairline weight, and a rule at
-  full --color-text would read as a table.
+  NO ROW DIVIDERS AND NO CELL BORDERS. The six items were full-width rows separated by
+  hairlines; as a grid, a rule between every row and every column would draw a table. One
+  vertical line is enough to say the six are one structure, and it is the only line here.
+
+  `position: relative` for that divider, which is a pseudo-element rather than a
+  `border-inline-start` on the second column's cells: a border would be three separate
+  segments broken by the row gaps, where this is one unbroken line down the grid's full
+  height. It is also what makes it independent of how many rows there are.
 */
-.list {
-  display: flex;
-  flex-direction: column;
-}
+.grid {
+  position: relative;
 
-.item {
   display: grid;
-  /*
-    Stacked below 48rem: numeral, then the heading pair, then the description. The
-    numeral leads rather than sitting beside the title because at this width it is the
-    only thing holding the row's inline start, and a row whose first line is the number
-    reads as an entry in a list.
-  */
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2xs);
-
-  padding-block: var(--space-lg);
-  border-block-start: 1px solid var(--glass-border);
-}
-
-.item:last-child {
-  border-block-end: 1px solid var(--glass-border);
+  column-gap: var(--why-column-gap);
+  row-gap: var(--why-row-gap);
 }
 
 /*
-  The index, and the only gold in the row.
+  The divider is only drawn where there are two columns to divide — the stacked layout
+  below 48rem has no middle. Enabled in the breakpoint at the foot of this file.
+*/
+.grid::before {
+  content: none;
+}
 
-  Large and quiet: 45% of the accent, which on this ground is present enough to be the
-  first thing the eye lands on in a row and far too dim to compete with the title beside
-  it. Deriving it with color-mix rather than writing a fourth rgba() keeps the accent
-  sampled from the logo in exactly one place, which is the same thing Founder.module.css
-  does with its own golds (CLAUDE.md §2).
+/*
+  The numeral, and the section's only piece of depth.
 
-  --font-weight-light at this size, not the heading weights. A heavy numeral reads as a
-  score; a light one reads as a folio, which is what this is.
+  It sits behind the title rather than beside it, at 8% of the accent — present enough to
+  give the cell a centre of gravity, far too dim to be read as a number first. That low
+  alpha is what allows it to be this large: at a legible opacity, a 7rem numeral behind a
+  1.5rem title would be the cell's subject.
 
-  `font-variant-numeric: tabular-nums` so 01 through 06 occupy identical width and the
-  six numerals sit on one vertical edge. Clash Display may not carry the feature, in
-  which case this costs nothing — every digit in 0-6 is already the same width in most
-  geometric faces.
+  `position: absolute` and FIRST in document order, with `.body` positioned after it, so
+  the two paint in tree order with the copy on top. Neither needs a z-index and this cell
+  needs no stacking context of its own — which matters, because Framer writes an inline
+  `transform` on this element for the reveal and a stacking context here would be created
+  and destroyed as that animation runs.
+
+  `line-height: 0.8` pulls the numeral's box tight to its digits so the offsets below are
+  measured against the glyphs rather than against a line box with leading in it.
+  `tabular-nums` so 01 through 06 sit on one vertical edge; Clash Display may not carry the
+  feature, in which case this costs nothing.
 */
 .index {
-  color: color-mix(in srgb, var(--color-gold) 45%, transparent);
-  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem);
-  font-weight: var(--font-weight-light);
-  line-height: 1;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+
+  color: color-mix(in srgb, var(--color-gold) 8%, transparent);
+  font-size: clamp(4rem, 8vw, 7rem);
+  font-weight: var(--font-weight-heavy);
+  line-height: 0.8;
   letter-spacing: var(--tracking-tight);
   font-variant-numeric: tabular-nums;
 }
 
-.heading {
+.item {
+  position: relative;
   min-inline-size: 0;
 }
 
 /*
-  The per-row tag. Smaller and dimmer than the section's own eyebrow, and without the
-  gold dot — the numeral is already this row's accent mark, and a second one on the same
-  line would be two bullets for one item.
+  The copy, inset from the cell's origin so the numeral behind it is not fully covered.
 
-  It is absent on the rows where it would repeat the title; see WhyAgb.jsx. The rows
-  stay aligned because the numeral, not this, is what sets each row's top edge.
+  The block inset is what lets the numeral's top half show above the title; the inline
+  inset moves the text off the numeral's left stem, which is the part that would otherwise
+  sit directly under the first letter of the heading. Both are small — the numeral is meant
+  to be found behind the words, not beside them.
 */
-.label {
-  margin-block-end: var(--space-3xs);
+.body {
+  position: relative;
 
-  color: var(--color-text-subtle);
-  font-size: 0.6rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  padding-block-start: var(--why-numeral-lead);
+  padding-inline-start: clamp(0.75rem, 1.6vw, 1.5rem);
 }
 
 /*
-  --text-xl, which until now was a rung of the type scale nothing used. It is the right
-  step: a clear tier below the section title and clearly above the description, which is
-  exactly the three-level hierarchy the row needs. Weight comes from global.css, where h3
-  is --font-weight-bold (600).
+  --text-xl, a clear tier below the section title and clearly above the description, which
+  is the three-level hierarchy the cell needs. Weight comes from global.css, where h3 is
+  --font-weight-bold (600).
 */
 .name {
+  margin-block-end: var(--space-2xs);
+
   font-size: var(--text-xl);
   line-height: 1.2;
   letter-spacing: var(--tracking-tight);
@@ -199,11 +369,14 @@
 /*
   Quiet body text, matching the register About's paragraph and the Founder's bio use:
   light weight, muted colour, relaxed leading. --text-sm rather than --text-base because
-  it is a caption to the title beside it rather than running copy.
+  it is a caption to the title above it rather than running copy.
+
+  No measure cap. The grid column is already the constraint — at --container-max with the
+  column gap it is about 550px, which is a comfortable measure at this size and holds every
+  description to one or two lines. A `ch` cap on top of it would only add lines, and lines
+  are what the one-screen budget is short of.
 */
 .description {
-  max-inline-size: 46ch;
-
   font-size: var(--text-sm);
   font-weight: var(--font-weight-light);
   line-height: var(--leading-relaxed);
@@ -213,40 +386,28 @@
 /* --- Breakpoints ---------------------------------------------------------- */
 
 @media (min-width: 48rem) {
-  /*
-    Three columns from here up: the numeral, the heading pair, and the description.
-
-    `auto` for the numeral so the column is exactly as wide as two digits — it is a fixed
-    string, and a track sized to it cannot drift. The other two take an explicit 2:3
-    ratio for the same reason About's row does: left to `auto` and `1fr` the description
-    would absorb every spare pixel on a wide window and the titles would sit in a column
-    narrower than the text explaining them. Both are minmax(0, …) so neither can be
-    forced past its share by its own content.
-
-    `align-items: start` keeps all three on the row's top edge, which is what makes the
-    numerals line up down the page regardless of how many lines a row takes.
-  */
-  .item {
-    grid-template-columns: auto minmax(0, 2fr) minmax(0, 3fr);
-    align-items: start;
-    gap: var(--space-xl);
-
-    padding-block: var(--space-xl);
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   /*
-    Optical alignment, not metric. The numeral's line-height is 1 against a heading whose
-    cap-height starts lower in its own line box, so setting both to the same top edge
-    leaves the number looking a fraction high. A small nudge down puts the two on the
-    same visual line.
-  */
-  .index {
-    padding-block-start: 0.15em;
-  }
-}
+    The one line in the section. Exactly on the row's centre — the two tracks are equal, so
+    50% is the middle of the gap whatever the gap is — and spanning the grid's full height
+    rather than stopping at the last row's text, so it reads as the structure the six cells
+    hang on rather than as a divider between them.
 
-@media (min-width: 64rem) {
-  .item {
-    gap: var(--space-2xl);
+    --color-gold at 16%, a little above the --glass-border hairline the rest of the site
+    uses, because this one is unsupported by any surface: there is no pane edge here for
+    the eye to find it against.
+  */
+  .grid::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    /* Half a pixel back so the 1px line straddles the centre rather than starting at it. */
+    inset-inline-start: calc(50% - 0.5px);
+
+    inline-size: 1px;
+    background-color: color-mix(in srgb, var(--color-gold) 16%, transparent);
   }
 }
