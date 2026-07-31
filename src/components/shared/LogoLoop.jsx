@@ -175,9 +175,13 @@ function LogoLoop({
       /*
         Two independent reasons to stop, resolved to one attribute because the
         stylesheet only cares that it is stopped: the caller says the strip is
-        invisible (Founder passes this while the section is still faded out), or it is
-        simply not on screen. Either way this is `paused`, not `none` — the strip holds
-        wherever it is and resumes from there, so nothing jumps when it comes back.
+        invisible, or it is simply not on screen. No caller passes `paused` today —
+        Founder did while it was pinned at opacity 0 inside About's zoom, where the
+        strip was geometrically on screen the whole time and the observer could not
+        see it — but the prop is part of this component's contract and stays.
+
+        Either way this is `paused`, not `none` — the strip holds wherever it is and
+        resumes from there, so nothing jumps when it comes back.
       */
       data-paused={paused || !onScreen ? 'true' : 'false'}
       /*

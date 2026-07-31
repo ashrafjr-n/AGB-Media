@@ -29,11 +29,9 @@ function readViewport() {
   `window.scrollY` reads per frame instead of one.
 
   That is not just three property accesses. Reading `scrollY` can force the
-  browser to flush pending layout before it can answer, and this runs in the same
-  frames Framer Motion is writing `width` and `height` inline on About's zoom
-  layer — so each read lands after a fresh style invalidation. One shared read
-  per frame means at most one such flush, and a fourth consumer now costs nothing
-  at all.
+  browser to flush pending layout before it can answer, so each read lands after
+  whatever style invalidation the frame has accumulated. One shared read per frame
+  means at most one such flush, and a fourth consumer now costs nothing at all.
 
   The listeners exist only while something is subscribed, so nothing is left
   attached to the window after the last consumer unmounts.

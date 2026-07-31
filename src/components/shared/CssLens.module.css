@@ -11,7 +11,7 @@
 
 /*
   The frame of reference for the disc's travel, and the box the ResizeObserver in
-  CssLens.jsx watches. It fills .media, which at rest is exactly the circle.
+  CssLens.jsx watches. It fills About's .circle exactly.
 */
 .area {
   position: absolute;
@@ -23,15 +23,8 @@
   for a WebGL path and became the only way this circle is ever drawn.
 
   Absolute rather than in flow so it fills the circle exactly, and `object-fit: cover` so
-  a 16:9 source fills a 1:1 hole instead of letterboxing inside it.
-
-  COVER IS ALSO THE ENTIRE MECHANISM OF THE ZOOM, so nothing here may become a fixed size
-  or a transform. As .zoom-layer reshapes from a circle to the screen, this box reshapes
-  with it and cover re-solves against each new aspect: at rest it crops the source to its
-  middle square, and by the end it is showing the frame whole. The footage is never scaled
-  by the transition — it is *uncropped* by it, which is why nothing stretches. A
-  transform: scale() anywhere on this element or on .media would replace that reveal with
-  a magnification and undo the whole effect.
+  a 16:9 source fills a 1:1 hole instead of letterboxing inside it — cropped to its middle
+  square, which is what the circle shows.
 */
 .video {
   position: absolute;
@@ -50,23 +43,6 @@
   position: absolute;
   inline-size: 0;
   block-size: 0;
-}
-
-/*
-  Undoes the scroll-zoom's magnification for the disc alone, so the glass stays the size
-  it is at rest while the frame behind it grows. See the note at its call site in
-  CssLens.jsx for why this has to wrap the follow rather than sit inside it.
-
-  It fills .area so that .follow's 50%/50% anchor still resolves to the circle's centre,
-  and it scales about that same centre — so countering the parent leaves the disc exactly
-  where it was, at the size it was.
-
-  Inert when About passes no counter (reduced motion, where there is no zoom at all): the
-  element is then a plain untransformed box and costs nothing.
-*/
-.lens-counter {
-  position: absolute;
-  inset: 0;
 }
 
 /*

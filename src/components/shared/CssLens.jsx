@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
 
 import styles from './CssLens.module.css'
 
@@ -81,16 +80,7 @@ const CENTRED_POINTER = { current: { x: 0, y: 0 } }
   same mousemove handler, because the loop is not running while the disc is at rest and
   the pointer moving is the only thing that can know it should be.
 */
-function CssLens({
-  videoSrc,
-  onVideo,
-  onMetadata,
-  pointer,
-  showLens = true,
-  lensOpacity,
-  lensCounterScale,
-  wakeRef,
-}) {
+function CssLens({ videoSrc, onVideo, pointer, showLens = true, wakeRef }) {
   const areaRef = useRef(null)
   const followRef = useRef(null)
 
@@ -101,7 +91,7 @@ function CssLens({
     How far the disc's centre may travel from the circle's centre: the circle's radius
     less the disc's own, so the glass stays wholly inside the frame rather than its centre
     sitting on the rim. Measured, because the circle is a min() of three terms that
-    changes across two breakpoints and again while the zoom runs.
+    resolves differently across two breakpoints and with the window's own size.
   */
   const travel = useRef(0)
 
@@ -158,10 +148,8 @@ function CssLens({
     node.style.transform = `translate3d(${current.x}px, ${current.y}px, 0)`
 
     /*
-      The loop ends here when the disc has arrived. Nothing else is animating from this
-      file — the zoom's fade is a MotionValue written by Framer straight to .lens's own
-      opacity, independent of this — so an arrived disc over a still pointer costs
-      nothing at all until the next wake().
+      The loop ends here when the disc has arrived. Nothing else in this file animates,
+      so an arrived disc over a still pointer costs nothing at all until the next wake().
     */
     if (!arrived) frame.current = requestAnimationFrame(tick)
   }, [pointer])
@@ -177,11 +165,10 @@ function CssLens({
     A callback ref rather than a plain one, so the disc is placed during the commit
     instead of a frame later.
 
-    The disc is unmounted at LENS_DROP_AT and mounted again on the way back up, but
-    `position` outlives that — it belongs to this component, which stays mounted
-    throughout. Without writing the transform as the node attaches, the fresh element
-    would paint once at the centre of the circle and then jump to where the disc actually
-    is on the next frame.
+    `position` outlives the node — it belongs to this component, which stays mounted while
+    `showLens` flips (a resize crossing the breakpoint is the case that reaches it).
+    Without writing the transform as the node attaches, a fresh element would paint once
+    at the centre of the circle and then jump to where the disc actually is.
   */
   const attachFollow = useCallback((node) => {
     followRef.current = node
@@ -218,9 +205,7 @@ function CssLens({
 
   /*
     The travel bound, re-measured whenever the circle changes size — across the two
-    breakpoints, on a window resize, and once a frame while the zoom is growing the frame
-    (which is only until the disc is dropped, well before the blur's bleed starts pushing
-    this box outside the frame that clips it).
+    breakpoints and on a window resize.
 
     `contentRect` rather than a getBoundingClientRect() of our own: a ResizeObserver
     already carries the measurement, and reading layout back inside its callback is how
@@ -246,9 +231,7 @@ function CssLens({
       {/*
         A plain <video>, hardware-decoded by the browser, where FluidLens had to keep the
         footage inside the WebGL scene as a texture so there was something in the buffer
-        for the transmission material to refract. That constraint is gone, and with it the
-        whole priming-and-handoff dance About needed to swap a canvas for a DOM element
-        mid-transition.
+        for the transmission material to refract. That constraint is gone.
 
         No `autoPlay`, deliberately: playback is About's decision, because the hero's own
         video must have stopped before this one starts. `muted` is not optional — an
@@ -277,7 +260,6 @@ function CssLens({
         muted
         playsInline
         preload="metadata"
-        onLoadedMetadata={onMetadata}
         aria-hidden="true"
       />
 
@@ -328,34 +310,23 @@ function CssLens({
           </svg>
 
           {/*
-            Three nested elements, because three different things write to them and none
-            may share a style attribute with another: About's scroll-zoom writes a
-            counter-scale here, the follow loop writes `transform` to the middle one on
-            the frames the disc is moving, and Framer writes `opacity` to the disc itself
-            for the zoom's fade.
+            Two nested elements rather than one, because the follow loop owns the outer
+            one's `transform` outright — it writes it directly to the node every frame it
+            moves, so nothing else may put a style on that element. The disc's own
+            appearance lives on the inner one.
 
-            THE ORDER IS LOAD-BEARING, and the counter has to be the OUTER one. About's
-            frame scales this whole subtree; putting the counter outside the follow means
-            the loop's translate is applied in already-counter-scaled space and comes back
-            out at its natural magnitude. Inside, the disc would be the right size but
-            would drift several times too far — worse than not countering at all.
+            There used to be a third wrapper above these, carrying a counter-scale that
+            held the disc at its resting size while the scroll-zoom magnified the frame
+            around it. There is no zoom and nothing scales this subtree, so it went with it.
           */}
-          <motion.div
-            className={styles['lens-counter']}
-            style={lensCounterScale ? { scale: lensCounterScale } : undefined}
+          <div
+            className={styles.follow}
+            ref={attachFollow}
+            style={{ '--lens-size': `${LENS_SIZE}px` }}
+            aria-hidden="true"
           >
-            <div
-              className={styles.follow}
-              ref={attachFollow}
-              style={{ '--lens-size': `${LENS_SIZE}px` }}
-              aria-hidden="true"
-            >
-              <motion.div
-                className={styles.lens}
-                style={lensOpacity ? { opacity: lensOpacity } : undefined}
-              />
-            </div>
-          </motion.div>
+            <div className={styles.lens} />
+          </div>
         </>
       )}
     </div>

@@ -1,13 +1,15 @@
 /*
-  The founder section, and the one section on the site that paints no background at all.
+  The founder section — an ordinary section of the home page, after the Story section,
+  scrolling normally.
 
-  It lives inside About's .hold, above the Story section's finished zoom — a full-viewport
-  blurred frozen frame of story.webm under a scrim. That frame is this section's ground,
-  so any fill here would cover the thing the whole transition exists to build. Nothing
-  below may set background-color, and the type is weighted for a dark, softly-lit surface.
-
-  IT DOES NOT SCROLL INTO VIEW. On the motion path this is pinned to the viewport and
-  arrives by fading up from nothing; it never translates. See .founder[data-pinned].
+  IT PAINTS ITS OWN GROUND, which it did not use to. It lived inside About's scroll-zoom
+  stage, pinned above a full-viewport blurred frozen frame of story.webm that served as
+  its background; with the zoom removed there is nothing behind it but the hero's fixed
+  4K footage, four viewports up the page. Hence the opaque --color-black below — and the
+  `position: relative` that goes with it, for the same reason .about and .placeholder are
+  positioned: Hero's .backdrop is `position: fixed` at z-index 0, and a positioned box at
+  z-index 0 paints above every static in-flow block in the same stacking context, so a
+  static section here would be drawn *underneath* the video whatever colour it was given.
 
   ONE SCREEN. The column is centred in the viewport and every area takes its natural
   height, so what fills the screen is the content rather than any single stretched block.
@@ -16,8 +18,9 @@
   things that own real height — block padding, the gaps, the portrait, the photo strip —
   keeps it inside one screen across the range.
 
-  Below 48rem none of this applies: the content is far taller than a phone screen, so it
-  is left in flow and scrolls normally. See the note on .hold in About.module.css.
+  `min-block-size` rather than `block-size`, so a phone — where the content is far taller
+  than the screen — simply grows past it and scrolls, instead of being cropped by a box
+  that used to be a pinned 100vh.
 
   There is no padding-inline on the section. Two areas are full bleed and two are
   contained, so the container is applied per block rather than pulled back out.
@@ -48,41 +51,19 @@
   --founder-gap: clamp(0.4rem, 1.1vh, 0.85rem);
   --founder-pad: clamp(0.75rem, 2.5vh, 2rem);
 
+  position: relative;
+  z-index: var(--z-base);
+
   display: flex;
   flex-direction: column;
   /* Centred as a block, which is what leaves even air top and bottom. */
   justify-content: center;
   gap: var(--founder-gap);
 
+  min-block-size: 100vh;
   padding-block: var(--founder-pad);
-}
 
-/*
-  Pinned to the viewport, and the reason nothing here slides.
-
-  STICKY, NOT FIXED, and the difference is the whole of the section's exit. Fixed would
-  hold this on screen forever — there is no scroll position at which a fixed box leaves —
-  so the founder could never scroll away to reveal what follows it. Sticky is pinned for a
-  range and then releases into flow, which is exactly the behaviour wanted: locked to the
-  viewport while it fades up and dwells, then carried off the top by ordinary scrolling.
-
-  The range is set by .founder-layer in About.module.css, which spans the whole stage and
-  is what this sticks inside. It is sized so this releases at precisely the scroll position
-  .about does, so the blurred frame and the founder standing on it leave together as one
-  surface rather than sliding apart.
-
-  Scoped to 48rem and up, and only while the zoom runs. Below 48rem the content is far
-  taller than a phone screen and a 100vh sticky box would simply crop it, so there it is
-  left in flow to scroll normally; under reduced motion there is no pinned frame to stand
-  on in the first place.
-*/
-@media (min-width: 48rem) {
-  .founder[data-pinned='true'] {
-    position: sticky;
-    inset-block-start: 0;
-    block-size: 100vh;
-    overflow: hidden;
-  }
+  background-color: var(--color-black);
 }
 
 /* --- The eyebrow ---------------------------------------------------------- */

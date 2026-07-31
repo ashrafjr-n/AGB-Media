@@ -1,10 +1,4 @@
-import { useState } from 'react'
-import {
-  motion,
-  useMotionValue,
-  useMotionValueEvent,
-  useTransform,
-} from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 
 import LogoLoop from '../shared/LogoLoop'
 import styles from './Founder.module.css'
@@ -33,27 +27,15 @@ import work006 from '../../assets/abdullah/strip/006.jpg'
 import work007 from '../../assets/abdullah/strip/007.jpg'
 
 /*
-  The founder's page-within-a-section, and the tenant of About's .hold — the slot the
-  Story section's zoom transition spends its whole runway building a blurred, frozen
-  backdrop for. That backdrop *is* this section's background, which is why nothing here
-  paints a ground of its own.
+  The founder's page-within-a-section, and an ordinary section of the home page: it sits
+  after the Story section in HomePage.jsx and scrolls up past the viewport like anything
+  else.
 
-  It does not scroll into view. On the motion path it is pinned to the viewport and
-  appears purely by fading up from nothing as the zoom finishes — see the note on
-  FADE_START and the .founder[data-pinned] rule in the stylesheet.
+  It used to be a tenant of About's scroll-zoom stage — pinned across the Story section's
+  runway and faded up over the finished zoom, painting no ground of its own because the
+  blurred frozen frame behind it *was* its background. That whole transition is gone, so
+  this now owns its own ground and arrives with a plain whileInView reveal.
 */
-
-/*
-  Where the fade starts, as a fraction of About's eased zoom progress — the same clock
-  every other part of the transition reads, so this arrives against a scrim that is
-  already ~88% up and a blur that is fully in. Nothing here overlaps the zoom itself; the
-  frame has finished becoming a frame before the founder begins to exist.
-
-  Worth knowing before retuning: progress is squared, so 0.85 → 1.0 is only the last ~8%
-  of the runway's *scroll*. That is a fast fade by design — raise this number and it gets
-  faster still, lower it and the founder starts appearing while the frame is still moving.
-*/
-const FADE_START = 0.85
 
 const bio =
   'A veteran Qatari artist whose presence across theatre, television drama, and radio spans decades, and a recognized name among audiences in Qatar and the Gulf. His experience extends well beyond acting — he is a leading voice in developing the local theatre movement and in preparing young talent for careers in performance, directing, and production.'
@@ -104,63 +86,33 @@ const workImages = [work002, work003, work004, work005, work006, work007].map(
   (src, index) => ({ src, alt: `AGB Media production still ${index + 1}` }),
 )
 
-/*
-  `progress` is About's eased zoom progress as a MotionValue, and `pinned` says whether
-  the zoom is running at all. Both are absent under prefers-reduced-motion, where the
-  section is simply rendered in place.
-*/
-function Founder({ progress, pinned = false }) {
+function Founder() {
   /*
-    A constant 1 when there is no zoom to follow, so the transforms below can be declared
-    unconditionally and the reduced-motion path lands on "fully visible" rather than on a
-    special case. Hooks cannot be skipped, and a MotionValue is the cheapest stand-in.
+    The global prefers-reduced-motion rule in global.css governs CSS animations only;
+    Framer drives this inline, so the preference has to be honoured in JS. When reduced,
+    the section renders in place with no transform to animate back from.
+
+    The section reveals as one block rather than in a stagger like About's — it is a
+    dense screen of small type, and four ladders arriving in sequence would read as the
+    page assembling itself rather than as content appearing.
   */
-  const settled = useMotionValue(1)
-  const source = progress ?? settled
+  const shouldReduceMotion = useReducedMotion()
 
-  const opacity = useTransform(source, [FADE_START, 1], [0, 1])
-
-  /*
-    Not decoration. While pinned this element covers the entire viewport from the moment
-    the page loads, invisible at opacity 0 — and an invisible full-screen box still eats
-    every pointer event underneath it. Without this the Story section's lens would never
-    see a mousemove, because the founder would be swallowing them the whole way down.
-  */
-  const pointerEvents = useTransform(source, (value) =>
-    value >= 1 ? 'auto' : 'none',
-  )
-
-  /*
-    Whether this section is invisible, and the one thing here that has to be state
-    rather than a MotionValue.
-
-    Everything else about the fade is written straight to the DOM by Framer without
-    React knowing, which is exactly right for a value that changes on every scroll
-    frame. This one is different: it decides whether the photo strip's animation runs,
-    and `animation-play-state` is not a style Framer can drive per frame — it is a
-    prop LogoLoop turns into an attribute a stylesheet matches.
-
-    It is affordable because it is not really a per-frame value. It flips at 0 and
-    nowhere else, so it costs two renders of this section per pass through the page,
-    not sixty a second. Reading it off `opacity` rather than off `source` directly ties
-    it to what is actually on screen: at opacity 0 the section paints nothing, so
-    stopping the strip there cannot be seen, and the strip is exactly the thing worth
-    stopping — a `will-change: transform` layer holding a dozen photographs, which was
-    animating for the several viewports of scrolling before this section appears.
-
-    `>` rather than `>=` so the strip is running the instant the fade begins, ahead of
-    the first frame at which anything is visible.
-  */
-  const [hidden, setHidden] = useState(() => opacity.get() <= 0)
-  useMotionValueEvent(opacity, 'change', (value) => setHidden(value <= 0))
+  const reveal = shouldReduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 24 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, amount: 0.2 },
+        transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+      }
 
   return (
     <motion.section
       className={styles.founder}
       id="founder"
       aria-labelledby="founder-name"
-      data-pinned={pinned ? 'true' : 'false'}
-      style={{ opacity, pointerEvents }}
+      {...reveal}
     >
       {/* --- Hero block: the name and portrait against the profile ------------ */}
       <div className={styles.intro}>
@@ -181,12 +133,9 @@ function Founder({ progress, pinned = false }) {
           </h2>
 
           {/*
-            Lazy and async-decoded. This section is pinned across About's stage, so on
-            the desktop path it is technically in the viewport from scroll 0 — at opacity
-            0, several viewports before anyone sees it. `loading="lazy"` will therefore
-            not defer it there, and that is fine: what it does buy is the phone and
-            reduced-motion paths, where the section is in normal flow well below the fold.
-            `decoding="async"` always applies, and keeps a 205KB decode off the frame it
+            Lazy and async-decoded. The section is in normal flow well below the fold on
+            every path now, so `loading="lazy"` genuinely defers the fetch until it is
+            near the viewport; `decoding="async"` keeps the 205KB decode off the frame it
             lands on.
           */}
           <img
@@ -260,15 +209,12 @@ function Founder({ progress, pinned = false }) {
           gap={16}
           pauseOnHover={true}
           /*
-            fadeOut is deliberately left off. It paints its gradient in a colour, which
-            needs a known ground — and this strip sits on a blurred video, where a pair of
-            --color-black gradients would read as smudges rather than as a fade. .strip
-            masks its own edges instead, so the images dissolve into whatever is behind
-            them. See the note there.
+            fadeOut is deliberately left off. .strip masks its own edges instead, which
+            removes the pixels rather than painting a gradient over them — so the images
+            dissolve into whatever is behind them without the fade having to know the
+            ground colour. See the note there.
           */
           ariaLabel="AGB Media productions"
-          /* Nothing is on screen at opacity 0 — see the note on `hidden` above. */
-          paused={hidden}
         />
       </div>
 

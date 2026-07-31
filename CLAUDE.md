@@ -29,7 +29,7 @@ Single source of truth for every task in this repository. Read this before writi
 
 ### Routing, and what is wired ahead of itself
 
-`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with `<Hero />` and `<About />`.
+`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with `<Hero />`, `<About />`, `<Founder />` and an empty placeholder section.
 
 `/about`, `/services` and `/contact` are linked from `navLinks.js`, and About's CTA points at `/about`, but **none of them has a `<Route>`** — following one renders an empty page. The links are deliberately wired ahead of the pages. When adding one of those pages, add the route *and* check nothing in `navLinks.js` needs to change.
 
@@ -38,7 +38,7 @@ Single source of truth for every task in this repository. Read this before writi
 | File | What it is |
 | --- | --- |
 | `App.jsx` | Router shell. One route. |
-| `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`). |
+| `pages/HomePage.jsx` | The only page: `Header` + `main`(`Hero`, `About`, `Founder`, placeholder). |
 | `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden for the whole hero via `data-hidden` + `inert`. See §4 "The two headers". |
 | `components/Hero/Hero.jsx` | `100svh` landing section: fixed 4K video backdrop under a `--color-scrim` overlay, an `sr-only` `<h1>`, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. Pauses the video once `viewportProgress >= 1`, and carries `data-offscreen` at the same threshold to stop the animations inside it — see §7. |
 | `components/Hero/HeroHeader.jsx` | The hero's own **in-flow** header — large logo + nav, mount-triggered entrance that plays once per session. Lives in `Hero/` because it has no life outside the hero. |
@@ -46,8 +46,8 @@ Single source of truth for every task in this repository. Read this before writi
 | `components/shared/Button.module.css` | **The** button definition — base + **two** glass variants. A module with no `.jsx` sibling, on purpose. |
 | `components/shared/FluidBar.jsx` | The hero ticker's water — three drifting gradient masses under an SVG turbulence displacement. **Pure markup + CSS: no canvas, no WebGL, no JS.** The only genuinely moving surface on the site. |
 | `components/shared/CssLens.jsx` | The Story circle: the looping `<video>`, plus a ~140px glass disc that follows the pointer over it. Pure DOM — a `backdrop-filter`, a radial highlight, an SVG turbulence displacement and two offset tinted layers for the colour fringe. Takes a `pointer` ref (not props) so mousemove does not re-render it, and a `wakeRef` so About can restart its follow loop. **It does not bend the footage** — see §7. |
-| `components/Founder/Founder.jsx` | The founder's page-within-a-section, pinned across About's stage and faded in over the finished zoom. Paints no ground of its own — the blurred frozen frame *is* its background. Passes `paused` to `LogoLoop` while its own opacity is 0. |
-| `components/shared/LogoLoop.jsx` | The continuously scrolling strip of production stills. CSS animation, JS only measures. Stops via `data-paused` when the caller says it is invisible **or** its own `IntersectionObserver` says it is off screen — see §7. |
+| `components/Founder/Founder.jsx` | The founder's page-within-a-section — an ordinary section after About, on its own opaque `--color-black` ground, arriving with a single `whileInView` reveal. |
+| `components/shared/LogoLoop.jsx` | The continuously scrolling strip of production stills. CSS animation, JS only measures. Stops via `data-paused` when its own `IntersectionObserver` says it is off screen; the `paused` prop is part of its contract but no caller passes it today — see §7. |
 | `hooks/useMediaQuery.js` | Subscribes to a media query from JS, for the case a CSS breakpoint cannot reach: deciding whether to **mount** at all. Exists for the lens, from when that meant a WebGL context, a model fetch and a video texture that `display: none` would still have paid for. It is far cheaper to mount now, but the gate is kept: a pointer-following disc has almost nowhere to travel in a ~300px circle and there is usually no pointer to follow. |
 | `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. **One module-scoped listener and one `scrollY` read per frame** shared by every consumer, so a fourth costs nothing. Takes an **optional selector**, which narrows what is stored in state so a consumer that only wants a threshold does not re-render on every scroll frame; all three current consumers pass the file's own `isPastFirstViewport` export, which *is* the header and video-gate threshold rather than a matching copy of it. |
 | `data/navLinks.js` | The nav model, shared by both headers. `Contact` carries `featured: true`. |
@@ -352,17 +352,29 @@ Two things that look like duplication and are deliberately not:
 - **Four SVG turbulence filters** — `FluidBar.jsx`, `HeroHeader.jsx` (`#hero-cta-turbulence`), `Header.jsx` (`#site-header-turbulence`) and `CssLens.jsx` (`#css-lens-distortion`). Structurally near-identical, every number different. `feTurbulence`'s `baseFrequency` is in **user-space units, not units of the element**, so a field tuned for one box size produces a visibly different texture on another — what reads as water across a 1500px strip is sandpaper on a 140px button. Sharing also saves nothing at render time, since a filter is evaluated per element it is applied to. Each carries a comment saying so; keep them separate.
 - **Two `@keyframes` per animated module** — `fluid-drift` / `fluid-drift-bob` in `FluidBar.module.css`, `sheen-flow` / `edge-travel` in `Button.module.css`. All four names and bodies are distinct, and CSS Modules scopes `@keyframes` per file anyway. Nothing to hoist into `global.css`.
 
+### The Story section's scroll-zoom was removed — 2026-07-31
+
+The Story section scrolls normally now. Everything that pinned it and grew its circle to fill the viewport is gone, and it is gone from the source rather than merely disabled — **git history is where it lives**.
+
+What went, so nobody hunts for it: `.stage`, `.lead`, `.runway`, `.hold` and `.founder-layer` in `About.module.css`; `position: sticky` on `.about`; `.zoom-layer`, `.media` and `.scrim` and the three `[data-zoom='on'] … { will-change }` rules; all of About's `useScroll`/`useTransform` work (`easedProgress`, `coverScale`, the counter-scales, the elliptical radius, the blur and its bleed, `--frame-scale`) and the constants that tuned it; the video-aspect measurement `loadedmetadata` fed; and CssLens's `lensOpacity`, `lensCounterScale`, `onMetadata` props with the `.lens-counter` wrapper they drove.
+
+Consequences worth knowing:
+
+- **`.circle` draws the circle again.** The round clip, rim, fill and shadow moved back onto it from `.zoom-layer`, which existed only to give the zoom an untransformed parent to measure. It takes `--shadow-soft` as the token, so **the project no longer duplicates a design token's numbers anywhere**.
+- **`Founder` is a sibling, not a child.** It renders from `HomePage.jsx` after `<About />`, paints its own opaque `--color-black` ground, and arrives with an ordinary `whileInView` reveal. It is `position: relative` + `--z-base` for the same reason `.about` and `.placeholder` are: Hero's fixed `.backdrop` at `z-index: 0` would otherwise paint over a static in-flow section.
+- **The story video's second gate changed** — see below.
+
 ### Only one video decodes at a time
 
 `hero.webm` and `story.webm` are **mutually exclusive**, and both ends of the switch are the same `isPastFirstViewport` selector. `Hero.jsx` pauses its backdrop when it becomes true; `About.jsx` refuses to start the story video until it does, through `syncPlayback`. `CssLens` renders its `<video>` **without `autoPlay`**, so nothing starts it except `syncPlayback` — putting `autoPlay` back reintroduces two simultaneous decodes across the whole first screen.
 
-The story video's second gate is the transition's own `VIDEO_PAUSE_AT`; both live in one expression on purpose.
+The story video's second gate is a Framer `useInView` on the section itself, so it also stops once the Story section has scrolled away. Both gates live in one expression on purpose; it used to be the scroll-zoom's own `VIDEO_PAUSE_AT`.
 
 **The rule is one-directional: nothing may pause or delay the hero.** Its `<video>` autoplays unconditionally, and `syncPlayback` is About's — it only ever holds the story video's `videoRef`. The hero also **starts `muted`**, and that is load-bearing rather than a preference: an unmuted autoplay without prior user activation is refused outright, and the rejection was being caught and dropped, so the backdrop simply sat on its first frame. `Hero.jsx` unmutes on the first `pointerdown`/`keydown`/`touchstart` instead — deliberately not on scroll, which is not user activation in Chrome and would burn the one shot.
 
 **The one visible consequence, so nobody re-derives it as a bug:** About's circle reaches the screen about a third of the way down the hero, and the hero's video does not stop until a full viewport has been scrolled — so in between, the circle shows a still frame. That window cannot be closed without either two decodes or freezing the hero, and the hero is full-bleed and is what the visitor is looking at.
 
-**There is now exactly one story `<video>` on every path, start to finish.** The old WebGL lens kept its footage inside the scene as a texture, so the transition had to swap a canvas for a DOM element mid-flight — which meant a second `<video>` warming up behind the first for the run to `LENS_DROP_AT`, and a playhead seek at the swap. All of it (the priming window, the handoff effect, the pair of video refs) went with `FluidLens`.
+**There is exactly one story `<video>` on every path, start to finish.** The old WebGL lens kept its footage inside the scene as a texture, so a canvas had to be swapped for a DOM element mid-scroll — which meant a second `<video>` warming up behind the first and a playhead seek at the swap. All of it (the priming window, the handoff effect, the pair of video refs) went with `FluidLens`.
 
 ### Always-on animation is paused when nothing can see it
 
@@ -372,7 +384,7 @@ Four CSS animations are infinite, and every one of them used to run from first p
 | --- | --- | --- |
 | `FluidBar`'s three drifting layers | `data-offscreen` on `.hero` | They sit under `filter: url(#fluid-bar-turbulence)`, and **a transform beneath a filtered ancestor cannot be composited** — every frame re-ran `feDisplacementMap` across the whole strip. The most expensive idle on the site. |
 | `.button-featured::after`'s rim light | `data-offscreen` on `.hero` | Animates a registered custom property into a conic-gradient behind two masks composited with `xor`: every frame is a full re-raster, not a compositor transform. |
-| `LogoLoop`'s track | `data-paused` — `paused` prop **or** its own `IntersectionObserver` | A `will-change` layer holding a dozen photographs. Both signals are needed: on the pinned path the strip is geometrically on screen the whole time at `opacity: 0`, so only `Founder`'s prop catches it; in flow on a phone only the observer does. |
+| `LogoLoop`'s track | `data-paused` — its own `IntersectionObserver` (or a `paused` prop, which no caller passes today) | A `will-change` layer holding a dozen photographs. The observer is enough now that Founder is an ordinary in-flow section; the prop existed because the pinned Founder kept the strip geometrically on screen at `opacity: 0`, where an observer sees nothing wrong. |
 | `.button-glass`'s two sheens | **nothing — left running** | Two small pseudo-elements animating `transform` with no filtered ancestor, so they genuinely are compositor work. Gating them would mean freezing a sheen that is partly on screen. |
 
 Every pause is `animation-play-state: paused`, never `animation: none` — the layers keep their offsets against each other and resume where they stopped, so nothing resyncs into a visible jump. Each also drops its `will-change` in the same rule: the hint is a promise about imminent motion, and on a stopped element it is a compositor layer held for nothing.
@@ -396,35 +408,14 @@ Three constraints in the file are load-bearing and easy to undo:
 - **Which means `About` has to restart it.** The section-wide mousemove is the only thing that knows the target moved, so it calls the `wakeRef` handle CssLens fills in. Remove that call and the disc stops following after its first rest.
 - **The lerp is frame-rate corrected.** `FOLLOW_LERP` is a per-60fps-frame fraction raised to `delta * 60`; a flat multiply would run twice as many steps per second on a 120Hz display and halve the weight of the follow.
 
-The disc is still dropped from the DOM at `LENS_DROP_AT`, though it now sheds one `backdrop-filter` element rather than a WebGL context. The video is a **sibling** of the disc inside CssLens, not a child, so it plays straight through.
-
-### The zoom is a transform, and every piece of it is a correction
-
-The frame used to animate `width` and `height` — layout properties, written inline every frame, which dirtied layout for the subtree and, worse, kept resizing a filtered and eventually viewport-sized layer so the compositor could never hold a raster of it. It is now a **non-uniform `transform: scale`** on a box that never changes size, plus a translate. Nothing in the transition touches layout.
-
-The frame going from a square to the shape of the screen is inherently non-uniform, and **everything else in the transition is a correction for that**. Each of these is exact, and each is easy to break by simplifying it:
-
-| What | Correction | Why |
-| --- | --- | --- |
-| The footage | `.media` counter-scales so its net scale is uniform `coverScale` | `object-fit: cover` used to re-solve against each new box and *uncrop* the footage. The box no longer reshapes, so cover is frozen on the resting square and its factor has to be reproduced — `max(scaleY, scaleX / videoAspect)`, which is cover's own driver written out. **This is why About reads the video's intrinsic aspect** via `loadedmetadata`. |
-| Corners | Elliptical `border-radius: X / Y`, each half divided by its own axis's scale | A single radius under a non-uniform scale renders as an ellipse. |
-| The blur | `blur(ZOOM_BLUR_PX / coverScale)` | `filter` applies in local coordinates and is scaled with the element. It divides by `coverScale`, not by an axis, because `.media`'s net scale is uniform — an isotropic `blur()` under a non-uniform scale would arrive as an ellipse and no CSS blur can be pre-squashed to compensate. |
-| The blur's bleed | Same division | So the faded edge lands at a constant 48px on screen instead of growing fourfold. |
-| The frame's shadow | `--frame-scale` written inline; the rule divides its lengths | See below. |
-| The lens disc | `lensCounterScale` wrapping — **outside** the follow, never inside | Undoes `coverScale` so the glass keeps its resting size. Outside, because the loop's translate then happens in counter-scaled space and comes back out at natural magnitude; inside, the disc would be the right size but drift several times too far. |
-
-**The translate is a centre offset now, not a corner offset**, because the box is scaled about its own centre rather than grown from its top-left. The two describe the same path — the algebra is in `measure()` — so intermediate frames are identical, not merely similar.
-
-**The one residual, stated rather than hidden.** `.zoom-layer`'s `box-shadow` is divided by `--frame-scale` (which is `zoomScaleY`), so it is exact at rest and on the vertical axis. It cannot be exact on both: `box-shadow` has one blur radius and the scale has two. The horizontal blur runs a little wide late in the transition, where the frame is near enough the viewport that the shadow is off screen. That rule is also **the only place in the project that duplicates a design token's numbers** — it writes out `--shadow-soft` so the two lengths can be scaled. Keep them in step.
-
-`.media` and `.scrim` carry `will-change` under `[data-zoom='on']` alongside `.zoom-layer`, and that is not belt-and-braces: an unpromoted child that transforms or fades inside a promoted parent dirties the parent's raster every frame, which would make the parent's promotion buy nothing.
+The disc mounts and unmounts on `showLens` alone — wide enough, and motion allowed. It used to also be dropped mid-scroll at `LENS_DROP_AT`, which went with the zoom. The video is a **sibling** of the disc inside CssLens, not a child, so `showLens` flipping on a resize never interrupts playback.
 
 ### Two more things that are load-bearing and expensive
 
-- **`.about`'s viewport-wide `backdrop-filter`** is still the single most expensive declaration in the project, and it stays — it *is* the section's surface (§2). `--section-glass-blur` is the dial, not the fill. Note it cannot be switched off once the zoom frame covers the viewport either: the frame keeps its 20px corners, and those four wedges are exactly where the section's glass shows through.
+- **`.about`'s viewport-wide `backdrop-filter`** is still the single most expensive declaration in the project, and it stays — it *is* the section's surface (§2). `--section-glass-blur` is the dial, not the fill.
 - **`body::after`'s `mix-blend-mode: soft-light`** forces the whole page into one blended group. It is what keeps the grain from lifting `--color-black` (§2) and it is not animated, so there is nothing to gate — a `will-change` hint would not make the blend cheaper.
 
-**No layout reads on the scroll or pointer path.** `About`'s pointer handler caches `.circle`'s rect and marks it stale from a passive `scroll` listener rather than calling `getBoundingClientRect()` per event — a high-polling mouse fires above the display's refresh rate, and it was flushing layout on every one of them. It matters less now that the zoom writes only transforms — there is far less pending layout for a read to flush — but the property is worth keeping. Anything added here should keep that property: `.circle` is the untransformed parent precisely so its box only moves on scroll and resize.
+**No layout reads on the pointer path.** `About`'s pointer handler caches `.circle`'s rect and marks it stale from a passive `scroll` listener rather than calling `getBoundingClientRect()` per event — a high-polling mouse fires above the display's refresh rate, and it was flushing layout on every one of them. Anything added here should keep that property: nothing transforms `.circle`, so its box only moves on scroll and resize.
 
 **Naming:** "About" and "the Story section" mean the same component throughout the codebase — the directory is `components/About/`, the `id` is `about`, and the visible title is "Our **Story**". Both names appear in comments; neither is wrong.
 

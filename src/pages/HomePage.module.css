@@ -1,7 +1,6 @@
 /*
   The slot for whatever follows the founder. Empty on purpose — it exists so the founder
-  has somewhere to scroll away *to*, and so that the handoff can be seen working before
-  there is any content to see it with.
+  has somewhere to scroll away *to*.
 
   `position: relative` is not cosmetic. Hero's .backdrop is `position: fixed` at
   `z-index: 0`, and a positioned box at z-index 0 paints above every non-positioned
