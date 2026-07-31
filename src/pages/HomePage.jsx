@@ -9,6 +9,7 @@ import Hero from '../components/Hero/Hero'
 import About from '../components/About/About'
 import Founder from '../components/Founder/Founder'
 import WhyAgb from '../components/WhyAgb/WhyAgb'
+import Team from '../components/Team/Team'
 import styles from './HomePage.module.css'
 
 function HomePage() {
@@ -97,9 +98,16 @@ function HomePage() {
           but because the element that draws it is confined to a box that ends above this
           one. Their own opaque grounds at --z-base remain correct on their own terms and
           stay as they are.
+
+          Team closes the page, and it brings back a `<video>` below the stage — the first
+          since the Founder's ground became a still image. It needs nothing from this file:
+          it registers its own claim with useExclusiveVideo and gates on its own box, so
+          the page-wide "one video decodes at a time" rule holds without HomePage knowing
+          there are two claimants.
         */}
         <Founder />
         <WhyAgb />
+        <Team />
       </main>
     </>
   )

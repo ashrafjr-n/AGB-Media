@@ -3,24 +3,25 @@ import { useCallback, useEffect, useRef } from 'react'
 /**
  * ONE VIDEO DECODES AT A TIME, ACROSS THE WHOLE PAGE.
  *
- * THERE IS ONE CLAIMANT TODAY — the Story circle — and this file is kept anyway.
- * That is a decision rather than an oversight, so here is the reasoning.
+ * THERE ARE TWO CLAIMANTS — the Story circle and the Team section's ground.
  *
- * It was built to arbitrate two: the Story circle and the Founder's background,
- * adjacent sections each at least 100vh, so at the boundary a fifth of both was
- * on screen and both wanted the same file playing. A per-section effect cannot
- * resolve that — neither knows about the other, and the last one to run its
- * effect wins, which is a different answer depending on render order. The
- * Founder's ground became a still image, so its claim went with the video.
+ * It was built to arbitrate two of them: the Story circle and the Founder's
+ * background, adjacent sections each at least 100vh, so at the boundary a fifth
+ * of both was on screen and both wanted the same file playing. A per-section
+ * effect cannot resolve that — neither knows about the other, and the last one
+ * to run its effect wins, which is a different answer depending on render order.
+ * The Founder's ground became a still image and it dropped to one claimant; this
+ * file was kept anyway, on the argument that a second video ground was expected
+ * and the arbitration is the part that would have to be rebuilt rather than
+ * re-derived. The Team section is that second ground, and it arrived pointing at
+ * the same story.webm the circle already shows.
  *
- * What is left still earns its place. With one claimant this is a declarative
- * play/pause — "this section would like its video running" instead of an effect
- * calling play() and pause() by hand — and it keeps the DEV assertion that the
- * page's invariant actually holds. More to the point, a second video ground is
- * expected (the strong section-glass tokens exist for exactly that), and the
- * arbitration is the part that would have to be rebuilt from scratch rather than
- * re-derived. Deleting it would be throwing away the answer to a question the
- * page is going to ask again.
+ * The two are NOT adjacent — Founder and WhyAgb sit between them, so roughly two
+ * viewports separate the last frame either would want. In practice one hands over
+ * to the other with a long gap in the middle where neither is claiming. That is a
+ * fact about today's page order rather than a guarantee: insert or remove a
+ * section and the gap changes, which is exactly the sort of thing this registry
+ * exists to stop anyone having to think about.
  *
  * The hero is deliberately NOT a claimant — its exclusivity is structural rather
  * than arbitrated, and the note on `wants` below says why.
@@ -31,17 +32,25 @@ import { useCallback, useEffect, useRef } from 'react'
 const claims = new Set()
 
 /**
- * Lower wins, in document order. One entry today.
+ * Lower wins, in document order.
  *
- * The Founder held `founder: 1` until its ground became a still image. The rule
- * that ordered the two is worth keeping written down, because it is the rule a
- * second entry should be argued against rather than simply appended to: the
- * section whose footage is on screen SHARP outranks one showing it under a blur
- * and a scrim, because a frozen frame is obvious in the first and very hard to
- * spot in the second. Freeze the one nobody can see freezing.
+ * THE RULE, which the Founder's old `founder: 1` established and the Team's entry
+ * is argued from rather than merely appended to: the section whose footage is on
+ * screen SHARP outranks one showing it under a blur and a scrim, because a frozen
+ * frame is obvious in the first and very hard to spot in the second. Freeze the
+ * one nobody can see freezing.
+ *
+ * That puts the Story circle first. It shows story.webm unblurred inside a ~300px
+ * window, where a stall is plainly a stall; the Team section shows the same file
+ * full-bleed under a 7px blur and a 0.3 scrim, where a held frame reads as a still
+ * background. Note the ordering is the same one the Founder had for the same
+ * reason even though the Team's pane is the LIGHTER of the two treatments — a
+ * lighter scrim over a blurred full-screen ground is still far more forgiving of a
+ * freeze than a sharp circle is.
  */
 export const PLAYBACK_PRIORITY = {
   story: 0,
+  team: 1,
 }
 
 /**
@@ -121,7 +130,7 @@ function assertSinglePlayback() {
  *   with no knowledge of the other sections. Nothing here overrides it upward:
  *   a claimant that does not want to play never plays, whatever the others do.
  *
- *   The one current caller folds `isPastFirstViewport` into this, which is what
+ *   Both current callers fold `isPastFirstViewport` into this, which is what
  *   keeps the HERO exclusive without it being a claimant at all: the hero's
  *   `<video>` runs only while that threshold is false (Hero.jsx pauses on it),
  *   and neither claimant will ask for playback until it is true. The two states

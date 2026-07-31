@@ -29,7 +29,7 @@ Single source of truth for every task in this repository. Read this before writi
 
 ### Routing, and what is wired ahead of itself
 
-`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with a `.stage` wrapper holding `<HeroBackdrop />`, `<Hero />` and `<About />`, followed by `<Founder />` and `<WhyAgb />`. There is no placeholder section any more — `WhyAgb` took that slot. `HomePage.module.css` went with it and has since come back, for the stage — see §7.
+`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />` then `<main>` with a `.stage` wrapper holding `<HeroBackdrop />`, `<Hero />` and `<About />`, followed by `<Founder />`, `<WhyAgb />` and `<Team />`. There is no placeholder section any more — `WhyAgb` took that slot, and `Team` closes the page below it. `HomePage.module.css` went with it and has since come back, for the stage — see §7.
 
 `/about`, `/services` and `/contact` are linked from `navLinks.js`, and About's CTA points at `/about`, but **none of them has a `<Route>`** — following one renders an empty page. The links are deliberately wired ahead of the pages. When adding one of those pages, add the route *and* check nothing in `navLinks.js` needs to change.
 
@@ -50,6 +50,7 @@ Single source of truth for every task in this repository. Read this before writi
 | `components/shared/CssLens.jsx` | The Story circle: the looping `<video>`, plus a 140px frosted-glass disc that follows the pointer over it. Pure DOM — a `backdrop-filter: blur() saturate()`, a white tint, a soft radial highlight, a thin rim and one inset shadow. A **perfect circle at every moment**; nothing distorts its geometry. Takes a `pointer` ref (not props) so mousemove does not re-render it, and a `wakeRef` so About can restart its follow loop. **It does not bend the footage** — see §7. |
 | `components/Founder/Founder.jsx` | The founder's page-within-a-section — an ordinary section after About, whose **four areas** reveal on the shared ladder (intro, career line, photo strip, works strip). Its ground is a **still image** (`founder.webp`) filling **one screen** under a frosted pane of the **light** glass pair — `--section-glass-fill-light` / `--section-glass-blur-light` — both at a negative `z-index` so the in-flow copy stays on top, and both pinned to the section's **block end** because that edge is a seam — §7. It was `story.webm` under the strong pair; it holds **no video** and no longer claims a playback slot — see §7. Runs **two** LogoLoops, deliberately opposed in direction. The portrait sits in a `.portrait-frame` that exists only to clip it — §7. |
 | `components/WhyAgb/WhyAgb.jsx` | The closing section — "Why AGB Media", six reasons in a **2 × 3 grid** on one screen. Each cell is a gold numeral labelling its title, with one hairline down the grid's centre and no other rule, border or fill. Copy lives in a local `reasons` array — `title` + `description` only, no per-row label. Its ground is `why.webp`, the second half of the Founder's image, under the same light glass pair pinned to the section's **block start** — the two grounds are one picture cut across the section boundary, §7. It was four radial gradients, a block-axis mask and a local grain layer, and before that a **drifting field of outlined "AGB MEDIA" wordmarks** — three rows of `-webkit-text-stroke` text on infinite CSS keyframes, the middle one carrying a pointer-follow loop. All of it is deleted: markup, keyframes, the `--why-field-stroke` dial, the RAF loop and its listeners. **Nothing in this component animates outside the shared reveal ladder**, so it no longer calls `useReducedMotion` at all. |
+| `components/Team/Team.jsx` | The closing section — "The People Behind AGB", the CEO in a large circle over a row of **four placeholder seats**, on `story.webm` running full bleed under the lightest *video* pane on the site. Registers the page's **second** `useExclusiveVideo` claim (`team: 1`) and gates on its own box, so it plays only in view. The four seats are a local `seats` array of `{ name, title, image }` with `image: null` — filling them in is a data edit, not a markup one, and an unfilled seat draws `HiOutlineUser` from react-icons rather than a fabricated avatar (§5). |
 | `components/shared/LogoLoop.jsx` | The continuously scrolling strip — **of stills or of text**, one entry being either `{ src, alt }` or `{ label }`. CSS animation, JS only measures. Stops via `data-paused` when its own `IntersectionObserver` says it is off screen; the `paused` prop is part of its contract but no caller passes it today — see §7. |
 | `hooks/useExclusiveVideo.js` | The page-wide **one-video-at-a-time** registry. Module-scoped claims, one `resolve()` that pauses every loser before playing the winner, and a DEV-only assertion that the invariant holds. `PLAYBACK_PRIORITY` names the order. Hero is deliberately not a claimant — see §7. |
 | `hooks/useSectionReveal.js` | **The** scroll-in entrance, as a ladder of steps. All three scrolling sections reveal from it, so retuning the feel is one edit rather than two that drift. Returns `revealAt(step)` — steps are indices, not seconds — and carries its own `prefers-reduced-motion` branch, so call sites never check. See §4 Motion. |
@@ -67,8 +68,9 @@ Single source of truth for every task in this repository. Read this before writi
 | `src/assets/abdullah/*.jpg` | 1280×720 originals. Only `abdullah.jpg` is imported (the portrait, drawn at ~440×350). The six numbered stills are **not** — nothing imports them, so Vite does not bundle them. | source only |
 | `src/assets/abdullah/strip/*.jpg` | 640×360 cuts of the same six, 368 KB the set against 1.8 MB. What `Founder` actually imports. LogoLoop draws them at most 152px tall, so these are 2× and nothing is softer; the originals stay put to re-cut from. | in use (the work strip) |
 | `public/assets/videos/hero.webm` | **3.7 MB, and the one asset deliberately NOT Vite-imported.** `index.html` preloads it by name with `fetchpriority="high"`, and a preload hint cannot name a content-hashed URL that does not exist until the build runs — so this has to be served from a stable path. `Hero.jsx` references it as the literal `HERO_VIDEO`; keep the two in step by hand, because there is no import to fail loudly. The trade is no cache-busting: **rename the file (and both references) when the footage changes.** | in use (Hero backdrop) |
-| `src/assets/videos/story.webm` | **4.7 MB.** Vite-imported and bundled, and it wants the opposite treatment to the hero's. **Imported once**, by `About` for the Story circle — `Founder` imported it too, for its background, until that ground became a still image. `CssLens` sets `preload="metadata"` so it fetches a first frame rather than 4.7 MB while the hero needs the bandwidth. | in use (Story circle) |
+| `src/assets/videos/story.webm` | **4.7 MB.** Vite-imported and bundled, and it wants the opposite treatment to the hero's. **Imported twice** — by `About` for the Story circle and by `Team` for its ground — which emits **one** hashed asset, so the second use adds no bytes and the file is already cached by the time anyone reaches the Team section. `Founder` imported it too, for its background, until that ground became a still image. `CssLens` sets `preload="metadata"` so it fetches a first frame rather than 4.7 MB while the hero needs the bandwidth. | in use (Story circle) |
 | `src/assets/images/founder.webp` | **21 KB**, 834×680 — the Founder's ground: a studio still with a director's chair, lit from the upper right. Vite-imported, so it is hashed and bundled. It replaced `f.png` (3.3 MB, 2122×1186, a PNG of a photographic image), which is where the "re-encode this one" note that used to live here went. | in use (Founder ground) |
+| `src/assets/nael/nael.webp` | **19 KB**, the CEO's portrait, drawn in a circle at most ~216px across. Vite-imported by `Team`, lazy and async-decoded. Its `alt` is empty on purpose: his name is real text directly beneath the circle, so describing the photograph with it would read him out twice. | in use (Team) |
 | `src/assets/images/why.webp` | **25 KB**, 834×630 — WhyAgb's ground, and **the same picture continued**: same source width as `founder.webp`, and its first row is the row below that file's last. The pair is laid out so the join lands exactly on the section boundary — the arithmetic is in both stylesheets and in §7. **They must stay the same width**; a re-cut that changes one changes both. | in use (WhyAgb ground) |
 
 Because the logo is portrait, **anything sizing it must drive `block-size` and leave `inline-size: auto`** — width has to derive from the capped height, not the reverse. There are no icon sprites and **no 3D models** — `public/assets/3d/lens.glb` was the lens mesh and went with the WebGL lens.
@@ -96,6 +98,7 @@ Four surfaces carry it, and they are meant to read as one material at different 
 | Site header pill | `Header.module.css` | Frozen turbulence again, lighter, built up from white rather than down from the ground. |
 | Story section ground | `About.module.css` | Frosted glass over the **section's full height**: `--section-glass-fill` over a `backdrop-filter` that blurs the hero's fixed footage through it. A `::before`, not the section's own background, and it may not stop short of the section's bottom — §7. |
 | Founder section ground | `Founder.module.css` | The same idiom at **half strength** — a still image under `--section-glass-fill-light` / `--section-glass-blur-light`. The **strong** pair is for a *video* ground and stays reserved for one; the light pair is for a still worth looking at. Do not collapse them back into one. |
+| Team section ground | `Team.module.css` | `story.webm` full bleed under **`.pane-lighter`** — the same 7px blur at `--section-glass-fill-lighter` (0.55). The one pane on the site tuned *down* from About's video treatment rather than up from the stills one: the footage is meant to read as film here. 0.55 is the measured floor — see the token. |
 | WhyAgb section ground | `WhyAgb.module.css` | The Founder's pane again — literally the same rule, `composes`d from `shared/SectionGlass.module.css`, over the continuation of the Founder's image. **The match is not a coincidence and is no longer possible to break by editing one side:** the two sections share a seam, and glass is part of what the eye compares across one. If the two ever *look* mismatched, it is the source images, not the pane — flag and re-grade them rather than splitting this rule. |
 
 Two rules hold this together, and both are load-bearing:
@@ -241,9 +244,15 @@ src/
     Founder/
       Founder.jsx
       Founder.module.css
+    WhyAgb/
+      WhyAgb.jsx
+      WhyAgb.module.css
+    Team/
+      Team.jsx              # the page's SECOND video claimant — see §7
+      Team.module.css
     shared/                 # reusable primitives
       Button.module.css     # THE button definition — no .jsx sibling, on purpose
-      SectionGlass.module.css # THE section pane — composed by Founder and WhyAgb, likewise
+      SectionGlass.module.css # THE section pane — .pane + .pane-lighter, likewise no .jsx
       FluidBar.jsx          # the ticker's water: markup + CSS, no canvas
       CssLens.jsx           # the story circle: the video, and a glass disc over it
       LogoLoop.jsx          # the founder's scrolling strips — stills, and titles
@@ -255,13 +264,14 @@ src/
     global.css              # reset, base element styles, noise overlay
   hooks/
     useExclusiveVideo.js    # the page-wide one-video-at-a-time registry
-    useSectionReveal.js     # THE scroll-in entrance, shared by both sections
+    useSectionReveal.js     # THE scroll-in entrance, shared by every scrolling section
     useMediaQuery.js        # for mount/skip decisions a CSS breakpoint cannot make
     useScrollPosition.js
   data/                     # static content (copy, project lists)
     navLinks.js             # the nav model, shared by BOTH headers
   assets/
     videos/story.webm       # bundled; hero.webm is in public/, see Assets
+    nael/nael.webp          # the CEO's portrait, for Team
     abdullah/               # the portrait, plus six 1280x720 originals nothing imports
       strip/                # 640x360 cuts of those six — what LogoLoop actually shows
     images/                 # founder.webp + why.webp — one picture cut in two, see §7
@@ -463,14 +473,14 @@ Measured in Brave over CDP at 1440×900 and 390×844, scrolling down and back up
 
 ### Only one video decodes at a time
 
-**Two `<video>` elements exist; at most one is ever running.** `hero.webm` in Hero, and `story.webm` in the Story circle (`CssLens`). There were three until the Founder's ground became a still image — that section carried a second `<video>` pointing at the same `story.webm`, which is why this rule needed arbitrating at all.
+**Three `<video>` elements exist; at most one is ever running.** `hero.webm` in Hero, and `story.webm` twice — sharp in the Story circle (`CssLens`) and full-bleed under glass as the Team section's ground. It was three before, dropped to two when the Founder's ground became a still image, and is three again. **Two of them play the same file**, which is why the Team section costs no new bytes: one bundled asset, two elements, never two decodes.
 
 The rule is enforced in two different ways, and the split is deliberate:
 
 - **Hero vs. everything below is structural.** Hero's video autoplays unconditionally and pauses at `isPastFirstViewport`; both of the others fold that same selector into their own "would I like to play" test, so neither can ask for playback while the hero still has it. There is nothing to arbitrate, and **`Hero.jsx` is not a participant in the machinery below** — nothing may pause or delay the hero.
-- **Everything below the hero is arbitrated**, in `hooks/useExclusiveVideo.js` — and **there is one claimant today**, the Story circle. It had to be arbitrated while the Founder was the second: adjacent sections, each at least 100vh, so at the boundary a fifth of both was on screen and both wanted to play. Each registers a claim (a `videoRef`, a priority, a boolean intent); one module-scoped `resolve()` recomputes the whole state from all claims on every change, pauses every loser in a pass of its own, and only then plays the winner. **The registry is kept deliberately** — with one claimant it is a declarative play/pause plus the DEV assertion, and a second video ground is expected (the strong section-glass tokens exist for one), so unwinding it would mean rebuilding the hard part later.
+- **Everything below the hero is arbitrated**, in `hooks/useExclusiveVideo.js` — and **there are two claimants**, the Story circle and the Team section's ground. Each registers a claim (a `videoRef`, a priority, a boolean intent); one module-scoped `resolve()` recomputes the whole state from all claims on every change, pauses every loser in a pass of its own, and only then plays the winner. It dropped to one claimant when the Founder's ground became a still image and **was kept anyway, on the argument that a second video ground was expected and the arbitration is the part that would have to be rebuilt rather than re-derived.** Team is that second ground, so the bet paid. Note the two are *not* adjacent — Founder and WhyAgb sit between them — so today one hands over to the other across a two-viewport gap where neither claims. That is page order, not a guarantee; the registry is what makes it not matter.
 
-`PLAYBACK_PRIORITY` is document order and holds **one entry**, `story: 0`. The rule that ordered it against the Founder's `founder: 1` is kept written down in that file, because it is what a second entry should be argued against rather than simply appended to: the section showing its footage *sharp* outranks one showing it under a blur and a scrim, since a frozen frame is obvious in the first and very hard to spot in the second. Freeze the one nobody can see freezing.
+`PLAYBACK_PRIORITY` is document order and holds **two entries**, `story: 0` and `team: 1`. The rule that ordered them is the one the Founder's old `founder: 1` established, and a third entry is argued against it rather than simply appended: the section showing its footage *sharp* outranks one showing it under a blur and a scrim, since a frozen frame is obvious in the first and very hard to spot in the second. Freeze the one nobody can see freezing. That the Team's pane is the *lighter* of the two treatments does not reverse it — a lighter scrim over a blurred full-screen ground still hides a freeze far better than a sharp 300px circle does.
 
 **The invariant is checked, not assumed.** `resolve()` ends with a `import.meta.env.DEV` assertion that reads every registered element's own `paused` flag and logs an error if more than one is running. Vite replaces the flag with `false` in a production build and the minifier drops the branch, so it costs nothing shipped — and it is why there are no temporary `console.log`s in either call site.
 

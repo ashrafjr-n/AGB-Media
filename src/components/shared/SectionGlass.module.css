@@ -53,3 +53,35 @@
   -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
   backdrop-filter: blur(var(--section-glass-blur-light));
 }
+
+/*
+  THE VARIANT FOR A *VIDEO* GROUND — the Team section, and the only call site.
+
+  It differs from `.pane` in exactly one declaration: --section-glass-fill-lighter (0.55)
+  instead of --section-glass-fill-light (0.4). The blur is identical and deliberately so —
+  fill and blur both cost legibility from what is behind, and blurring harder would take
+  back what the fill tuning is for.
+
+  MIND THE DIRECTION, because "lighter" is relative to the wrong thing if you read it
+  quickly. This variant is lighter than the strong pair About lays over the hero's footage
+  (0.75), and HEAVIER than `.pane` above (0.4). That is not an inconsistency: `.pane` sits
+  over near-black photographs and 0.55 would bury them, while this one sits over story.webm,
+  whose 95th-percentile luminance reaches 0.37 through this same blur. Measured against the
+  clip's worst frames, 0.55 is the lightest fill at which the section's type clears AA. The
+  numbers are at the token; do not lower this by comparing it to `.pane`.
+
+  WHY IT IS WRITTEN OUT RATHER THAN `composes: pane`. Composing would put both classes on
+  the element with equal specificity, so which fill won would come down to the order the
+  two rules happen to land in the bundle — a cascade race decided by the import graph
+  rather than by anything in this file. Two sibling variants, each complete, is how
+  Button.module.css handles the same situation, and it cannot be got wrong. The cost is one
+  repeated blur declaration; the benefit is that a call site gets what it asked for.
+
+  A call site takes `.pane` OR this, never both.
+*/
+.pane-lighter {
+  background-color: var(--section-glass-fill-lighter);
+  /* -webkit- prefix for Safari, which still requires it — as in About and Header. */
+  -webkit-backdrop-filter: blur(var(--section-glass-blur-light));
+  backdrop-filter: blur(var(--section-glass-blur-light));
+}

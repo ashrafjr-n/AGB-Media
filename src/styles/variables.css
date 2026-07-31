@@ -102,6 +102,54 @@
   --section-glass-fill-light: rgba(1, 1, 1, 0.4);
 
   /*
+    THE LIGHTENED *VIDEO* SCRIM — 0.55, and the Team section is what it exists for.
+
+    READ THE COMPARISON CAREFULLY, because the name invites the wrong one. This is lighter
+    than --section-glass-fill (0.75), which is the site's treatment for type over moving
+    footage; it is HEAVIER than --section-glass-fill-light (0.4). It is not the lightest
+    pane on the site and it cannot be, and the reason is measured rather than judged.
+
+    WHAT THE MEASUREMENT SAID. The Founder's and WhyAgb's grounds are photographs that sit
+    at a median relative luminance of about 0.003 — near-black almost everywhere — so 0.4
+    over them is generous. story.webm is nothing like that: sampled at sixteen points
+    across its 31.6s, through the same 7px blur this pane uses, its 95th-percentile
+    luminance runs from 0.08 to 0.37 and its median reaches 0.25 in the lit stretches. Over
+    that, in the worst frames:
+
+      fill 0.30 → section title 2.3:1, small labels 1.8:1
+      fill 0.40 → section title 3.0:1, small labels 2.2:1
+      fill 0.55 → section title 5.0:1, small labels 5.0:1   (with opaque label colour)
+
+    AA wants 3:1 for the large title and 4.5:1 for anything small. 0.4 misses both, so a
+    value at or under the Founder's would have put unreadable type over the brightest third
+    of the clip. 0.55 is the lightest fill at which every piece of type in the section
+    clears AA against the worst frame in the file — and getting it that low is why the
+    section's labels are opaque --color-text rather than the muted alphas used elsewhere;
+    at --color-text-muted the same floor is 0.70, which is barely a step from 0.75 at all.
+
+    So the tuning is real but it is a step down from the *video* treatment, not from the
+    stills treatment. Against About's 0.75 the footage here reads visibly more clearly,
+    which is the intent.
+
+    THIRD TOKEN RATHER THAN A RETUNE OF EITHER EXISTING ONE, for the same reason the second
+    was not a retune of the first: --section-glass-fill is About's, --section-glass-fill-
+    light is now shared by two sections that meet at a seam (shared/SectionGlass.module.css),
+    and moving either would restyle a section that never asked.
+
+    It pairs with --section-glass-blur-light (7px), NOT the strong 20px. Blur and fill both
+    cost legibility from the footage, and a 20px blur would take back what the lighter fill
+    is for. There is no --section-glass-blur-lighter and there should not be one until
+    something needs a fourth surface.
+
+    --color-black at an alpha, hand-maintained like every other entry in this group: when
+    --color-black moves, this moves with it.
+
+    IF THIS IS EVER LOWERED, re-measure against story.webm's brightest frames rather than
+    against a still, and re-check the section's small labels first — they are what binds.
+  */
+  --section-glass-fill-lighter: rgba(1, 1, 1, 0.55);
+
+  /*
     Gold at very low alpha — a tint that warms a surface without colouring it.
     The quiet button's hover fill; deliberately weak enough that it reads as the
     panel catching light rather than as a filled state.

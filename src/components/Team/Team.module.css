@@ -1,0 +1,467 @@
+/*
+  The Team section: a title, the CEO, and four unfilled seats, over story.webm.
+
+  It follows the pattern the Founder and WhyAgb established rather than inventing one, so
+  most of this file is those two sections' structure with a video where their image is:
+  `position: relative` + --z-base to make the section a stacking context, an opaque
+  --color-black floor, a one-screen ground and pane pinned to the section's top, and every
+  value that owns height written as a clamp with a vh middle term.
+
+  `position: relative` + --z-base is not cosmetic, and it is the same requirement WhyAgb
+  inherited from the placeholder before it: a positioned box at z-index 0 paints above
+  every static in-flow block in the same stacking context, so a static section here could
+  be drawn underneath a positioned sibling whatever colour it was given. It is also what
+  scopes the ground and the pane to this section instead of letting them escape into the
+  page.
+
+  ONE SCREEN. `min-block-size: 100vh` with the column centred — a floor rather than a
+  height, so a phone, where the lead figure and four stacked seats run far past a screen,
+  simply grows past it and scrolls instead of being cropped.
+
+  THE TITLE SITS ABOVE THE MIDDLE, which is the one placement decision here that is not
+  inherited. See .inner.
+*/
+.team {
+  /*
+    Every value in the section that owns height, in one place — the first dials to reach
+    for if it ever needs to breathe more or fit into less.
+  */
+  --team-pad: clamp(1.75rem, 5vh, 4.5rem);
+  --team-title-gap: clamp(1.5rem, 4vh, 3rem);
+  --team-lead-gap: clamp(1.25rem, 3.2vh, 2.5rem);
+
+  /*
+    The two circle sizes, as one relationship rather than two independent numbers. The lead
+    is roughly twice a seat, which is what makes the hierarchy read at a glance without a
+    label having to state it — and both are clamps with a vh term so the whole group
+    survives a 720px-tall window without the row wrapping.
+  */
+  --team-lead-size: clamp(8rem, 21vh, 13.5rem);
+  --team-seat-size: clamp(4rem, 10vh, 6.5rem);
+
+  position: relative;
+  z-index: var(--z-base);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  min-block-size: 100vh;
+  padding-block: var(--team-pad);
+  padding-inline: var(--container-padding);
+
+  background-color: var(--color-black);
+}
+
+/* --- The ground: footage under the lightest of the three panes ------------- */
+
+/*
+  story.webm, full bleed, one screen tall and pinned to the top of the section.
+
+  FULL BLEED WITH NO LETTERBOX AT ANY SIZE, which is what `object-fit: cover` on a box that
+  is exactly the viewport buys: the video is scaled until it covers both axes and the
+  excess on the long axis is cropped, so there is no edge at which the section's own black
+  can show through. `object-position` is left at its default centre on purpose — unlike the
+  Founder's and WhyAgb's grounds, which are two halves of one picture and have to be
+  anchored to the edge they meet on, this one continues into nothing and a centred crop is
+  simply the best framing of a 16:9 source in a portrait or ultrawide box.
+
+  `inline-size: 100%` IS REQUIRED and is not the no-op it looks like — the same trap the
+  other two grounds document. A `<video>` is a replaced element, and an absolutely
+  positioned replaced element with `inline-size: auto` takes its INTRINSIC width: the
+  insets would place it, not size it, and CSS resolves the over-constraint by dropping the
+  end inset. It would sit at the video's own pixel width with bare ground beside it.
+
+  ONE SCREEN rather than `inset: 0`, for the reason the other two grounds are: on a phone
+  the content runs well past 100vh, and a ground stretched to the section's full height
+  would be a 16:9 source covering an ever-taller box — a heavier decode scaled to a crop
+  nobody chose. Anything past the first screen falls onto the section's opaque
+  --color-black, which is why that fill stays full height.
+
+  z-index 0, the same as `.glass`, so the two are same-layer boxes painting in document
+  order: this is written first in the JSX and is therefore behind the pane. `.inner` is at
+  --z-base above both.
+*/
+.backdrop {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 0;
+
+  pointer-events: none;
+
+  inline-size: 100%;
+  block-size: 100vh;
+  object-fit: cover;
+}
+
+/*
+  THE PANE, and the only call site on the site that takes the video variant.
+
+  `.pane-lighter` is --section-glass-fill-lighter (0.55) over --section-glass-blur-light
+  (7px). It lives in shared/SectionGlass.module.css beside the `.pane` the Founder and
+  WhyAgb take, so this section is part of the same system and retunes from one place.
+
+  WHAT IT IS LIGHTER *THAN*, since the name reads the other way at a glance: About's
+  --section-glass-fill (0.75), which is the site's treatment for type over moving footage.
+  Against that, the film reads visibly more clearly here — which is the section's whole
+  intent. It is heavier than the Founder's and WhyAgb's 0.4, and it has to be: those sit
+  over near-black photographs, and this sits over story.webm, whose lit stretches reach a
+  95th-percentile luminance of 0.37 through this blur. At 0.4 the section title measured
+  3.0:1 and the small labels 2.2:1 against the worst frames in the clip. The full sweep is
+  at the token.
+
+  Structure only below this line — which edge, how tall, how deep. Everything optical is in
+  the shared file.
+*/
+.glass {
+  composes: pane-lighter from '../shared/SectionGlass.module.css';
+
+  position: absolute;
+  /* Pinned to the section's start, matching .backdrop exactly — see the note there. */
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 0;
+
+  pointer-events: none;
+
+  /* One screen, matching .backdrop exactly — see the note there. */
+  block-size: 100vh;
+}
+
+/* --- Content -------------------------------------------------------------- */
+
+/*
+  THE GROUP SITS SLIGHTLY ABOVE THE SECTION'S MIDDLE, and this is the one thing here that
+  is not inherited from the Founder or WhyAgb.
+
+  `justify-content: center` on the section centres the whole column, which would put the
+  title well above centre and the group's own middle exactly on it. The brief wants the
+  title above centre without the block reading as top-aligned, so the group is biased
+  upward by a block-end margin: extra space below the content pushes the centred block up
+  by half of it. A margin rather than a translate, so it is real layout — nothing overlaps,
+  and the bias simply disappears on a window where the content already overflows.
+
+  8vh is the bias, capped at 5rem: on a 900px window that is 72px up, which is enough to
+  read as deliberate placement and far short of the section looking top-heavy. It is a vh
+  value because what it is offsetting against is a fraction of the viewport.
+*/
+.inner {
+  position: relative;
+  /* Above the ground and its pane, all three inside this section's stacking context. */
+  z-index: var(--z-base);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  margin-block-end: min(8vh, 5rem);
+
+  text-align: center;
+}
+
+/*
+  The site's micro-label, at the same 0.65rem / 0.28em as About's and WhyAgb's — see the
+  note there for why both values sit outside the shared scales. Kept identical on purpose:
+  four sections now open with this mark and they must read as one device.
+
+  `justify-content: center` is the only difference, because this column is centred where
+  the others are not.
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+
+  /* Tight to the heading it labels — the two are one unit. */
+  margin-block-end: var(--space-2xs);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+/* flex-shrink so a 5px item with no content cannot collapse in a tight column. */
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/*
+  --text-3xl, matching WhyAgb's section title exactly rather than About's --text-4xl. The
+  two closing sections are peers and their headings should set at the same size; About's is
+  larger because it is two words opening the page's first real section.
+
+  line-height under the global --leading-tight for the reason About's and WhyAgb's titles
+  are: a display heading wants to read as a block, not as a ladder.
+*/
+.title {
+  margin-block-end: var(--team-title-gap);
+
+  font-size: var(--text-3xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/* --- The circles ---------------------------------------------------------- */
+
+/*
+  THE CIRCLE TREATMENT, shared by the lead and the four seats, and deliberately the Story
+  circle's rather than a new one: a perfect round, a --glass-border hairline, an opaque
+  --color-black fill under the image, and --shadow-soft. About's .circle is where those
+  four choices were made and the reasoning is at that rule — in particular --glass-border
+  rather than a literal rgba(255,255,255,0.1), which keeps every rim on the site tied to
+  one token.
+
+  What it is NOT is a CssLens. That component is a pointer-following frosted disc over
+  moving footage, and it exists because the Story circle is a *window onto video*. These
+  are photographs of people; a lens riding over a face would obscure the one thing the
+  circle is there to show, and five of them on one screen would be five follow loops for
+  no gain. A static crop is the right answer here.
+
+  `aspect-ratio: 1` with only an inline size set, so the two sizes above are single numbers
+  rather than pairs that can disagree.
+
+  `overflow: hidden` is what does the circular crop, and it is on this element rather than
+  a `border-radius` on the image so the icon in an empty seat is clipped by the same round
+  as a photograph would be.
+*/
+.portrait {
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  aspect-ratio: 1;
+  inline-size: var(--team-seat-size);
+
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+
+  /*
+    Opaque --color-black, not the pane's fill — the same decision About's circle documents.
+    This is what a circle shows before its image has decoded, and it wants a known surface
+    rather than a blurred frame of the footage behind it showing through the hole.
+  */
+  background-color: var(--color-black);
+  box-shadow: var(--shadow-soft);
+
+  /*
+    A LIGHT HOVER, and the transition is scoped to the two properties that move rather than
+    written as `all`. It is CSS rather than Framer Motion on purpose: this is a two-state
+    toggle, not choreography, and the `prefers-reduced-motion` block in global.css already
+    covers CSS transitions — which is why nothing in this file checks the preference.
+
+    A 2% scale and a warmer rim. Both are deliberately at the edge of noticeable: these are
+    portraits, and a circle that leaps at the cursor turns a page of people into a control
+    panel. Nothing about the layout moves, since a transform does not affect flow.
+  */
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.portrait:hover {
+  transform: scale(1.02);
+  border-color: var(--color-gold-veil);
+}
+
+.portrait-lead {
+  inline-size: var(--team-lead-size);
+}
+
+/*
+  `block-size: 100%` alongside the width, because a percentage height on an absolutely
+  unpositioned child of a flex container is not enough on its own — and `object-fit: cover`
+  to fill the round with a rectangular source instead of letterboxing inside it, the same
+  job it does in the Story circle and on both section grounds.
+
+  `max-inline-size: none` is REQUIRED rather than tidy: global.css sets `img { max-width:
+  100% }`, which is harmless here but would clamp the moment a source narrower than the
+  circle is dropped in — exactly the kind of silent regression the Founder's portrait
+  documents at .portrait.
+*/
+.portrait img {
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+  The empty seat's mark. Sized as a fraction of the circle rather than in rem, so it holds
+  its proportion as --team-seat-size clamps down on a short window.
+
+  --color-text-subtle, the same alpha the eyebrow takes: present enough to read as a
+  silhouette, quiet enough that four of them do not compete with the one real face above.
+*/
+.seat-icon {
+  inline-size: 45%;
+  block-size: 45%;
+  color: var(--color-text-subtle);
+  /* An icon, not type — react-icons draws at 1em, so the box above needs this to bite. */
+  font-size: inherit;
+}
+
+/* --- The lead figure ------------------------------------------------------ */
+
+.lead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.75rem, 2vh, 1.25rem);
+
+  margin-block-end: var(--team-lead-gap);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+/*
+  THE FOUNDER'S NAME TREATMENT, and it is a deliberate quotation rather than a coincidence:
+  given name in --color-text, family name in gold, set on one line. That pairing is how this
+  site writes a person's name, and the two people on the page should be written the same
+  way.
+
+  Smaller than the Founder's, because his heading opens a section of its own and this one
+  labels a photograph inside a section with a title above it. `white-space: nowrap` states
+  the intent — the clamp leaves comfortable slack at every width, so it never has anything
+  to prevent, but it is what would make an overflow obvious rather than silently wrapping
+  if the name were ever changed for a longer one.
+*/
+.name {
+  white-space: nowrap;
+
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: var(--font-weight-heavy);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/*
+  --color-gold-light (#E09A3C), where the Founder's equivalent uses --color-gold (#C97014)
+  at 85%. The pattern is the same and deliberately so — given name in white, family name in
+  gold, is how this site writes a person — but the ground is not, and the darker gold does
+  not survive it.
+
+  Measured across sixteen points of the clip, worst frame, through this pane:
+  --color-gold-light holds 2.3:1, where --color-gold at 85% works out near 1.4:1. NEITHER
+  CLEARS AA — 2.3:1 is an improvement, not a fix — and
+  that is worth stating plainly rather than implying the brighter token fixed it: gold is a
+  warm mid-luminance colour, the bright frames are warm too, and no alpha of either token
+  reaches 3:1 against them — the same wall CLAUDE.md §7 documents for the Founder's gold
+  micro-labels, which no fill value ever solved either. What the lighter token buys is a
+  real improvement in the worst case at no cost anywhere else, and it stays inside the
+  palette (it is the accent's existing raised state, not a new colour).
+
+  The name is not lost when the frame is bright — "Nael" beside it is at 4.96:1 and the role
+  line beneath it names him again in white. If the surname ever needs to clear AA on its
+  own, the honest fix is white here and gold kept for the eyebrow's dot, not a heavier pane.
+*/
+.name-accent {
+  color: var(--color-gold-light);
+}
+
+/*
+  The role line, shared by the lead and the four seats — one rule, because they are the
+  same kind of label at the same size and letting them drift apart would be two decisions
+  where the page makes one.
+
+  IT IS OPAQUE --color-text WHERE EVERY OTHER META LABEL ON THE SITE IS MUTED, and that is
+  the one place this section departs from the shared meta style. It is not a preference:
+  it is what buys the section its lighter pane.
+
+  Everywhere else these labels sit over a near-black photograph or a flat ground, where
+  --color-text-muted (0.65) or even --color-text-subtle (0.4) has plenty of headroom. Here
+  they sit over story.webm, whose brightest stretches reach a 95th-percentile luminance of
+  0.37 through this pane. Measured across sixteen points of the clip, at 0.65 alpha these
+  labels need a fill of 0.70 to clear AA — which is barely a step from About's 0.75 and
+  would have thrown away the entire point of the section reading as film. At full alpha the
+  same labels clear AA at 0.55, so the trade is: one label colour a step brighter than the
+  house style, in exchange for a pane a fifth lighter than the site's video treatment.
+
+  The register still reads as a meta label rather than as copy — 0.65rem, medium weight,
+  0.2em tracking, uppercase, exactly like the Founder's fact labels. Only the alpha moved.
+*/
+.role {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+/* --- The four seats ------------------------------------------------------- */
+
+/*
+  ONE ROW, EVENLY SPACED, and it wraps rather than compressing: below the breakpoint at the
+  foot of this file the circles are already at their clamp floor, so four across a phone
+  would be four thumbnails with no room for the labels under them. `flex-wrap` lets it
+  become two-and-two instead, which is why the gap has separate row and column terms.
+
+  `align-items: start` so a label that wraps to two lines does not stretch its neighbours'
+  circles — each seat is as tall as its own content.
+*/
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: center;
+  column-gap: clamp(1.25rem, 4vw, 3rem);
+  row-gap: clamp(1.25rem, 3vh, 2rem);
+
+  list-style: none;
+}
+
+.seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  /* The label sets the seat's width, and it must not drag the row wider than the group. */
+  max-inline-size: 9rem;
+}
+
+/*
+  The placeholder's name, in the same register as its role rather than in the lead's — a
+  seat that is not yet filled should not carry a person-sized name. It is --color-text at
+  full alpha only because "Team Member" has to read as the deliberate statement it is, not
+  as something that failed to load.
+*/
+.seat-name {
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.12em;
+  color: var(--color-text);
+}
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  /*
+    The row is comfortably one line from here up, so the wrap above never engages and the
+    four sit evenly across the group's width.
+  */
+  .row {
+    flex-wrap: nowrap;
+  }
+}
