@@ -1,6 +1,6 @@
 /*
-  The closing section: six reasons in a 2 x 3 grid, over a drifting field of outlined
-  wordmarks.
+  The closing section: six reasons in a 2 x 3 grid, over the second half of the Founder's
+  photograph.
 
   It takes over the slot the empty `.placeholder` held, and it inherits that element's one
   structural requirement along with the position. `position: relative` + --z-base is not
@@ -11,8 +11,8 @@
   fight — but the rule is what makes the section correct on its own terms rather than
   correct because of an arrangement elsewhere.
 
-  It also makes this section a stacking context, which is what lets the wordmark field sit
-  at z-index 0 and the content at z-index 1 without either escaping into the page.
+  It also makes this section a stacking context, which is what lets the ground sit at
+  z-index 0 and the content at z-index 1 without either escaping into the page.
 
   ONE SCREEN, the same way the Founder gets one: `min-block-size: 100vh` with the column
   centred, and every value that owns real height written as a clamp with a vh middle term.
@@ -37,6 +37,16 @@
   the very boundary the images exist to hide. --why-glow-warm and its three siblings went
   with the gradients; --color-gold-deep is back to having no call site on the site, which
   is the state CLAUDE.md §7 describes it as being deliberately kept in.
+
+  THE WORDMARK FIELD IS GONE TOO, and it was the last moving thing in this section. Three
+  rows of outlined "AGB MEDIA" drifted behind the content on infinite CSS keyframes, the
+  middle one against the other two and carrying a pointer-driven offset from a follow loop
+  in WhyAgb.jsx. Everything that served it has been deleted rather than disabled: `.field`
+  and its four descendant rules, the `wordmark-drift` keyframes, the --why-field-stroke
+  dial, and the loop with its refs and listeners. Nothing in this file animates now except
+  the shared reveal ladder, so the section has no infinite animation to gate and no
+  `will-change` anywhere — the two questions CLAUDE.md §7 asks of every always-on layer
+  simply do not arise here any more.
 */
 .why {
   /*
@@ -63,26 +73,6 @@
   */
   --why-numeral-gap: clamp(0.3rem, 0.8vh, 0.5rem);
 
-  /*
-    THE FIELD'S WEIGHT, and the one dial worth having a number for.
-
-    Measured rather than judged, because on a near-black ground the eye is a poor
-    instrument: at 7% the brightest rendered stroke pixel is RGB(15, 9, 2) against a
-    (1, 1, 1) section — a luminance step of about 1.5%, which looks far stronger in a dark
-    room than the number suggests. 5% lands near RGB(11, 7, 2). Above roughly 8% the
-    wordmarks stop being texture and start being legible text behind the copy; below about
-    3% they disappear on a bright panel. Re-measure rather than re-eyeball if this moves.
-
-    THE GROUND UNDER IT IS NO LONGER FLAT, and the value is left where it is anyway. Those
-    numbers were measured against a (1, 1, 1) section; the ground is now a frosted
-    photograph, which is still at luminance 0.002 through its median — so the stroke reads
-    exactly as before across most of the field and simply disappears where it crosses the
-    lit wordmark in the image. That is the right behaviour for a texture and not worth
-    correcting: raising the stroke so it survives the bright patch would make it legible
-    text everywhere else.
-  */
-  --why-field-stroke: color-mix(in srgb, var(--color-gold) 5%, transparent);
-
   position: relative;
   z-index: var(--z-base);
 
@@ -93,13 +83,6 @@
   min-block-size: 100vh;
   padding-block: var(--why-pad);
   padding-inline: var(--container-padding);
-
-  /*
-    The field's tracks are several times the viewport wide. This is what stops them
-    producing a horizontal scrollbar on the document — `.field` clips them too, and either
-    alone would do it, but the section is the box whose inline size is authoritative.
-  */
-  overflow: hidden;
 
   background-color: var(--color-black);
 }
@@ -138,13 +121,11 @@
   absolutely positioned replaced element with `inline-size: auto` takes its intrinsic width,
   and the insets only place it.
 
-  NOTHING HERE ANIMATES, AND IT IS A SIBLING OF `.field`, NOT ITS PARENT — the wordmark
-  keyframes and the pointer-follow both live inside `.field`, so neither can dirty this
-  element. It paints once and is never touched again.
+  NOTHING HERE ANIMATES. It paints once, on first composite, and is never touched again.
 
-  z-index 0, the same as `.glass` and `.field`, so the three are same-layer boxes painting
-  in document order: this is written first in the JSX and is therefore behind both.
-  `.inner` is at --z-base above all of them.
+  z-index 0, the same as `.glass`, so the two are same-layer boxes painting in document
+  order: this is written first in the JSX and is therefore behind the pane. `.inner` is at
+  --z-base above both.
 */
 .backdrop {
   position: absolute;
@@ -207,186 +188,11 @@
   backdrop-filter: blur(var(--section-glass-blur-light));
 }
 
-/* --- The wordmark field --------------------------------------------------- */
-
-/*
-  Three rows of outlined "AGB MEDIA", spread down the section behind everything else.
-
-  `justify-content: center`, where this was `space-around`. The three rows are now a single
-  tight block of type rather than three separate lines distributed down the section — which
-  is what the larger size is for. Spread apart at this scale they read as three unrelated
-  bands; stacked to nearly touching they read as one architectural mass with the content
-  laid over it.
-
-  THE BLOCK DOES NOT FILL THE SECTION, and that is the current state rather than an
-  oversight: three rows at the capped size measure about 615px against a 720px or 900px
-  section, so it is centred with plain --color-black above and below it. The rows bleed off
-  the section's *inline* edges, never its block edges. Making it bleed vertically as well
-  would mean a fourth row or a much larger cap, and at the moment the empty band is what
-  gives the heading its air. Measured, not assumed — re-measure if the type size moves.
-
-  z-index 0 against `.inner`'s 1, both inside this section's own stacking context. It shares
-  that 0 with `.backdrop` and `.glass` and is written after both in the JSX, so it paints on
-  top of them: the outlines are drawn on the frosted photograph rather than under it, and
-  they are not themselves blurred by the pane. That is deliberate — the field is a texture
-  laid ON the ground (CLAUDE.md §2), and a texture behind the glass would be part of the
-  ground instead, which is a different and much weaker thing.
-*/
-.field {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  overflow: hidden;
-  /* Full-bleed over the section; without this it would swallow every drag and click. */
-  pointer-events: none;
-  /* The field is not copy. Selecting the heading should not drag eighteen wordmarks in. */
-  user-select: none;
-}
-
-.field-row {
-  /* Each row clips its own track, so a track can never widen the flex column. */
-  overflow: hidden;
-}
-
-/*
-  THE POINTER LAYER — the middle row only, and empty on the other two.
-
-  It exists so two independent transforms can be composed without either owning the other's
-  property: the CSS keyframes animate `.field-track` inside this, and WhyAgb.jsx's follow
-  loop writes `transform` straight onto this node. Nested transforms multiply, so the row
-  keeps drifting on the compositor exactly as it did and the pointer offset slides the whole
-  drifting row along on top of it. On one element the loop would overwrite the animation
-  sixty times a second.
-
-  NO `will-change` AND NO `transform` HERE. The loop writes `translate3d`, which promotes
-  the element on its own for as long as it is moving; a `will-change` would be a compositor
-  layer held permanently for a row that is stationary most of the time, and CLAUDE.md's
-  rule is that the hint has to be droppable when the motion stops.
-
-  `inline-size: max-content` is the one thing it does declare, and it has to declare
-  something: a rule whose body is only a comment is dropped by the build, and a CSS Module
-  class with no rule is absent from the `styles` object — `styles['field-shift']` would come
-  back `undefined` and the element would render with an empty class. Verified against the
-  built stylesheet, not assumed. The value is also correct rather than filler: the wrapper
-  should be exactly as wide as the track it holds, matching `.field-track` below, so it
-  never reports a width of its own into the row.
-*/
-.field-shift {
-  inline-size: max-content;
-}
-
-/*
-  THE TRACK, and the seamless loop.
-
-  `inline-size: max-content` so the box is exactly as wide as its two spans — this is what
-  makes `translateX(-50%)` mean "exactly one copy" without anyone measuring a glyph. The
-  two spans are identical strings, each ending in its own separator, so the track is
-  precisely two periods wide and the wrap point is invisible. See the note in WhyAgb.jsx
-  for why this is DOM text rather than an SVG.
-
-  ONLY `transform` IS ANIMATED, and there is nothing filtered above it — no ancestor here
-  carries a `filter`, so the transform is genuine compositor work rather than a repaint per
-  frame. That is the same category as `.button-glass`'s sheens, which CLAUDE.md §7
-  deliberately leaves running, and it is why there is no `will-change` here: an infinite
-  animation would never reach the rule that drops the hint again, and Chromium promotes an
-  element with an animating transform on its own.
-
-  `linear`, not an ease: any easing curve on an infinite loop puts a rhythm into what is
-  meant to be a constant drift, and the eye finds a rhythm immediately.
-
-  Reduced motion needs nothing here. The global block in global.css already forces
-  `animation-duration: 0.01ms` and `animation-iteration-count: 1` on every element, which
-  freezes these three rows — and because the loop is seamless, the frame it freezes on is
-  indistinguishable from the one it started on.
-*/
-.field-track {
-  display: flex;
-  inline-size: max-content;
-
-  animation-name: wordmark-drift;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  /* animation-duration is set per row from WhyAgb.jsx — see the note there. */
-}
-
-/*
-  Rows 1 and 3 drift right-to-left, row 2 left-to-right. One pair of keyframes serves both:
-  the forward row runs the identical animation in reverse, which is exact by construction
-  and cannot drift from its opposite the way a second hand-written @keyframes block could.
-*/
-.field-track[data-direction='reverse'] {
-  animation-direction: normal;
-}
-
-.field-track[data-direction='forward'] {
-  animation-direction: reverse;
-}
-
-/*
-  Outline only: transparent fill with a hairline stroke. `-webkit-text-stroke` is
-  non-standard but is implemented in every current engine; where it is not, this is
-  transparent text with nothing to replace it and the field simply does not appear, which
-  is the right failure for a decorative layer.
-
-  The stroke colour is `--why-field-stroke`, a dial at the top of this file with the
-  measured numbers behind it. Gold rather than `--color-text`: white at this alpha reads as
-  a grey haze that belongs to no part of the palette, where the gold keeps the field inside
-  the site's one accent even when it is barely there.
-
-  `line-height: 1` and `display: block` so each row's box is the type's own height and the
-  flex column can space three of them evenly without inherited leading padding it out.
-*/
-.field-track span {
-  display: block;
-  /* Preserves the runs of spaces that separate the wordmarks, and never wraps. */
-  white-space: pre;
-
-  font-family: var(--font-display);
-  /*
-    Roughly 20vw, where this was 12 — the wordmark is architecture now rather than texture,
-    and on a 1280px window one repeat sets around 1,600px, so a little under one full
-    "AGB MEDIA" is on screen at a time. That is the intent: the reader sees fragments of a
-    very large word, not a legible line of small repeated text.
-  */
-  font-size: clamp(5rem, 20vw, 16rem);
-  font-weight: var(--font-weight-heavy);
-  /*
-    UNDER 1, and this is what puts the rows nearly in contact. A line box at `line-height:
-    1` is the full em, which carries the face's ascender and descender space above and
-    below glyphs that are mostly cap-height — so three stacked rows sat with a visible band
-    of nothing between them. 0.8 pulls each box tight to its own caps; what is left between
-    rows is the type's own overshoot, which is the gap the reference has.
-  */
-  line-height: 0.8;
-  letter-spacing: var(--tracking-tight);
-
-  color: transparent;
-  -webkit-text-stroke: 1px var(--why-field-stroke);
-}
-
-/*
-  0 to -50% of a track that is exactly two copies wide: one full period, and the end state
-  is pixel-identical to the start.
-*/
-@keyframes wordmark-drift {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 /* --- Content -------------------------------------------------------------- */
 
 .inner {
   position: relative;
-  /* Above the field. Both are inside this section's stacking context. */
+  /* Above the ground and its pane, all three inside this section's stacking context. */
   z-index: var(--z-base);
 
   inline-size: 100%;

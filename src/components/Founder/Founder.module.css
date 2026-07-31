@@ -7,7 +7,7 @@
   its background; with the zoom removed there was nothing behind it but the hero's fixed
   4K footage, four viewports up the page. It now builds that backdrop for itself instead —
   .backdrop and .glass below — and keeps the opaque --color-black under both as the floor
-  the section is drawn on before a frame of video has arrived.
+  the section is drawn on wherever those two one-screen layers do not reach.
 
   `position: relative` goes with that for two reasons. It is the containing block for the
   two absolute layers; and it is the same fix .about and .placeholder need — Hero's
@@ -55,6 +55,40 @@
   --founder-gap: clamp(0.4rem, 1.1vh, 0.85rem);
   --founder-pad: clamp(0.75rem, 2.5vh, 2rem);
 
+  /*
+    HOW FAR THE CAREER LINE AND EVERYTHING BELOW IT DROPS, and the reason it takes a token
+    rather than a bigger number on .career's own margin.
+
+    The column is `justify-content: center`, so it is measured from its own middle: adding
+    height anywhere inside it pushes the *top* of the column up by half of what it pushes
+    the bottom down. A drop written only as extra margin above .career would therefore move
+    the name, the portrait and the profile up by half of it — the one block that has to stay
+    exactly where it is.
+
+    The fix is to add the same amount back as block-start padding on the section. With
+    `min-block-size: 100vh` and border-box sizing, that padding comes out of the container's
+    inner height, so the free space the centring divides shrinks by the same amount it
+    grew — and the two cancel exactly at the top. Worked through: intro top is
+    `pad + (inner - column) / 2`; adding X to the column and X to the pad gives
+    `pad + X + (inner - X - column - X) / 2`, which is the same number. The areas below the
+    intro keep the whole X.
+
+    .strip takes half of it again on top of that, so the two scrolling lines open away from
+    the career line rather than travelling with it as one slab. The section's block padding
+    therefore compensates for 1.5 x this value, which is the only place the two are added
+    up — if either drop changes, that multiplier changes with it.
+
+    Measured at 1440x900, 1280x720 and 1920x1080: the name, the portrait, the eyebrow and
+    the facts grid all move by exactly 0px, the career line by the shift, and both strips by
+    one and a half times it. THE CANCELLATION NEEDS FREE SPACE TO CANCEL AGAINST, though,
+    and on a phone there is none — the four areas run past 100vh, `justify-content: center`
+    has nothing left to redistribute, and the block-start padding becomes a plain offset
+    that moves the whole column down by 1.5 x the shift (about 25px at 390x844). That is
+    benign rather than a bug: at that width the section is a scrolling column instead of a
+    composed screen, so everything in it simply starts slightly lower and nothing is clipped.
+  */
+  --founder-shift: clamp(0.75rem, 2vh, 1.75rem);
+
   position: relative;
   z-index: var(--z-base);
 
@@ -65,12 +99,19 @@
   gap: var(--founder-gap);
 
   min-block-size: 100vh;
-  padding-block: var(--founder-pad);
+  /*
+    Asymmetric on purpose, and the block-start term is not padding in the usual sense: it
+    is the counterweight that holds the intro still while the three areas below it drop.
+    See --founder-shift. The block-end stays at --founder-pad, so the column's bottom edge
+    moves down by the full shift, which is what makes the drop visible at all.
+  */
+  padding-block: calc(var(--founder-pad) + var(--founder-shift) * 1.5)
+    var(--founder-pad);
 
   background-color: var(--color-black);
 }
 
-/* --- The ground: footage under frosted glass ------------------------------ */
+/* --- The ground: a photograph under frosted glass ------------------------- */
 
 /*
   BOTH LAYERS SIT AT A NEGATIVE Z-INDEX, and that is what keeps this section's markup
@@ -84,12 +125,12 @@
   behind the whole section. Remove the z-index up there and these two go with it.
 
   A stacking context is NOT a backdrop root, so .glass's backdrop-filter still reaches the
-  video beneath it. What would break that is a `filter`, a `mask`, `isolation: isolate` or
+  image beneath it. What would break that is a `filter`, a `mask`, `isolation: isolate` or
   an `opacity < 1` on .founder itself. Nothing animates the section any more — the
   entrance moved onto the four content areas individually (see the ladder in Founder.jsx),
   so the two layers here never fade at all and the question of what an animating opacity
   would isolate no longer arises. Putting a reveal back on <section> would raise it again:
-  it was safe then only because the video sits *inside* the subtree being isolated.
+  it was safe then only because the ground sits *inside* the subtree being isolated.
 */
 /*
   BOTH LAYERS ARE EXACTLY ONE SCREEN TALL, pinned to the BOTTOM of the section, where they
@@ -181,12 +222,15 @@
   at 0.015 or below, everything is far above AA. --section-glass-fill-light is the dial if
   that trade needs revisiting — but see the paragraph above before turning it.
 
-  COST. This is much the cheaper of the two viewport-wide backdrop-filters now: a filter's
-  cost scales with radius as well as area, and this one runs at roughly a third of About's.
-  If it ever still reads as heavy, the drop-in replacement is `filter: blur()` on .backdrop
-  itself (scaled up a few percent so its own blurred edges stay outside the box) plus a
-  flat fill here — the only thing behind this glass is a sibling, so unlike About's it does
-  not need backdrop-filter to reach out through the document at all.
+  COST. This is one of the two cheap viewport-wide backdrop-filters — a filter's cost
+  scales with radius as well as area, and this and WhyAgb's both run at roughly a third of
+  About's. If it ever reads as heavy, the drop-in replacement is `filter: blur()` on
+  .backdrop itself (scaled up a few percent so its own blurred edges stay outside the box)
+  plus a flat fill here — the only thing behind this glass is a sibling, so unlike About's
+  it does not need backdrop-filter to reach out through the document at all. THAT SWAP IS
+  NOT LOCAL ANY MORE: scaling .backdrop up changes its rendered width, and equal rendered
+  width on both sides of the section boundary is what the seam depends on. WhyAgb's ground
+  has to be inflated by the same amount in the same commit, or not at all.
 */
 .glass {
   position: absolute;
@@ -461,7 +505,8 @@
 
 /*
   Full bleed by simply not being constrained — the section sets no inline padding, so this
-  block is already the width of .hold. There is no negative-margin breakout in this file.
+  block is already the width of the section. There is no negative-margin breakout in this
+  file.
 */
 .career {
   flex: 0 0 auto;
@@ -475,8 +520,14 @@
     ends on a run of short values and the career line begins with a centred eyebrow, so
     without this the two read as one continuous block of small type rather than as the end
     of the profile and the start of something else.
+
+    Plus --founder-shift, which is what drops this line and the two strips below it away
+    from the intro block. It is added here rather than folded into the clamp so the base
+    separation and the deliberate drop stay two readable numbers — and so the section's
+    padding compensation, which counts this shift once and .strip's half of it again, has
+    something to point at. See --founder-shift.
   */
-  margin-block-start: clamp(1.5rem, 3.5vh, 2.5rem);
+  margin-block-start: calc(clamp(1.5rem, 3.5vh, 2.5rem) + var(--founder-shift));
 
   inline-size: 100%;
 }
@@ -534,7 +585,7 @@
 
   The edges fade with a MASK rather than with LogoLoop's own fadeOut, and the distinction
   matters here: fadeOut paints a gradient *in a colour*, which works over a known ground
-  and would be a pair of dark smudges over a blurred video. A mask removes the pixels
+  and would be a pair of dark smudges over a frosted photograph. A mask removes the pixels
   instead, so the strip genuinely dissolves into whatever is behind it. LogoLoop's fadeOut
   is left off at the call site for that reason.
 
@@ -548,8 +599,16 @@
     Extra air above, on top of the column's own --founder-gap. The career line ends as a
     centred run of small type and the strip begins as a wall of photographs; without the
     separation the images read as a caption to it.
+
+    Plus half of --founder-shift. The career line has already dropped by the whole shift and
+    this strip travels with it; the extra half is what makes the two scrolling lines open
+    away from the career line instead of moving down as one slab with it. Half rather than
+    the whole because this is the block that gives up height first on a short window — the
+    photographs are the one area here with nothing to read.
   */
-  margin-block-start: clamp(1.5rem, 3.5vh, 2.25rem);
+  margin-block-start: calc(
+    clamp(1.5rem, 3.5vh, 2.25rem) + var(--founder-shift) * 0.5
+  );
   margin-inline: clamp(1rem, 4vw, 3rem);
 
   -webkit-mask-image: linear-gradient(
@@ -605,7 +664,7 @@
 
   /*
     The same mask as .strip, and for the same reason: a gradient painted *in a colour*
-    would be a pair of dark smudges over a blurred video, where a mask removes the pixels
+    would be a pair of dark smudges over a frosted photograph, where a mask removes the pixels
     and lets the titles dissolve into whatever is behind them.
 
     Narrower than the photo strip's 60px — a title cut off mid-fade is harder to read
