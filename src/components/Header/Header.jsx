@@ -7,11 +7,24 @@ import navLinks from '../../data/navLinks'
 import styles from './Header.module.css'
 
 /*
-  Mirrors --ease-out in variables.css. Framer Motion cannot read a CSS custom
+  Mirrors --ease-in-out in variables.css. Framer Motion cannot read a CSS custom
   property, so the curve is duplicated here — change both together or the JS and
-  CSS halves of the same movement drift apart.
+  CSS halves of the same movement drift apart. The CSS half is the bar's own
+  border-radius transition in Header.module.css, which runs on the same token.
+
+  IT WAS --ease-out (0.22, 1, 0.36, 1), AND THAT CURVE IS WHY THE PANEL READ AS A SNAP.
+  --ease-out is close to exponential: it covers about 90% of its travel in the first
+  quarter of the duration, so at 180ms the drawer had effectively finished opening within
+  ~45ms and the remaining 135ms was a few pixels of settle nobody can see. That is the
+  right curve for something *arriving* — a colour landing on a nav link, the header
+  itself sliding in — and the wrong one for a panel whose whole gesture is the travel.
+
+  --ease-in-out (0.65, 0, 0.35, 1) is symmetrical and spends its time in the middle, which
+  is what makes the movement legible. Symmetry also matters because this is a reversible
+  toggle: closing should take exactly as long as opening, which an ease-out curve does not
+  do. The same argument the nav links' hover already made in Header.module.css.
 */
-const EASE_OUT = [0.22, 1, 0.36, 1]
+const MENU_EASE = [0.65, 0, 0.35, 1]
 
 /*
   A PLAIN LINK, AND IT USED TO BE THREE NESTED MOTION ELEMENTS.
@@ -67,12 +80,31 @@ function Header({ visible = false }) {
   }, [visible])
 
   /*
-    0.18s is --duration-fast, the timing the bar's corner radius runs at — the drawer and
-    the corners are one gesture, and any slower here makes the drawer trail the pill it
-    opens out of. It fed the hover underline too until that was removed; the links are a
-    CSS transition now and read this value from the token directly.
+    0.3s is --duration-base, the timing the bar's corner radius now runs at — the drawer
+    and the corners are one gesture and must stay on one number, which is the whole reason
+    this is stated here rather than left to each end.
+
+    It was 0.18s (--duration-fast). Read alongside the curve change at MENU_EASE, because
+    the two are one correction rather than two: under --ease-out, 180ms was not a fast
+    animation but effectively no animation, since that curve had spent 90% of its travel
+    in the first ~45ms. Under a symmetrical curve 180ms is a genuine 180ms — visible, and
+    a little hurried for a panel this size. 300ms is where the movement reads as
+    deliberate without lagging the tap that asked for it.
   */
-  const motionDuration = shouldReduceMotion ? 0 : 0.18
+  const motionDuration = shouldReduceMotion ? 0 : 0.3
+
+  /*
+    The list's own small slide, and it is the difference between a panel opening and a
+    panel being uncovered. The drawer's height animation alone moves nothing — the links
+    sit still while a clipping edge travels down past them, which reads as a mask rather
+    than as a surface arriving. Eight pixels against the curve above is enough to say the
+    content came with the box.
+
+    Zero under reduced motion: the height and opacity are already collapsed to an instant
+    by `motionDuration`, and an untweened 8px jump is exactly the kind of movement the
+    preference exists to remove.
+  */
+  const listLift = shouldReduceMotion ? 0 : -8
   const closeMenu = () => setIsMenuOpen(false)
 
   return (
@@ -166,14 +198,37 @@ function Header({ visible = false }) {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: motionDuration, ease: EASE_OUT }}
+              /*
+                Per-property rather than one blanket transition, because the two are not
+                doing the same job. Height is the gesture and takes the full duration on
+                the shared curve. Opacity is only there to keep the links from being
+                legible while they are half-clipped by a box that is still growing — it
+                wants to be over well before the box has finished, and it wants to be
+                linear, since an eased fade on top of an eased height reads as the panel
+                hesitating.
+              */
+              transition={{
+                height: { duration: motionDuration, ease: MENU_EASE },
+                opacity: { duration: motionDuration * 0.55, ease: 'linear' },
+              }}
               className={styles['mobile-nav']}
             >
-              <div className={styles['mobile-nav-list']}>
+              {/*
+                The list slides the last few pixels into place rather than sitting still
+                behind a travelling clip — see `listLift`. On the same curve and duration
+                as the height above, so the two are one movement and not two.
+              */}
+              <motion.div
+                className={styles['mobile-nav-list']}
+                initial={{ y: listLift }}
+                animate={{ y: 0 }}
+                exit={{ y: listLift }}
+                transition={{ duration: motionDuration, ease: MENU_EASE }}
+              >
                 {navLinks.map((link) => (
                   <NavLink key={link.to} {...link} onClick={closeMenu} />
                 ))}
-              </div>
+              </motion.div>
             </motion.nav>
           )}
         </AnimatePresence>

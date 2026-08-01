@@ -683,6 +683,97 @@
 
 /* --- Breakpoints ---------------------------------------------------------- */
 
+/*
+  PHONE ONLY — the exact complement of the `min-width: 48rem` block below, so no width
+  gets both and none gets neither. Nothing at tablet or desktop is touched here.
+*/
+@media (max-width: 47.9375rem) {
+  .team {
+    /*
+      Both circles down about 14%. The relationship the two are defined by — the lead is
+      roughly twice a seat — is unchanged, which is the point of them being one pair of
+      dials: the hierarchy still reads at a glance, the group simply costs less of a
+      screen it now has to share with four stacked seats and a footer.
+    */
+    --team-lead-size: clamp(7.5rem, 18vh, 10.5rem);
+    --team-seat-size: clamp(3.75rem, 8.5vh, 5rem);
+
+    /*
+      HEADER CLEARANCE, replacing a lead-in tuned for a section that fits one screen.
+
+      On desktop `.inner` is centred by auto margins with real slack above and below it,
+      so this token is a *bias* — it pushes the group down by about a quarter of its
+      difference from --team-drop-bias and nothing more. Here the content overflows 100vh,
+      the auto margins collapse to nothing, and this value becomes the literal distance
+      from the section's padding to the eyebrow. At min(6vh, 4rem) that put the title
+      about 92px down, which is close enough to the fixed pill's 56px for the two to read
+      as touching as the section arrives.
+
+      --header-height + --space-md is the same clearance About takes, plus the section's
+      own --team-pad above it. --team-drop-bias is left alone: with the margins collapsed
+      it is simply the space under the CTA, where it reads correctly as it is.
+    */
+    --team-lead-in: calc(var(--header-height) + var(--space-md));
+  }
+
+  /*
+    THE GROUND FOLLOWS THE SECTION HERE, WHERE ON DESKTOP IT IS ONE SCREEN — and this is
+    what puts the footer back inside the section.
+
+    100vh is right wherever the section is one screen, which is every width the pin
+    covers: the ground fills the viewport, the footer sits on the section's block-end
+    padding, and both are inside the same lit surface. On a phone the section runs about
+    990px against an 844px viewport, so the last ~150px of it — the CTA's lower half, the
+    gap under it, and the whole footer — fell off the bottom of the ground onto bare
+    --color-black. The bar then read as a separate strip *below* the Team section rather
+    than as the band closing it, which is exactly what it is not: Footer.jsx is Team's
+    last flex child and breaks out of its padding on three sides specifically so it can
+    sit on the section's own surface.
+
+    `block-size: 100%` is About's fix for the identical problem — see .about::before,
+    which was a flat 100vh for the same reason and left bare footage showing under it.
+    The difference is that this section CAN do it: the Founder's and WhyAgb's grounds are
+    locked to 100vh because they are two halves of one photograph that only line up at one
+    cover scale, and this ground is footage that continues into nothing, centred, with no
+    seam to keep.
+
+    --team-tuck is 0px at this width (it is set only inside the pin's envelope at the foot
+    of this file), so the calc these replace resolves to a flat 100vh here and there is
+    nothing left to carry.
+
+    THE COST, stated rather than hidden: the pane's backdrop-filter now covers a box about
+    a sixth taller than the viewport, and the video is scaled to cover it. Only the
+    on-screen part is ever rasterised, so the per-frame cost is unchanged — what grows is
+    the region the compositor may allocate for. It is the same trade About documents, and
+    the same answer: a visible band of bare ground under the page's closing bar is worse.
+  */
+  .backdrop,
+  .glass {
+    block-size: 100%;
+  }
+
+  /*
+    TWO BY TWO, rather than the three-then-one the flex wrap produced.
+
+    Four seats across a phone were never going to be one row — the labels set the seat's
+    width, not the circle, and "POSITION TBD" at this tracking is wider than a circle at
+    any size the group can afford. So the row wraps either way and the only question is
+    where: greedy wrapping filled the first line with three and left the fourth centred
+    alone underneath, which reads as a seat that failed to load rather than as a grid.
+
+    A grid rather than tightening the flex gap until three no longer fit, because that
+    would be an arithmetic coincidence holding up a layout — one longer placeholder title
+    and it is 3 + 1 again. Two explicit columns cannot become anything else.
+
+    It costs no height: both arrangements are two rows.
+  */
+  .row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: center;
+  }
+}
+
 @media (min-width: 48rem) {
   /*
     The row is comfortably one line from here up, so the wrap above never engages and the

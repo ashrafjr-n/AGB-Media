@@ -229,3 +229,96 @@
 .ticker-value {
   color: var(--color-text-muted);
 }
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+/*
+  PHONE ONLY. `max-width: 47.9375rem` is the exact complement of the `min-width: 48rem`
+  breakpoints the rest of the site is written in, so there is no width at which both
+  apply and none at which neither does. Nothing above 768px is touched by this block.
+
+  THE STRIP IS TWO SHORT LINES HERE, WHERE IT WAS FOUR. At --text-xs with a 3rem column
+  gap and a 1rem separator inset, six entries wrapped four deep and the resulting pane
+  was ~177px of the first screen — a quarter of a phone viewport spent on metadata, and
+  tall enough to read as a panel rather than as a caption along the bottom of the hero.
+
+  Four things come down together and they are one decision, not four: the type, the
+  column gap, the separator's inset, and the pane's own padding. Shrinking the type alone
+  leaves the same wide gutters around smaller words, which reads as a strip that failed
+  to fill rather than as a tighter one.
+
+  THE SIXTH ENTRY IS DROPPED rather than squeezed — see the note on `secondary` in
+  Hero.jsx. Measured at 390px with the values below, the five that remain set as 3 + 2.
+*/
+@media (max-width: 47.9375rem) {
+  /*
+    Down from --space-lg, and it moves in lockstep with .ticker's own block-end pair
+    below: that padding exists to carry the pane's fill through this padding and out to
+    the section's bottom edge, so the three values are one number written three times.
+  */
+  .hero {
+    padding-block-end: var(--space-sm);
+  }
+
+  .ticker {
+    /*
+      Row gap tight enough that the two lines read as one block of metadata; column gap
+      scaled to the window for the reason the font-size below is — the strip is full bleed,
+      so what has to fit is a fixed run of words inside a box that is exactly the viewport.
+    */
+    gap: var(--space-3xs) clamp(0.625rem, 3vw, 1rem);
+
+    padding-block-start: var(--space-2xs);
+    /* Both halves of .hero's block-end padding — keep all three equal. */
+    padding-block-end: var(--space-sm);
+    margin-block-end: calc(var(--space-sm) * -1);
+
+    /*
+      ~10px at 390, below the shared scale's --text-xs floor for the same reason the site's
+      micro-labels are: this is a caption at a size no running text should take.
+
+      A CLAMP RATHER THAN A FLAT VALUE, because two lines is a wrapping outcome and not a
+      declaration — five entries of fixed copy either fit across two full-bleed lines or
+      they do not. At a flat 0.625rem they fit from 375px up and spill onto a third line at
+      360, which is a common Android width, so the type tracks the viewport instead. The
+      floor holds from ~340px down, where the strip degrades to three lines rather than to
+      something illegible.
+
+      The tracking comes back with it — --tracking-wide (0.06em) across six entries was
+      most of what pushed the strip onto a fourth line at the original size.
+    */
+    font-size: clamp(0.5625rem, 2.55vw, 0.6875rem);
+    letter-spacing: 0.04em;
+    /* Tighter than --leading-normal, so two lines cost two lines and not three. */
+    line-height: 1.5;
+  }
+
+  /*
+    The gold dot keeps its size and loses its inset. At --space-sm it was 16px in front of
+    every entry but the first — 64px across the strip, spent separating words that the
+    column gap above is already separating.
+  */
+  .ticker-item:not(:first-of-type)::before {
+    margin-inline-end: var(--space-2xs);
+  }
+}
+
+/*
+  THE SIXTH ENTRY, AND THE WIDTH IT STOPS FITTING AT — see the note on `secondary` in
+  Hero.jsx for which entry this is and why it is the one that goes.
+
+  37.4375rem (599px) is measured rather than chosen: with the type and gaps set above, all
+  six entries wrap to two lines from exactly 600px up and to three below it, so this is the
+  last width at which the strip cannot hold them. Deliberately NOT folded into the block
+  above — that block's boundary is the site's own 48rem layout threshold, and this one is a
+  fact about six strings at a given size. They are different questions and the answers only
+  happened to agree while the hide was written at the wrong width, which showed as five
+  entries strung across an otherwise empty line on a 700px window.
+
+  Re-measure this number if the copy, the type size or either gap changes.
+*/
+@media (max-width: 37.4375rem) {
+  .ticker-item[data-secondary='true'] {
+    display: none;
+  }
+}

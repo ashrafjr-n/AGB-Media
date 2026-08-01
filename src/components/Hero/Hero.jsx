@@ -9,6 +9,16 @@ import styles from './Hero.module.css'
   Metadata rendered as a single line along the bottom of the hero.
   Separators are drawn in CSS (a gold dot before every item but the first), so
   this array stays pure data — add or reorder entries freely.
+
+  `secondary` marks an entry the phone layout drops. The strip is meant to read as two
+  short lines there, and six entries cannot: measured at 390px, the six run to just over
+  two lines' worth of width at every type size small enough to still be legible, so the
+  sixth wraps alone onto a third. Scope is the entry that goes because HQ already places
+  the company — nothing else here is restated anywhere.
+
+  It is a flag on the data rather than an `:nth-of-type` rule in the stylesheet so this
+  array keeps the "reorder freely" property stated above: the phone layout drops *this
+  entry*, not whichever one happens to be last.
 */
 const tickerItems = [
   { label: 'Company', value: 'AGB Media' },
@@ -16,7 +26,7 @@ const tickerItems = [
   { label: 'HQ', value: 'Doha, Qatar' },
   { label: 'Founder', value: 'Abdullah Ghyfan' },
   { label: 'CEO', value: 'Nael Al-Jarabah' },
-  { label: 'Scope', value: 'Qatar · Gulf · Arab World' },
+  { label: 'Scope', value: 'Qatar · Gulf · Arab World', secondary: true },
 ]
 
 /**
@@ -112,8 +122,13 @@ function Hero() {
         */}
         <FluidBar />
 
-        {tickerItems.map(({ label, value }) => (
-          <li key={label} className={styles['ticker-item']}>
+        {tickerItems.map(({ label, value, secondary }) => (
+          <li
+            key={label}
+            className={styles['ticker-item']}
+            /* Dropped at phone width — see the note on `secondary` above. */
+            data-secondary={secondary ? 'true' : 'false'}
+          >
             <span className={styles['ticker-label']}>{label}</span>
             <span className={styles['ticker-dash']}>—</span>
             <span className={styles['ticker-value']}>{value}</span>

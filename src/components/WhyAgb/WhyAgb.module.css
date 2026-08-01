@@ -437,6 +437,101 @@
 
 /* --- Breakpoints ---------------------------------------------------------- */
 
+/*
+  PHONE ONLY — the exact complement of the `min-width: 48rem` block below, so no width
+  gets both and none gets neither. Nothing at tablet or desktop is touched here.
+
+  THE SECTION FITS ITS OWN GROUND AGAIN. This is the one place on the page where
+  overflowing 100vh is not merely untidy but visibly wrong, and the reason is in this
+  file's own notes: `.backdrop` and `.glass` are a flat 100vh pinned to the section's
+  start, deliberately, because the image is half of a picture whose other half is the
+  Founder's and the seam only survives while both are drawn at one screen. So the ground
+  cannot follow the content the way About's does — the content has to come back to the
+  ground. At 390x844 the section measured 1166px, which left the last two reasons and most
+  of a third sitting on bare --color-black below the photograph.
+
+  EVERY VALUE BELOW IS TYPE OR THE SPACE BETWEEN TYPE, and they were tuned as one set
+  against 390x844 and 375x812, measured rather than estimated. The two-column grid is not
+  involved — it does not exist at this width — so nothing here interacts with the
+  divider, the pin, or the seam itself.
+
+  WHY THE HEADING TAKES THE LARGEST CUT. At --text-3xl the sentence set as five lines of
+  ~18 characters, which is 168px — a fifth of the viewport — for ninety characters of
+  copy. --text-2xl brings it to four lines at ~24 characters, which is both shorter and a
+  better measure: a display heading at 18 characters a line reads as a column of fragments
+  rather than as a sentence.
+*/
+@media (max-width: 47.9375rem) {
+  .why {
+    /*
+      The four height dials, all down. The vh middle terms come down with the rem
+      ceilings rather than instead of them — the ratios between the four are what make the
+      section read as numeral / title / description / next, and cutting one alone would
+      collapse a level of that hierarchy rather than tighten the whole.
+    */
+    --why-pad: clamp(1.25rem, 3.6vh, 2.5rem);
+    --why-opening-gap: var(--space-sm);
+    --why-row-gap: clamp(1rem, 2.1vh, 1.75rem);
+    --why-numeral-gap: var(--space-3xs);
+  }
+
+  .title {
+    /*
+      26ch rather than the desktop 34ch. The cap is not doing the wrapping here — the
+      column is only ~342px wide, so the measure is already narrower than either value —
+      but leaving 34ch would mean the cap silently stops applying at this width, and a
+      declared measure that never binds is worse than one sized to the layout it is in.
+    */
+    max-inline-size: 26ch;
+
+    font-size: var(--text-2xl);
+    /* A touch more than the desktop 1.05: at four lines of 24px the block needs the air
+       inside it more than it needs the extra tightness. */
+    line-height: 1.1;
+  }
+
+  /*
+    The numeral drops from ~16px to 13px, which is where it should have been read as a
+    tag all along at this width: it enumerates the title beneath it, and at 16px against a
+    16px title it was competing with the thing it labels rather than indexing it.
+  */
+  .index {
+    font-size: 0.8125rem;
+  }
+
+  .name {
+    margin-block-end: var(--space-3xs);
+
+    /*
+      --text-base, down from --text-xl. It is worth stating what this buys beyond its own
+      four pixels: at 20px, "Integrated Production Management" and "Deep Understanding of
+      Gulf Culture" both wrapped to two lines, and at 16px neither does. Two of the six
+      cells therefore lose a whole line rather than a few pixels of leading, which is most
+      of where the grid's height actually went.
+    */
+    font-size: var(--text-base);
+    line-height: 1.25;
+  }
+
+  /*
+    0.8125rem (13px) with the leading pulled in from --leading-relaxed (1.85) to 1.5.
+    These are captions to the titles above them, two lines each at this measure, and 1.85
+    is a leading written for running copy — twelve lines of it cost more than the heading
+    does. The leading is the lever rather than the size here: 1.85 to 1.5 is 4.5px a line
+    and 54px across the grid, where the same saving in font-size would have taken the
+    descriptions under 12px.
+
+    It is also what clears the last few pixels on a 360x800 window, which is the tightest
+    of the common phone sizes for this section: the vh terms in the four dials above are
+    still off their floors there, so the leading is the only lever left that does not cost
+    a legible size.
+  */
+  .description {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+}
+
 @media (min-width: 48rem) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

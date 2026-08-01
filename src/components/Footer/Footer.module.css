@@ -168,3 +168,55 @@
 .link:focus-visible {
   color: var(--color-text);
 }
+
+/* --- Breakpoints ---------------------------------------------------------- */
+
+/*
+  PHONE ONLY — the exact complement of the `min-width: 48rem` breakpoints the rest of the
+  site is written in, so no width gets both and none gets neither.
+
+  SHORTER, BECAUSE SHORT IS THIS ELEMENT'S WHOLE JOB. The note at the top of this file
+  says the bar earns its place by being the one block on the site that is not a screen
+  tall; at ~96px on an 844px viewport it was better than an eighth of a phone screen, and
+  because the two halves wrap at this width it was reading as a two-line block rather than
+  as a rule under the page.
+
+  Everything below is the same three values moving together — the type, the space between
+  the two lines, and the padding around them. Cutting the padding alone leaves the same
+  type crowded against the section's edge; cutting the type alone leaves it floating in
+  padding sized for something larger.
+
+  NONE OF THE NEGATIVE MARGINS ARE TOUCHED. They are copies of Team's --container-padding
+  and --team-pad, neither of which changes at this width, so the bar stays full-bleed and
+  flush to the section's block end exactly as it is above 48rem.
+*/
+@media (max-width: 47.9375rem) {
+  .footer {
+    padding-block: clamp(0.75rem, 2vh, 1.125rem);
+  }
+
+  .inner {
+    row-gap: var(--space-3xs);
+  }
+
+  /*
+    0.5625rem (9px), down from 0.65rem. The tracking goes UP with it, from 0.2em to
+    0.16em... which is down in em and up in effect: 0.2em of a 9px type is 1.8px where
+    0.2em of 10.4px was 2.1px, and below about 2px these uppercase micro-labels start to
+    close into single shapes. --tracking-widest is the scale's own value for exactly this
+    register, so the label keeps reading as a tracked-out mark rather than as small text.
+
+    The two rules stay identical to each other, which is the same discipline the desktop
+    values keep: .link is .rights plus a hover, and the moment they set different sizes the
+    bar has two type styles in it.
+  */
+  .rights,
+  .link {
+    font-size: 0.5625rem;
+    letter-spacing: var(--tracking-widest);
+  }
+
+  .links {
+    column-gap: var(--space-sm);
+  }
+}

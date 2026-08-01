@@ -59,18 +59,39 @@
   */
   --btn-border: 1px;
 
+  /*
+    THE BUTTON'S SIZE, AS THREE DIALS, and they are the one thing a call site may set from
+    its own stylesheet. Everything else here — the fill, the blur, the rim, the radius,
+    the sheens — stays this file's business, which is the rule stated above and unchanged.
+
+    They exist because "layout is not the button's business" cuts both ways: a section
+    that has to fit one phone screen has a legitimate claim on how much height its call to
+    action costs, and the alternatives were both worse. A size variant beside .button-
+    featured and .button-glass would double the variant count to describe a difference
+    that is not a surface; a font-size written into a section module would be the fork the
+    note above exists to prevent, because the next value written there is a colour.
+
+    The defaults are exactly what this rule set before they were named, so nothing that
+    does not opt in changes by a pixel. Anything overriding them must stay a *size*: a
+    call site setting a colour or a radius through this door has forked the button just as
+    surely as one setting it directly.
+  */
+  --btn-padding-block: var(--space-xs);
+  --btn-padding-inline: var(--space-lg);
+  --btn-font-size: var(--text-sm);
+
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2xs);
 
-  padding: var(--space-xs) var(--space-lg);
+  padding: var(--btn-padding-block) var(--btn-padding-inline);
 
   background-color: transparent;
   border: var(--btn-border) solid var(--color-gold);
 
   color: var(--color-gold);
-  font-size: var(--text-sm);
+  font-size: var(--btn-font-size);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;

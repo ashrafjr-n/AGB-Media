@@ -125,14 +125,55 @@
   box-shadow: none;
 
   /*
-    Fast and eased-out, matching the drawer it accompanies: the corners soften as
-    the drawer starts opening, so a slower curve here lags visibly behind it.
+    ON THE DRAWER'S NUMBER AND THE DRAWER'S CURVE — the corners and the panel are one
+    gesture, and the two ends have to be read together or they drift. Both moved at once:
+    --duration-fast + --ease-out became --duration-base + --ease-in-out, and the argument
+    for the pair is written out in full at MENU_EASE in Header.jsx, where the JS half
+    lives. In short: --ease-out spends 90% of its travel in the first quarter of the
+    duration, so at 180ms this was not a fast transition, it was effectively an instant
+    one with a long invisible tail.
   */
-  transition: border-radius var(--duration-fast) var(--ease-out);
+  transition: border-radius var(--duration-base) var(--ease-in-out);
 }
 
 .header[data-menu-open='true'] .bar {
   border-radius: var(--radius-lg);
+}
+
+/*
+  THE CLOSED PILL'S RADIUS AS A REAL LENGTH, and this is the fix for the corners
+  mismatching as the drawer opens.
+
+  --radius-full is 999px, which a browser resolves to *half the box's shorter side* at
+  paint time — 24px on a 48px-tall pill. It is a perfectly good way to say "pill", and a
+  bad thing to animate away from, for two reasons that compound:
+
+  - `border-radius` interpolates on the *declared* value, not the painted one. 999px to
+    --radius-lg (16px) spends almost the whole transition above the clamp — anything over
+    half the height paints identically — so the corners hold a full pill for ~95% of the
+    duration and then square off in the last frames. That is the snap.
+  - The clamp is against a box whose height is *also* animating, since the drawer is what
+    is growing. So the painted radius of the closed state is itself moving while the
+    declared value moves, and the two do not move together.
+
+  1.5rem is exactly half the closed pill's outer height at this width — .inner's 2.875rem
+  plus .bar's 1px border top and bottom — so the closed state paints identically to
+  --radius-full and nothing about the header at rest changes. What changes is that
+  24px → 16px is now eight real pixels interpolating over the full duration, in step with
+  the drawer and with nothing left to clamp.
+
+  SCOPED TO WHERE THE DRAWER EXISTS. `.mobile-nav` is `display: none` from 40rem up, so
+  above that there is no menu to open, no `data-menu-open='true'` state to transition to,
+  and no reason to state the pill's radius as anything but what it is. The pill is also a
+  different height up there (--header-height-docked), which would make 1.5rem wrong.
+
+  IF .inner's BLOCK-SIZE CHANGES, THIS CHANGES WITH IT. The two are one number in two
+  rules: half of (block-size + 2 * border) or the closed pill stops being a pill.
+*/
+@media (max-width: 39.9375rem) {
+  .bar {
+    border-radius: 1.5rem;
+  }
 }
 
 /* --- Frozen frost texture ------------------------------------------------- */

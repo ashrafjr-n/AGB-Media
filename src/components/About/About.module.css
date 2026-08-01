@@ -481,6 +481,89 @@
 
 /* --- Breakpoints ---------------------------------------------------------- */
 
+/*
+  PHONE ONLY — the exact complement of the `min-width: 48rem` block below, so no width
+  gets both and none gets neither. Nothing at tablet or desktop is touched by this.
+
+  THE WHOLE SECTION FITS ONE PHONE SCREEN AGAIN. It measured 967px against an 844px
+  viewport, which is not merely an overflow: the ground below is `block-size: 100%` and
+  follows the section, but the *circle* is the section's subject and it was being pushed
+  off the top of the screen by the time the CTA was reachable, so the two halves of the
+  section were never on screen together. Every value below is height, and they were tuned
+  as a set against 390x844 and 375x812 — measured at 812 with room to spare.
+
+  WHAT WAS SPENT AND WHERE. The desktop column runs 4.5rem under the title and 7rem under
+  the paragraph on the argument at .cta — that the space, rather than a rule or a
+  container, is what separates the button from the copy. That argument is a desktop one:
+  it is written against a 432px circle sitting *beside* the column, where the two need to
+  balance. Stacked on a phone the circle is above the copy and there is nothing to balance
+  against, so 11.5rem of block space is 11.5rem the section does not have. The three
+  elements are pulled tight into one group instead, which is what the eye reads as
+  deliberate at this width.
+
+  THE TOP GAP IS DELIBERATELY NOT TOUCHED. .about's `padding-block-start` stays at
+  --header-height + --space-2xs: it is the site header's clearance, it is the only part of
+  this section's block padding that is load-bearing, and cutting into it puts the pill on
+  the eyebrow. The savings come from inside the column.
+*/
+@media (max-width: 47.9375rem) {
+  /*
+    --space-md, down from --space-2xl (4.5rem). This is the gap between the circle and the
+    copy, and stacked it is the one gap in the section that reads as a seam rather than as
+    composition — 72px of nothing between a picture and the words about it.
+  */
+  .inner {
+    gap: var(--space-md);
+  }
+
+  /*
+    --text-3xl, down from --text-4xl: 32px against 41px at this width. It is the same size
+    WhyAgb's and Team's headings take, so the three section titles set alike on a phone
+    where on desktop this one leads — which is the right way round, because the argument
+    for it leading (it is two words where the others are sentences) is about a line count
+    that does not change here.
+  */
+  .title {
+    /*
+      --space-sm, down from --space-2xl. The label/title pair stays tight to itself and
+      the title now sits tight to the paragraph too: at this width the column IS the
+      section, so the air that separated blocks on desktop only separates them from view.
+    */
+    margin-block-end: var(--space-sm);
+
+    font-size: var(--text-3xl);
+  }
+
+  /*
+    A step down from --text-base with the leading pulled in from --leading-relaxed (1.85)
+    to --leading-normal (1.6). The leading is where the height actually was — six lines at
+    1.85 cost 44px more than the same six at 1.6 — and 1.6 is still a comfortable measure
+    for a paragraph this short at this size.
+  */
+  .body p {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+
+  /*
+    --space-md, down from --space-3xl (7rem). The button is still the most separated thing
+    in the column — a step above the title's own gap — which is all the argument at the
+    desktop rule actually needs.
+
+    The three --btn-* dials are the size door shared/Button.module.css opens for exactly
+    this: a size and nothing else. No colour, radius or border is set here, so the button
+    is not forked — it is the same button, one step smaller, on the one layout where its
+    full size costs the section its last block of copy.
+  */
+  .cta {
+    --btn-padding-block: var(--space-2xs);
+    --btn-padding-inline: var(--space-md);
+    --btn-font-size: var(--text-xs);
+
+    margin-block-start: var(--space-md);
+  }
+}
+
 @media (min-width: 48rem) {
   /*
     Two columns from here up, which is also where About.jsx starts mounting the lens.

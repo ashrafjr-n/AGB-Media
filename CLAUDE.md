@@ -169,7 +169,7 @@ It blends with **`mix-blend-mode: soft-light`, and that is load-bearing.** feTur
 
 **`src/components/shared/Button.module.css` is the only place a button is styled.** **Never restyle a button inside a section module** — add a variant beside the existing ones instead.
 
-A call site applies the base **and exactly one variant**, plus a local class carrying *only* spacing:
+A call site applies the base **and exactly one variant**, plus a local class carrying *only* spacing — **and, since the mobile pass, optionally the button's three size dials**. `.button` defines `--btn-padding-block`, `--btn-padding-inline` and `--btn-font-size` at exactly the values it used to hard-code, so nothing that ignores them changes; a call site may override them and **nothing else**. About's `.cta` is the only one that does, inside its phone breakpoint, because the Story section has to fit one phone screen and the button's full size was the last block of copy's worth of height. A local class setting a colour, radius, border or background has forked the button exactly as before:
 
 | Classes | Look | Used by |
 | --- | --- | --- |
