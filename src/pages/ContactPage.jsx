@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FaFacebookF, FaInstagram, FaWhatsapp, FaYoutube } from 'react-icons/fa6'
-import { HiOutlineMail } from 'react-icons/hi'
+import { HiOutlineDownload, HiOutlineMail } from 'react-icons/hi'
 
 import Header from '../components/Header/Header'
 import buttonStyles from '../components/shared/Button.module.css'
@@ -227,6 +227,23 @@ function ContactPage() {
               </form>
             </div>
           </div>
+
+          {/*
+            THE PROFILE DOWNLOAD — its own local style in the stylesheet, not a call
+            site of Button.module.css and not styled to match either of that file's
+            variants or the Services cards' border-reveal: a hairline pill with no
+            fill at rest, gold rather than glass, and (per the brief) no box-shadow in
+            any state. It reads as a document action rather than a call to action,
+            which is the distinction that earns it a different family.
+          */}
+          <a
+            className={styles['profile-download']}
+            href="/files/agb-media.pdf"
+            download="AGB-Media-Profile.pdf"
+          >
+            <HiOutlineDownload aria-hidden="true" />
+            Download Company Profile
+          </a>
         </div>
       </main>
     </>

@@ -88,6 +88,11 @@
   position: relative;
   z-index: var(--z-base);
 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(var(--space-lg), 4vh, var(--space-xl));
+
   inline-size: 100%;
   max-inline-size: 70rem;
 }
@@ -115,9 +120,15 @@
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-lg);
+  gap: var(--space-md);
 
-  padding: clamp(var(--space-lg), 4vw, var(--space-xl));
+  /*
+    A modest reduction from a first pass that ran a touch tall — the ceiling came
+    down from --space-xl to --space-lg and the floor from --space-lg to --space-md.
+    Everything below that owns block space came down with it by the same small
+    amount, rather than any one value doing all the work.
+  */
+  padding: clamp(var(--space-md), 3.5vw, var(--space-lg));
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border-white);
 
@@ -140,15 +151,16 @@
 
 /*
   Height-driven, per CLAUDE.md's rule for this mark: the logo is portrait (360x672),
-  so block-size sets the constraint and inline-size derives from it. Smaller than a
-  standalone hero mark would be — this is one element among four in a card that has
-  to hold its height budget on a single screen.
+  so block-size sets the constraint and inline-size derives from it. Larger than the
+  first pass — this is still one element among four sharing a single screen's height
+  budget, but it reads as the identity column's anchor now rather than a small mark
+  above the icon row.
 */
 .logo {
-  block-size: clamp(3.5rem, 9vw, 5rem);
+  block-size: clamp(4.25rem, 11vw, 6.25rem);
   inline-size: auto;
 
-  margin-block-end: clamp(var(--space-md), 3vh, var(--space-lg));
+  margin-block-end: clamp(var(--space-sm), 2vh, var(--space-md));
 }
 
 .social-list {
@@ -197,7 +209,7 @@
 .identity-divider {
   inline-size: 5rem;
   block-size: 1px;
-  margin-block: clamp(var(--space-md), 3vh, var(--space-lg));
+  margin-block: clamp(var(--space-sm), 2vh, var(--space-md));
 
   /*
     The same plateau-then-fade shape `.divider` uses in the 48rem breakpoint below —
@@ -295,7 +307,7 @@
 }
 
 .form-title {
-  margin-block-end: clamp(var(--space-md), 3vh, var(--space-lg));
+  margin-block-end: clamp(var(--space-sm), 2vh, var(--space-md));
 
   font-size: var(--text-3xl);
   line-height: 1.05;
@@ -306,7 +318,7 @@
 .form-body {
   display: flex;
   flex-direction: column;
-  gap: clamp(var(--space-sm), 2.5vh, var(--space-md));
+  gap: clamp(var(--space-xs), 2vh, var(--space-sm));
 }
 
 .field {
@@ -332,14 +344,12 @@
   where a soft inward shadow gives the well a shallow depth the card's own surface
   does not have.
 
-  --color-gold on focus is the role variables.css documents for that token ("borders,
-  interactive states"); the veil ring reuses --color-gold-veil, already the site's
-  token for "the panel catching light" (the quiet button's old hover fill) rather than
-  a new low-alpha gold value.
+  --radius-md rather than --radius-sm — the sharper radius read as boxy next to the
+  card's own --radius-lg corners; this is the half-step between the two.
 */
 .field-control {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-md);
   border: 1px solid var(--glass-border-white);
 
   background-color: var(--glass-fill-white);
@@ -348,35 +358,98 @@
   font-family: var(--font-body);
   font-size: var(--text-base);
 
-  transition:
-    border-color var(--duration-fast) var(--ease-in-out),
-    box-shadow var(--duration-fast) var(--ease-in-out);
+  transition: box-shadow var(--duration-fast) var(--ease-in-out);
 }
 
 .field-control::placeholder {
   color: var(--color-text-subtle);
 }
 
-.field-control:focus {
-  border-color: var(--color-gold);
+/*
+  NO BORDER CHANGE ON FOCUS, BY DESIGN — `border-color` is not touched here, so the
+  rim stays at --glass-border-white exactly as it is at rest. The default
+  `:focus-visible` outline from global.css is suppressed for the same reason: it
+  would draw the hard-edged ring this rule is deliberately avoiding.
+
+  What signals focus instead is a soft, blurred glow (a wide, low-alpha box-shadow
+  with no spread-only ring underneath it) — reads as light gathering around the field
+  rather than as a drawn edge. --color-gold-veil is already the site's token for
+  exactly that idea ("the panel catching light"), so nothing new was needed.
+
+  Text inputs are the case a `:focus-visible` heuristic already covers for both
+  pointer and keyboard focus, so this fires on either, not keyboard-only.
+*/
+.field-control:focus-visible {
+  outline: none;
   box-shadow:
     inset 0 1px 3px rgba(0, 0, 0, 0.18),
-    0 0 0 3px var(--color-gold-veil);
+    0 0 20px 3px var(--color-gold-veil);
 }
 
 .field-textarea {
   resize: vertical;
-  min-block-size: clamp(4rem, 10vh, 6rem);
+  min-block-size: clamp(3.25rem, 7vh, 4.5rem);
 }
 
 .submit {
   align-self: flex-start;
-  margin-block-start: var(--space-2xs);
+  margin-block-start: var(--space-3xs);
 }
 
 .confirmation {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+/* --- The profile download -------------------------------------------------------- */
+
+/*
+  A HAIRLINE GOLD PILL, NOT A GLASS SURFACE — its own local style, and deliberately
+  the odd one out among this page's buttons. `.button-glass` above is glass over the
+  card; the Services cards are glass with a hover-triggered rim; this one has no fill
+  at rest at all, a solid gold border rather than a translucent white one, and sits
+  outside the card entirely. It is meant to read as a document action — "here is a
+  file" — rather than as a second call to action competing with the form's own submit
+  button.
+
+  NO box-shadow / drop-shadow IN ANY STATE, by the brief — rest, hover and focus below
+  are all colour-only. The default `:focus-visible` outline from global.css is left
+  untouched: an outline is not a box-shadow, and removing the one visible focus
+  indicator a plain <a download> gets would be a real accessibility regression for no
+  reason the brief asked for.
+*/
+.profile-download {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+
+  padding: var(--space-xs) var(--space-lg);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-gold);
+
+  background-color: transparent;
+  color: var(--color-gold-light);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out);
+}
+
+/* react-icons draws at 1em; a touch larger than the label reads better beside caps text. */
+.profile-download svg {
+  font-size: 1.1em;
+}
+
+.profile-download:hover,
+.profile-download:focus-visible {
+  border-color: var(--color-gold-light);
+  background-color: var(--color-gold-veil);
+  color: var(--color-text);
 }
 
 /* --- Breakpoints ---------------------------------------------------------------- */
@@ -397,6 +470,16 @@
   .identity {
     align-items: flex-start;
     text-align: left;
+  }
+
+  /*
+    SHIFTED OFF THE COLUMN'S OWN EDGE, ON ITS OWN — the logo alone, not the whole
+    column. `.identity` stays flush left below (the icons and the emails are meant to
+    line up against the seam, not float toward the middle of their track), so this is
+    a margin on the logo specifically rather than a change to the column's alignment.
+  */
+  .logo {
+    margin-inline-start: clamp(var(--space-md), 4vw, var(--space-xl));
   }
 
   .social-list {
