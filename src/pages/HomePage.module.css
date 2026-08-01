@@ -63,3 +63,60 @@
 .stage-content {
   margin-block-start: -100vh;
 }
+
+/*
+  THE CLOSING STAGE — WhyAgb and Team, held in one box so WhyAgb can be pinned and Team
+  can scroll up over it.
+
+  It is `.stage` again with one part removed. Up there the sticky element is HeroBackdrop,
+  a layer that is not a section, so the screen of flow height it claims has to be given
+  back by `.stage-content`'s negative margin. Here the sticky element is WhyAgb itself and
+  that screen of flow height is legitimately the page's, so there is nothing to give back
+  and no inner wrapper — the document is exactly as tall as it was before the pairing
+  existed. All that changed is what happens inside the two screens it already had.
+
+  THE ARITHMETIC, and it is the same shape as the backdrop's. With this box's height H,
+  WhyAgb's height W and scroll offset s measured from this box's top, WhyAgb's own top is
+  `clamp(s, 0, H - W)`, and since H = W + T for Team's height T, the travel is exactly T:
+
+  - `s = 0` — WhyAgb fills the viewport, Team's rounded edge is one screen below.
+  - `0 < s < W` — WhyAgb is pinned and motionless. Team rises over it, its top edge at
+    `W - s` in the viewport, so the curve travels the full height of the screen.
+  - `s = W` — Team's top edge is the viewport's top edge and it covers the section
+    completely. W is one viewport in every window where the pin is enabled (see the media
+    query in WhyAgb.module.css), and T is at least one viewport, so the pin is still live
+    here with a screen of travel to spare. This is the moment the mechanic exists for.
+  - `s = T` — the travel is spent. WhyAgb unpins and scrolls away *behind* Team, which is
+    already covering the whole viewport, so nothing about it is visible while it goes.
+
+  WHY WhyAgb HAS TO BE EXACTLY ONE VIEWPORT TALL FOR ANY OF THIS. A sticky box pinned to
+  the block start shows its own first screen and no more: pin something two screens tall
+  and its lower half can never be scrolled to. That is not a tuning problem, it is the
+  mechanic — and it is why the pin is gated to windows where WhyAgb's 2 x 3 grid genuinely
+  fits one screen, rather than being applied and then compensated for.
+
+  IT IS DELIBERATELY BARE, for the reasons `.stage` is and one of its own:
+
+  - NO `overflow` other than visible. Anything else makes this a scroll container and the
+    sticky child sticks to it rather than to the viewport.
+  - NO `transform`, `filter`, `perspective` or `contain`. Each re-scopes the sticky child's
+    containing block.
+  - NO `position` and NO `z-index`. Left static and non-stacking, `.why` and `.team` — both
+    at `--z-base` — go on painting in the root stacking context in document order, which is
+    the entire reason Team paints *over* WhyAgb rather than under it. A `z-index` here would
+    trap the pair in a new context, and while it would still look right today, Founder sits
+    at the same `--z-base` in that same root context.
+  - NO `background`. The corner notches Team's rounded top edge leaves have to show what is
+    behind them, which during the pin is WhyAgb.
+
+  Which leaves one property, for the same reason `.stage` has one.
+*/
+.closing-stage {
+  /*
+    Stops the two sections' block margins collapsing through this wrapper, which would move
+    its edges away from theirs — and this box's height is the H the sticky travel is
+    measured against. Neither section sets a block margin today; this is what keeps that
+    from mattering.
+  */
+  display: flow-root;
+}

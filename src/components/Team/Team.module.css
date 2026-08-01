@@ -63,6 +63,26 @@
   --team-lead-size: clamp(8rem, 21vh, 13.5rem);
   --team-seat-size: clamp(4rem, 10vh, 6.5rem);
 
+  /*
+    THE ROUNDED TOP EDGE, and it is sized for the moment the section is at FULL SCREEN
+    rather than for the moment it arrives.
+
+    This section now scrolls up over a pinned WhyAgb (`.closing-stage` in
+    HomePage.module.css), so its top edge is the leading edge of a panel travelling the
+    height of the viewport — the one edge on the page that is meant to be watched. A radius
+    tuned to look right on a small card disappears at 1440px wide: the curve has to stay
+    obviously a curve once this box IS the window, which is where it spends most of its
+    time.
+
+    Hence the clamp, and hence the ceiling being high. 4.5vw keeps the corner proportional
+    to the width it is drawn across, the 1.75rem floor keeps it from vanishing on a phone,
+    and the 4rem (64px) cap stops it turning into an arch on an ultrawide.
+
+    Written as a dial rather than inline because it is used twice below — the radius and the
+    hairline that makes it legible are one decision.
+  */
+  --team-radius: clamp(1.75rem, 4.5vw, 4rem);
+
   position: relative;
   z-index: var(--z-base);
 
@@ -75,6 +95,46 @@
   padding-inline: var(--container-padding);
 
   background-color: var(--color-black);
+
+  /*
+    THE TOP TWO CORNERS ONLY, in their logical form — `start-start` and `start-end` are
+    top-left and top-right under LTR. The block-end corners stay square because that edge is
+    the bottom of the document: rounding it would cut two notches out of the page's last
+    pixels with nothing behind them but the body's own ground.
+
+    `overflow: hidden` is what makes the radius mean anything. The ground (`.backdrop`) and
+    its pane are absolutely positioned children at the full inline size of the section, so
+    without a clip they would paint square corners straight over the curve. With it, the
+    video stays FULL BLEED — it is still `inline-size: 100%` across the section and one
+    screen tall — and is simply cut to the section's own rounded box.
+
+    It clips nothing else. The footer's negative margins reach exactly the border box's
+    edges rather than past them, and `.button-featured`'s glow ring is already clipped by
+    the variant's own `overflow: hidden` in Button.module.css.
+
+    This section is not the sticky one — WhyAgb is, and it is a sibling — so the scroll
+    container this creates has no sticky descendant to capture. That is worth stating,
+    because `overflow` on the wrong element is the one thing that silently breaks a sticky
+    pairing (see `.closing-stage`).
+  */
+  overflow: hidden;
+  border-start-start-radius: var(--team-radius);
+  border-start-end-radius: var(--team-radius);
+
+  /*
+    A HAIRLINE ALONG THAT EDGE, and it is what makes the curve read rather than decoration.
+
+    Both surfaces meeting here are near-black — this section's footage under a 0.55 pane
+    over WhyAgb's photograph under a 0.4 one — so through the dark stretches of the clip the
+    corners have nothing to describe them and the panel arrives as an invisible edge. The
+    site's standard pane rim at --glass-border (white at 0.08) is the smallest thing that
+    fixes it, and it is the same rim every other raised surface on the site is found by.
+
+    Block-start only: it follows the two rounded corners and tapers out along the sides,
+    which is exactly the shape that wants marking. It costs no height — the global reset is
+    `box-sizing: border-box`, so `min-block-size: 100vh` already contains it.
+  */
+  border-block-start: 1px solid var(--glass-border);
 }
 
 /* --- The ground: footage under the lightest of the three panes ------------- */

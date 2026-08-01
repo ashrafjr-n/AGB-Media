@@ -360,6 +360,65 @@
   color: var(--color-text-muted);
 }
 
+/* --- The pin -------------------------------------------------------------- */
+
+/*
+  THE SECTION IS PINNED, AND TEAM SCROLLS UP OVER IT.
+
+  This is the page's second sticky pairing and it is the first one's technique applied
+  again, not a new mechanic: `.closing-stage` in HomePage.module.css holds this section and
+  Team, this section is `position: sticky` inside it, and a sticky box cannot be offset past
+  its own containing block — so the pin ends at that wrapper's bottom edge as a fact of the
+  layout. The travel arithmetic is written out in full at `.closing-stage`; read it there
+  before touching either end.
+
+  NOTHING ABOUT IT IS DRIVEN BY JS, and that is the whole difference between this and the
+  scroll-zoom that was removed from the Story section (CLAUDE.md §7). That one was
+  `position: sticky` plus `useScroll`/`useTransform` writing a scale, a counter-scale, an
+  elliptical radius and a blur into three `will-change` layers on every frame. This is one
+  declaration. There is no listener, no observer, no transform, no `will-change` and nothing
+  recomputed per frame — the compositor moves a box it is already holding, which is exactly
+  what HeroBackdrop does at the top of the page and why that one is the pattern to copy.
+
+  `position: sticky` REPLACES `position: relative`, which this section already had for its
+  own reasons — the ground and the pane at z-index 0 are scoped by this box being a stacking
+  context, and `z-index: var(--z-base)` above is what makes it one either way. Sticky is a
+  positioned value, so nothing about that changes.
+
+  TEAM PAINTS OVER THIS BECAUSE OF DOCUMENT ORDER, not because of a z-index. Both sections
+  sit at `--z-base` in the root stacking context — `.closing-stage` is deliberately
+  non-stacking — so the later of the two wins. Raising Team's z-index would work today and
+  would be the wrong fix: it would say the layering is a decision when it is a consequence,
+  and it would put Team above a Founder that is at the same level for unrelated reasons.
+
+  WHY THE GATE, AND WHY IT IS TWO CONDITIONS. A box pinned to the block start shows its own
+  first screen and nothing below it, so pinning a section taller than the viewport makes its
+  lower half unreachable — on a phone that is four of the six reasons, permanently. The pin
+  is therefore only enabled where this section genuinely fits one screen, which is exactly
+  the envelope the section was designed and verified against:
+
+  - `min-width: 48rem` is where the grid becomes 2 x 3. Below it the six cells are a single
+    column running two or three screens, and no height makes that fit.
+  - `min-height: 45rem` is 720px — the shorter side of the 1280x720 window this section's
+    one-screen budget was measured at (see the note at --why-opening-gap).
+
+  Outside that envelope this section and Team are ordinary siblings in flow, which is what
+  they were before the pairing existed. Nothing else in either file is conditional on it.
+
+  THE ONE COST, stated rather than hidden: this section's `backdrop-filter` and Team's are
+  both live for the full screen of scrolling in which Team is rising, where before they only
+  overlapped briefly at a section boundary. Both are the cheap light variant (7px, not 20),
+  and the alternative — switching this one off once Team covers it — means an observer and a
+  threshold, which is precisely the machinery HeroBackdrop's rewrite deleted. It is not worth
+  buying back for this.
+*/
+@media (min-width: 48rem) and (min-height: 45rem) {
+  .why {
+    position: sticky;
+    inset-block-start: 0;
+  }
+}
+
 /* --- Breakpoints ---------------------------------------------------------- */
 
 @media (min-width: 48rem) {

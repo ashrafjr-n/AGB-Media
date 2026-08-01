@@ -99,19 +99,49 @@ function HomePage() {
           one. Their own opaque grounds at --z-base remain correct on their own terms and
           stay as they are.
 
-          Team closes the page, and it brings back a `<video>` below the stage — the first
-          since the Founder's ground became a still image. It needs nothing from this file:
-          it registers its own claim with useExclusiveVideo and gates on its own box, so
-          the page-wide "one video decodes at a time" rule holds without HomePage knowing
-          there are two claimants.
+          Team brings back a `<video>` below the stage — the first since the Founder's
+          ground became a still image. It needs nothing from this file: it registers its
+          own claim with useExclusiveVideo and gates on its own box, so the page-wide "one
+          video decodes at a time" rule holds without HomePage knowing there are two
+          claimants.
         */}
         <Founder />
-        <WhyAgb />
+
         {/*
-          Team closes the page, and the footer is INSIDE it — see the note in Team.jsx.
-          There is no page-level element after this one.
+          THE CLOSING STAGE — the page's SECOND sticky pairing, and it is the stage
+          pattern again rather than a new mechanic.
+
+          Up top, HeroBackdrop is pinned and the hero and the Story section scroll over it.
+          Here WhyAgb itself is pinned and Team scrolls up over it, arriving on its own
+          rounded top edge and eventually covering the section completely. Same technique,
+          same one guarantee: a sticky box cannot be offset past its own containing block,
+          so this wrapper's bottom edge is where the pin ends, as a fact of layout rather
+          than as a threshold something has to compute. There is no scroll listener, no
+          observer, no transform and no JS of any kind in it.
+
+          IT DIFFERS FROM `.stage` IN EXACTLY ONE WAY, and it is worth knowing which. Up
+          there the sticky element is a *backdrop* — an extra layer that is not a section,
+          so the screen of flow height it claims has to be handed back by a negative margin
+          on `.stage-content`. Here the sticky element IS a section, and its screen of flow
+          height is the page's own. Nothing is given back, there is no inner wrapper, and
+          the page is exactly as tall as it was before this change.
+
+          THE PIN IS OFF ON SMALL WINDOWS, deliberately — see the media query in
+          WhyAgb.module.css. Below it these two are ordinary siblings in flow, which is
+          what the file looked like before, and Team's rounded edge is the only thing that
+          differs.
+
+          The stylesheet is mostly a list of things this box must never be given; read it
+          before adding a property here.
         */}
-        <Team />
+        <div className={styles['closing-stage']}>
+          <WhyAgb />
+          {/*
+            Team closes the page, and the footer is INSIDE it — see the note in Team.jsx.
+            There is no page-level element after this one.
+          */}
+          <Team />
+        </div>
       </main>
     </>
   )

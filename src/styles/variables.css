@@ -186,11 +186,19 @@
     composited against a home page section, so there is no seam for a second ground tone
     to show up in. It reads as a different room in the same building.
 
-    #130c07 is --color-gold's hue taken almost to black: R19 G12 B7, hue ~21deg, the same
-    warm orange-brown lean the logo's midtone has. It is a couple of points lighter than
+    #0b0704 is --color-gold's hue taken almost to black: R11 G7 B4, hue ~26deg, the same
+    warm orange-brown lean the logo's midtone has. It is a few points lighter than
     --color-black, which is most of what makes it register as brown rather than as black
     — on a ground this dark, hue alone is nearly invisible and it is the small lift that
     lets the eye find it.
+
+    IT WAS #130c07 (R19 G12 B7) AND CAME DOWN BY ROUGHLY HALF ITS LUMINANCE. That value
+    read as a genuine brown and was too far off black for the page to feel like part of
+    this site — the ground was the loudest thing on a page that is otherwise type. The
+    ratio between the three channels is unchanged, which is what carries the hue; only
+    the level moved. Do not chase the warmth back by lifting this: the warmth the page
+    reads as comes from --about-sheen, which is gold at an alpha and is the layer built
+    for it.
 
     THE PAGE IS NOT FLAT, and the three tokens below are what keeps it off flat. A single
     fill over a page this long reads as a void; the ground is this colour lit by a warm
@@ -198,16 +206,23 @@
     gradients (AboutPage.module.css). No blur, no blend mode and nothing animated — the
     depth is painted, so it costs one composite and never re-rasterises.
   */
-  --about-ground: #130c07;
+  --about-ground: #0b0704;
 
   /*
-    The vignette, and it is the ground's OWN tone taken deeper — rgba(8, 5, 2) — rather
+    The vignette, and it is the ground's OWN tone taken deeper — rgba(4, 2, 1) — rather
     than raw black. Same rule as the --color-black family above and for the same reason:
     pure black over a warm ground greys the corners out instead of deepening them, which
-    is exactly the flat, dead edge a vignette is meant to avoid. 0.8 is heavy because it
+    is exactly the flat, dead edge a vignette is meant to avoid. 0.85 is heavy because it
     only ever reaches the outer edges of the gradient that carries it.
+
+    IT HAD TO MOVE WITH THE GROUND, and that is the one thing to know before touching
+    either. This was rgba(8, 5, 2) against a #130c07 ground; against #0b0704 that is
+    lighter than the surface it sits on, so the vignette would have quietly inverted into
+    a faint glow at the corners. A vignette is a *relationship*, not a colour — whenever
+    --about-ground moves, this follows it down, the same way the whole rgba(1, 1, 1, …)
+    family follows --color-black.
   */
-  --about-vignette: rgba(8, 5, 2, 0.8);
+  --about-vignette: rgba(4, 2, 1, 0.85);
 
   /*
     The warm light on the page: the accent and its lighter step, both at the very low
