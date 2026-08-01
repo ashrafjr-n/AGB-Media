@@ -64,24 +64,56 @@
   --team-seat-size: clamp(4rem, 10vh, 6.5rem);
 
   /*
-    THE ROUNDED TOP EDGE, and it is sized for the moment the section is at FULL SCREEN
-    rather than for the moment it arrives.
+    THE ROUNDED TOP EDGE — modest, and deliberately so.
 
-    This section now scrolls up over a pinned WhyAgb (`.closing-stage` in
-    HomePage.module.css), so its top edge is the leading edge of a panel travelling the
-    height of the viewport — the one edge on the page that is meant to be watched. A radius
-    tuned to look right on a small card disappears at 1440px wide: the curve has to stay
-    obviously a curve once this box IS the window, which is where it spends most of its
-    time.
+    This section scrolls up over a pinned WhyAgb (`.closing-stage` in HomePage.module.css),
+    so its block-start edge is the leading edge of a panel crossing the whole screen. It
+    wants to read as a panel arriving, not as a device: the curve is there to say "this is a
+    surface with an edge", and past a certain size it stops saying that and starts being the
+    thing you look at.
 
-    Hence the clamp, and hence the ceiling being high. 4.5vw keeps the corner proportional
-    to the width it is drawn across, the 1.75rem floor keeps it from vanishing on a phone,
-    and the 4rem (64px) cap stops it turning into an arch on an ultrawide.
+    IT WAS clamp(1.75rem, 4.5vw, 4rem) — a 64px arc at desktop width — on the argument that
+    a corner has to stay legible once the section IS the window. That argument was wrong
+    about what happens at full screen, and the fix is `--team-tuck` below rather than a
+    bigger radius: at full cover the curve is not meant to be legible, it is meant to be
+    GONE. Which leaves the radius free to be sized for the only moment it is actually seen —
+    mid-slide, against WhyAgb — where something small and simple is what a premium edge looks
+    like.
 
-    Written as a dial rather than inline because it is used twice below — the radius and the
-    hairline that makes it legible are one decision.
+    A dial rather than an inline value because it is now used FOUR times: the section's own
+    clip, the video's, the pane's, and the tuck derived from it.
   */
-  --team-radius: clamp(1.75rem, 4.5vw, 4rem);
+  --team-radius: clamp(0.5rem, 1.5vw, 1.25rem);
+
+  /*
+    THE TUCK — the extra block-start height that carries the curve up off the screen once
+    this section has finished arriving.
+
+    THE PROBLEM IT SOLVES. Team's top edge sits at `W - s` in the viewport while WhyAgb is
+    pinned (the arithmetic is at `.closing-stage`), so it reaches the top of the screen at
+    `s = W` and the section covers the viewport exactly. If the section is exactly one
+    screen tall, that is also the end of the document — the page cannot scroll further, and
+    the curve is left parked on the top edge of the viewport for good. A rounded corner
+    against nothing is not an edge, it is a notch cut out of the page.
+
+    THE FIX IS HEIGHT, NOT A CONDITIONAL RADIUS. Making the section `tuck` taller gives the
+    document `tuck` more scroll, so Team keeps rising after it has covered the screen and
+    the curve travels off the top under its own steam. No observer, no breakpoint on the
+    radius, no class toggled at a threshold — the corner is visible exactly while there is
+    something behind it to be an edge against, and gone once there is not, as a consequence
+    of the same scroll that moved it.
+
+    A LITTLE MORE THAN THE RADIUS, so the curve clears with a few pixels to spare rather
+    than landing exactly on the viewport's edge, where a half-pixel of rounding would leave
+    it just visible.
+
+    0 BY DEFAULT, and set only inside the gate at the foot of this file — the same
+    `64rem x 45rem` envelope that enables WhyAgb's pin. Outside it there is no pin, Team is
+    an ordinary section in flow that is already taller than the screen, and its top edge is
+    far above the viewport by the end of the page without any help. Adding height there
+    would only push this section's tuned spacing down for nothing.
+  */
+  --team-tuck: 0px;
 
   position: relative;
   z-index: var(--z-base);
@@ -90,8 +122,23 @@
   flex-direction: column;
   justify-content: center;
 
-  min-block-size: 100vh;
-  padding-block: var(--team-pad);
+  /*
+    THE TUCK IS ADDED TO BOTH THE HEIGHT AND THE BLOCK-START PADDING, and it has to be both
+    or the content moves.
+
+    Adding it to `min-block-size` alone grows the box downward around a centred column, so
+    everything in the section would sit `tuck / 2` lower on screen. Adding it to the padding
+    as well pushes the content box back down by the same amount it was raised: the content
+    box keeps its original height (`100vh - 2 * --team-pad`) and starts `--team-pad` below
+    the section's *visible* top edge at full cover, which is exactly where it started before
+    the tuck existed. THE TWO MOVE TOGETHER; changing one alone shifts the whole section.
+
+    `padding-block` was a shorthand and is now written out for that reason — the block-end
+    value is untouched, and Footer's negative `margin-block-end` still cancels exactly it.
+  */
+  min-block-size: calc(100vh + var(--team-tuck));
+  padding-block-start: calc(var(--team-pad) + var(--team-tuck));
+  padding-block-end: var(--team-pad);
   padding-inline: var(--container-padding);
 
   background-color: var(--color-black);
@@ -102,39 +149,32 @@
     the bottom of the document: rounding it would cut two notches out of the page's last
     pixels with nothing behind them but the body's own ground.
 
-    `overflow: hidden` is what makes the radius mean anything. The ground (`.backdrop`) and
-    its pane are absolutely positioned children at the full inline size of the section, so
-    without a clip they would paint square corners straight over the curve. With it, the
-    video stays FULL BLEED — it is still `inline-size: 100%` across the section and one
-    screen tall — and is simply cut to the section's own rounded box.
+    `overflow: hidden` clips the section's own content and background to the curve. It is
+    necessary and it is NOT SUFFICIENT — see the note at `.backdrop`, which is where the
+    hard edge actually came from.
 
-    It clips nothing else. The footer's negative margins reach exactly the border box's
-    edges rather than past them, and `.button-featured`'s glow ring is already clipped by
-    the variant's own `overflow: hidden` in Button.module.css.
+    It clips nothing it should not. The footer's negative margins reach exactly the border
+    box's edges rather than past them, and `.button-featured`'s glow ring is already clipped
+    by the variant's own `overflow: hidden` in Button.module.css.
 
     This section is not the sticky one — WhyAgb is, and it is a sibling — so the scroll
     container this creates has no sticky descendant to capture. That is worth stating,
     because `overflow` on the wrong element is the one thing that silently breaks a sticky
     pairing (see `.closing-stage`).
+
+    THERE IS NO BORDER ON THIS EDGE, and there was: a 1px --glass-border hairline, added to
+    make the curve legible where two near-black surfaces meet. It is the single worst thing
+    that could have been put here. `overflow` clips descendants to the PADDING box, which a
+    border pushes inward, so the video was clipped 1px inside the section's own rounded
+    edge — and that 1px of white-at-0.08 over an opaque black background composites to about
+    rgb(20, 20, 19), tracing the entire top edge and both corners in a near-black line
+    against whatever bright frame of the footage was underneath it. That was the "black hard
+    edge". Do not put a border back on this element; if the curve ever needs marking, mark it
+    with an inset shadow or a pseudo-element, neither of which moves the clip.
   */
   overflow: hidden;
   border-start-start-radius: var(--team-radius);
   border-start-end-radius: var(--team-radius);
-
-  /*
-    A HAIRLINE ALONG THAT EDGE, and it is what makes the curve read rather than decoration.
-
-    Both surfaces meeting here are near-black — this section's footage under a 0.55 pane
-    over WhyAgb's photograph under a 0.4 one — so through the dark stretches of the clip the
-    corners have nothing to describe them and the panel arrives as an invisible edge. The
-    site's standard pane rim at --glass-border (white at 0.08) is the smallest thing that
-    fixes it, and it is the same rim every other raised surface on the site is found by.
-
-    Block-start only: it follows the two rounded corners and tapers out along the sides,
-    which is exactly the shape that wants marking. It costs no height — the global reset is
-    `box-sizing: border-box`, so `min-block-size: 100vh` already contains it.
-  */
-  border-block-start: 1px solid var(--glass-border);
 }
 
 /* --- The ground: footage under the lightest of the three panes ------------- */
@@ -156,15 +196,38 @@
   insets would place it, not size it, and CSS resolves the over-constraint by dropping the
   end inset. It would sit at the video's own pixel width with bare ground beside it.
 
-  ONE SCREEN rather than `inset: 0`, for the reason the other two grounds are: on a phone
-  the content runs well past 100vh, and a ground stretched to the section's full height
-  would be a 16:9 source covering an ever-taller box — a heavier decode scaled to a crop
-  nobody chose. Anything past the first screen falls onto the section's opaque
+  ONE SCREEN PLUS THE TUCK rather than `inset: 0`, for the reason the other two grounds are
+  one screen: on a phone the content runs well past 100vh, and a ground stretched to the
+  section's full height would be a 16:9 source covering an ever-taller box — a heavier decode
+  scaled to a crop nobody chose. Anything past that falls onto the section's opaque
   --color-black, which is why that fill stays full height.
+
+  IT HAS TO CARRY --team-tuck TOO, and this is the one place it is easy to forget. The tuck
+  raises the section by that much at full cover, so the last `tuck` pixels of the screen are
+  the section's own box past the first 100vh — bare --color-black, a hard black band along
+  the bottom of the viewport, if this box stops at 100vh. It matches the section's height
+  expression exactly; the two move together.
 
   z-index 0, the same as `.glass`, so the two are same-layer boxes painting in document
   order: this is written first in the JSX and is therefore behind the pane. `.inner` is at
   --z-base above both.
+
+  IT CARRIES THE SECTION'S RADIUS ITSELF, and that is the actual fix for the hard edge
+  rather than a belt-and-braces duplicate of the parent's clip.
+
+  A `<video>` is composited on its own layer, and so is anything carrying a
+  `backdrop-filter` (`.glass`, below). An ancestor's `border-radius` + `overflow: hidden` is
+  a paint-time clip on the ancestor's own layer, and it is well known not to reach a
+  separately composited descendant in Chromium or WebKit — which is exactly the symptom this
+  section had: the pane looked correctly rounded while the footage under it kept square
+  corners, and the square corner showing past the curve read as a hard edge along the top of
+  the section. The section's `overflow: hidden` is still correct and still required for
+  everything that is NOT its own layer; it just cannot be the whole answer.
+
+  So the radius is declared on each layer that has one: here, on `.glass`, and on the
+  section. Three copies of one dial, which is why `--team-radius` is a custom property —
+  they cannot drift, and any new full-bleed layer added to this section's block-start edge
+  needs the same two lines.
 */
 .backdrop {
   position: absolute;
@@ -175,8 +238,12 @@
   pointer-events: none;
 
   inline-size: 100%;
-  block-size: 100vh;
+  block-size: calc(100vh + var(--team-tuck));
   object-fit: cover;
+
+  /* Its own layer, so its own clip — see the note above. */
+  border-start-start-radius: var(--team-radius);
+  border-start-end-radius: var(--team-radius);
 }
 
 /*
@@ -209,8 +276,16 @@
 
   pointer-events: none;
 
-  /* One screen, matching .backdrop exactly — see the note there. */
-  block-size: 100vh;
+  /* One screen plus the tuck, matching .backdrop exactly — see the note there. */
+  block-size: calc(100vh + var(--team-tuck));
+
+  /*
+    Its own clip, for the same reason `.backdrop` has one: a backdrop-filter puts this on a
+    separate compositing layer, which the section's `overflow: hidden` does not reliably
+    reach. Without it the pane's own square corners paint over the curve.
+  */
+  border-start-start-radius: var(--team-radius);
+  border-start-end-radius: var(--team-radius);
 }
 
 /* --- Content -------------------------------------------------------------- */
@@ -615,5 +690,27 @@
   */
   .row {
     flex-wrap: nowrap;
+  }
+}
+
+/*
+  THE TUCK, ENABLED ONLY WHERE THE PIN IS.
+
+  THESE TWO CONDITIONS ARE A COPY OF THE ONES IN WhyAgb.module.css AND MUST STAY IDENTICAL.
+  They are one decision — "is this pairing pinned?" — expressed in two files because it
+  applies to two elements in two components, and a custom property cannot be set across
+  that boundary. If the envelope moves, it moves in both places; the argument for the two
+  numbers is written out at the WhyAgb end, which is where the pin itself lives.
+
+  What breaks if they drift: the tuck without the pin is 24px of dead space at the top of an
+  ordinary section, and the pin without the tuck parks the rounded corner permanently on the
+  viewport's top edge at the end of the document — the bug this exists to fix.
+
+  Everything downstream is a calc against this one value: the section's height, its
+  block-start padding, and both full-bleed layers' heights. Nothing else is conditional.
+*/
+@media (min-width: 64rem) and (min-height: 45rem) {
+  .team {
+    --team-tuck: calc(var(--team-radius) + 0.25rem);
   }
 }

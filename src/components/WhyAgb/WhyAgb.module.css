@@ -392,18 +392,34 @@
   and it would put Team above a Founder that is at the same level for unrelated reasons.
 
   WHY THE GATE, AND WHY IT IS TWO CONDITIONS. A box pinned to the block start shows its own
-  first screen and nothing below it, so pinning a section taller than the viewport makes its
-  lower half unreachable — on a phone that is four of the six reasons, permanently. The pin
-  is therefore only enabled where this section genuinely fits one screen, which is exactly
-  the envelope the section was designed and verified against:
+  first screen and nothing below it — sticky cannot lift its own top edge above the offset,
+  so anything past the first viewport is not merely scrolled past, it is unreachable for the
+  life of the page. On a phone that would be four of the six reasons, permanently. The pin
+  is therefore only enabled where this section genuinely fits one screen:
 
-  - `min-width: 48rem` is where the grid becomes 2 x 3. Below it the six cells are a single
-    column running two or three screens, and no height makes that fit.
-  - `min-height: 45rem` is 720px — the shorter side of the 1280x720 window this section's
-    one-screen budget was measured at (see the note at --why-opening-gap).
+  - `min-width: 64rem` (1024px). NOT the 48rem where the grid becomes 2 x 3, and the
+    difference is measured rather than cautious. At 768 the two columns are about 337px
+    each, which wraps the longer titles to two lines and the descriptions to three; the
+    section works out around 810px tall and would strand its last row on a 720px window —
+    the exact failure this gate exists to prevent, inside the gate. By 1024 the columns are
+    ~465px, most titles are one line, and the section comes in around 690px.
+  - `min-height: 45rem` (720px) — the shorter side of the 1280x720 window this section's
+    one-screen budget was measured against (see the note at --why-opening-gap).
+
+  1024 x 720 IS THE TIGHT CORNER of that envelope, with roughly 30px to spare. If this
+  section's copy ever grows — a longer heading, a seventh reason, a bigger --why-opening-gap
+  — that corner is what to re-measure, and raising the gate is the correct response rather
+  than shrinking the section to fit it.
 
   Outside that envelope this section and Team are ordinary siblings in flow, which is what
-  they were before the pairing existed. Nothing else in either file is conditional on it.
+  they were before the pairing existed.
+
+  THE SAME TWO CONDITIONS ARE REPEATED IN Team.module.css, where they enable `--team-tuck` —
+  the extra block-start height that carries Team's rounded corner off the top of the screen
+  once it has finished arriving. They are one decision written twice because it applies to
+  two elements in two components and a custom property cannot cross that boundary. Keep them
+  identical: the pin without the tuck leaves Team's corner parked on the viewport's top edge
+  for the rest of the document, and the tuck without the pin is dead space.
 
   THE ONE COST, stated rather than hidden: this section's `backdrop-filter` and Team's are
   both live for the full screen of scrolling in which Team is rising, where before they only
@@ -412,7 +428,7 @@
   threshold, which is precisely the machinery HeroBackdrop's rewrite deleted. It is not worth
   buying back for this.
 */
-@media (min-width: 48rem) and (min-height: 45rem) {
+@media (min-width: 64rem) and (min-height: 45rem) {
   .why {
     position: sticky;
     inset-block-start: 0;
