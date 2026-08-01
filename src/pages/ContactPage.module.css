@@ -1,0 +1,339 @@
+/*
+  The /contact page: one card, centred on both axes, split into an identity column and
+  a form column.
+
+  THE GROUND IS A DUPLICATE OF AboutPage.module.css'S AND ServicesPage.module.css'S,
+  NOT A SHARED IMPORT — same reasoning as Services: `.page` and `.atmosphere` below are
+  copies of that construction (same tokens, same layering order), kept local so nothing
+  done here can ever change how the other two render. Three call sites is still not
+  the line for extracting a shared module; if a fourth page wants this ground, that is
+  the point to revisit it.
+
+  UNLIKE THE OTHER TWO, `.page` IS A VIEWPORT-CENTRING FLEX BOX RATHER THAN A SCROLLING
+  COLUMN. This page has exactly one piece of content — the card — so centring it is the
+  whole layout; there is no masthead, no reveal ladder, nothing above or below it.
+*/
+
+.page {
+  --contact-gap: clamp(var(--space-lg), 6vh, var(--space-2xl));
+
+  position: relative;
+  min-block-size: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: var(--about-ground);
+
+  /*
+    Clears the fixed header the same way About's and Services' top padding does, plus
+    the page's own air on every other edge so the card never touches the viewport
+    edge on a short window.
+  */
+  padding-block: calc(var(--header-height) + var(--contact-gap)) var(--contact-gap);
+  padding-inline: var(--container-padding);
+
+  /*
+    THE GRAIN BOOST FOR THIS ROUTE, and the reason it lives here rather than in
+    global.css. `body::after` already grains every page site-wide at the shared
+    --noise-opacity (0.03) — deliberately subtle, tuned for the video-and-glass home
+    page. This route (and About's, and Services') asked for grain that reads as
+    "premium film stock" rather than "barely there", and raising the shared token
+    would have retuned the home page along with it. `.noise-overlay`'s own ::after
+    reads --noise-opacity too, so redeclaring it here on `.page` — the element the
+    utility class is applied to — overrides it for this subtree only. Same value as
+    About's and Services' pages; the three should read as one texture at one strength.
+  */
+  --noise-opacity: 0.07;
+}
+
+/*
+  Identical to AboutPage's `.atmosphere` — see that file for why each choice (fixed,
+  no blur, no blend mode, vignette painted first) is made. Duplicated verbatim rather
+  than shared, per the note at the top of this file.
+*/
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+
+  pointer-events: none;
+
+  background-image:
+    radial-gradient(
+      ellipse 125% 95% at 50% 42%,
+      transparent 48%,
+      var(--about-vignette) 100%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 82% 4%,
+      var(--about-sheen),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 10% 92%,
+      var(--about-sheen-soft),
+      transparent 70%
+    );
+}
+
+.inner {
+  position: relative;
+  z-index: var(--z-base);
+
+  inline-size: 100%;
+  max-inline-size: 64rem;
+}
+
+/* --- The card ------------------------------------------------------------------ */
+
+/*
+  A DARK NAVY FILL, DELIBERATELY DISTINCT FROM THE BROWN GROUND BEHIND IT — see
+  --contact-card-fill in variables.css for why it leans cool where the page leans
+  warm. The border is --glass-border-white, the same "built up from white" rim the
+  site header's pill uses, at the same alpha; --contact-card-glow adds a very soft
+  bloom behind it rather than a second, heavier border, which is what keeps the edge
+  reading as a hairline with light on it instead of an outline.
+*/
+.card {
+  position: relative;
+  isolation: isolate;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2xl);
+
+  padding: clamp(var(--space-xl), 5vw, var(--space-2xl));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border-white);
+
+  background-color: var(--contact-card-fill);
+  box-shadow: 0 0 3rem 0 var(--contact-card-glow), var(--shadow-soft);
+}
+
+/* --- Left column: identity -------------------------------------------------- */
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+}
+
+/*
+  Height-driven, per CLAUDE.md's rule for this mark: the logo is portrait (360x672),
+  so block-size sets the constraint and inline-size derives from it.
+*/
+.logo {
+  block-size: clamp(5rem, 14vw, 7.5rem);
+  inline-size: auto;
+
+  margin-block-end: var(--space-lg);
+}
+
+.social-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+
+  margin-block-end: var(--space-xl);
+}
+
+/*
+  A round glass swatch per icon — the site's light/frosted glass fill and rim
+  (--glass-fill-light, --glass-border), the same family Services' cards and the
+  Contact button pull from, at icon-button scale. Not a new material, just a new
+  size of the existing one.
+*/
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+
+  background-color: var(--glass-fill-light);
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+
+  transition:
+    border-color var(--duration-fast) var(--ease-in-out),
+    color var(--duration-fast) var(--ease-in-out);
+}
+
+.social-link:hover,
+.social-link:focus-visible {
+  border-color: var(--glass-border-bright);
+  color: var(--color-gold-light);
+}
+
+.email-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+
+  inline-size: 100%;
+  max-inline-size: 20rem;
+}
+
+.email-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+/* The site's meta-label register — see Team's .role for the same values. */
+.email-label {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.email-address {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  transition: color var(--duration-fast) var(--ease-in-out);
+}
+
+.email-address:hover,
+.email-address:focus-visible {
+  color: var(--color-gold-light);
+}
+
+/* --- Right column: the form -------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-inline-size: 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  margin-block-end: var(--space-2xs);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+.form-title {
+  margin-block-end: var(--space-lg);
+
+  font-size: var(--text-3xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.field-label {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+/*
+  The white-glass fill again (--glass-fill-white / --glass-border-white), the same
+  pair the site header's pill is built from — a field wants the same small lift off
+  a dark surface a nav bar does. --color-gold on focus, which is exactly the role
+  variables.css documents for that token ("borders, interactive states").
+*/
+.field-control {
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border-white);
+
+  background-color: var(--glass-fill-white);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+
+  transition: border-color var(--duration-fast) var(--ease-in-out);
+}
+
+.field-control::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.field-control:focus {
+  border-color: var(--color-gold);
+}
+
+.field-textarea {
+  resize: vertical;
+  min-block-size: 8rem;
+}
+
+.submit {
+  align-self: flex-start;
+  margin-block-start: var(--space-xs);
+}
+
+.confirmation {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Breakpoints ---------------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  .card {
+    /*
+      A NARROW IDENTITY RAIL, A WIDER FORM — the same uneven split About's masthead
+      uses, for the same reason: the left column holds a mark, five icons and three
+      short lines, and the right holds a heading and three form fields. An even split
+      gives the identity column room it cannot use.
+    */
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .identity {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .social-list {
+    justify-content: flex-start;
+  }
+
+  .email-list {
+    max-inline-size: none;
+  }
+}

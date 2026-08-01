@@ -20,6 +20,15 @@
   padding-block-start: calc(var(--header-height) + var(--services-gap-major));
   padding-block-end: var(--services-gap-major);
   padding-inline: var(--container-padding);
+
+  /*
+    THE GRAIN BOOST FOR THIS ROUTE — see the matching note on `.page` in
+    AboutPage.module.css for the full argument. `.noise-overlay` (applied to this
+    element in ServicesPage.jsx) reads --noise-opacity, so redeclaring it here
+    overrides the site-wide 0.03 for this subtree only. Same value as About's and
+    Contact's pages.
+  */
+  --noise-opacity: 0.07;
 }
 
 /*

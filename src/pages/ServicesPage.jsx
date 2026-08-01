@@ -107,7 +107,13 @@ function ServicesPage() {
     <>
       <Header visible />
 
-      <main className={styles.page}>
+      {/*
+        `noise-overlay` — the global utility from global.css, applied as a literal
+        string per CLAUDE.md. Gives this page its own grain layer on top of the
+        site-wide one `body::after` already paints everywhere; see the
+        `--noise-opacity` override on `.page` in the stylesheet.
+      */}
+      <main className={`${styles.page} noise-overlay`}>
         <div className={styles.atmosphere} aria-hidden="true" />
 
         <div className={styles.inner}>

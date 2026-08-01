@@ -58,6 +58,19 @@
   padding-block-start: calc(var(--header-height) + var(--about-gap-major));
   padding-block-end: var(--about-gap-major);
   padding-inline: var(--container-padding);
+
+  /*
+    THE GRAIN BOOST FOR THIS ROUTE. `body::after` (global.css) already grains every
+    page site-wide at the shared --noise-opacity (0.03) — deliberately subtle, tuned
+    for the home page's video and glass. This route wants grain that reads as film
+    stock rather than "barely there", and raising the shared token would have
+    retuned the home page along with it. `.noise-overlay` (applied to this element
+    in AboutPage.jsx) reads --noise-opacity too, so redeclaring it here overrides it
+    for this subtree only, stacking a second, stronger layer on top of the first.
+    Same value as Services' and Contact's pages — the three should read as one
+    texture at one strength.
+  */
+  --noise-opacity: 0.07;
 }
 
 /* --- The light in the room ------------------------------------------------ */

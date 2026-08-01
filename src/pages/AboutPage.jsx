@@ -131,7 +131,15 @@ function AboutPage() {
       */}
       <Header visible />
 
-      <main className={styles.page}>
+      {/*
+        `noise-overlay` — the global utility from global.css, applied as a literal
+        string per CLAUDE.md (it is not a module class, so `styles['noise-overlay']`
+        would resolve to undefined). It gives this page its own grain layer on top of
+        the site-wide one `body::after` already paints everywhere; see the
+        `--noise-opacity` override on `.page` in the stylesheet for why a second layer
+        was the answer rather than raising the shared token.
+      */}
+      <main className={`${styles.page} noise-overlay`}>
         {/*
           THE LIGHT AND THE VIGNETTE, in one fixed element rather than two or three.
 
