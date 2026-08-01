@@ -243,17 +243,6 @@
   */
   --about-hairline: rgba(201, 112, 20, 0.22);
 
-  /* --- The /contact page's card ------------------------------------------ */
-
-  /*
-    The card's own fill is --glass-fill-white — the header pill's "built up
-    from white" material rather than a new one — so this token is only the
-    outer glow behind that hairline: a very low-alpha white bloom, not a
-    second border. It is what turns the --glass-border-white rim into a lit
-    edge rather than a flat outline.
-  */
-  --contact-card-glow: rgba(255, 255, 255, 0.06);
-
   /* --- Glass ------------------------------------------------------------ */
 
   /*

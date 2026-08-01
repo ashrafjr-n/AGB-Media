@@ -105,9 +105,10 @@
   --glass-blur-wide, the wide blur because, like the pill, this card sits over
   whatever the page happens to be — a photograph here rather than a scrolling page,
   but still not a single known backdrop the way About's own frosted ground is).
-  --contact-card-glow adds a soft outer bloom behind the hairline rather than a second,
-  heavier border, which is what keeps the edge reading as light rather than as an
-  outline.
+
+  NO SHADOW, in any state — the hairline border alone is what separates the card
+  from the ground behind it. There was a soft outer bloom plus --shadow-soft here;
+  both are gone, by request, rather than the glow being tuned down.
 
   WIDER THAN IT IS TALL, DELIBERATELY. `.inner`'s cap widened to 70rem and this card's
   own padding and internal gaps are tuned tighter than a first pass would reach for —
@@ -135,7 +136,6 @@
   background-color: var(--glass-fill-white);
   -webkit-backdrop-filter: blur(var(--glass-blur-wide));
   backdrop-filter: blur(var(--glass-blur-wide));
-  box-shadow: 0 0 3rem 0 var(--contact-card-glow), var(--shadow-soft);
 }
 
 /* --- Left column: identity -------------------------------------------------- */
@@ -151,13 +151,14 @@
 
 /*
   Height-driven, per CLAUDE.md's rule for this mark: the logo is portrait (360x672),
-  so block-size sets the constraint and inline-size derives from it. Larger than the
-  first pass — this is still one element among four sharing a single screen's height
-  budget, but it reads as the identity column's anchor now rather than a small mark
-  above the icon row.
+  so block-size sets the constraint and inline-size derives from it. Enlarged a second
+  time — the first pass read as barely bigger than the icon row beneath it; this is
+  clearly the identity column's anchor now, at the cost of a slightly larger share of
+  the card's height budget (the social row and email list simply sit that much lower,
+  which is fine in a column that already grows top to bottom).
 */
 .logo {
-  block-size: clamp(4.25rem, 11vw, 6.25rem);
+  block-size: clamp(5.5rem, 14vw, 8.5rem);
   inline-size: auto;
 
   margin-block-end: clamp(var(--space-sm), 2vh, var(--space-md));
@@ -188,14 +189,16 @@
   color: var(--color-text-muted);
   font-size: 1rem;
 
-  transition:
-    border-color var(--duration-fast) var(--ease-in-out),
-    color var(--duration-fast) var(--ease-in-out);
+  transition: color var(--duration-fast) var(--ease-in-out);
 }
 
+/*
+  ICON COLOUR ONLY — the circle (fill, border) stays exactly as it is at rest. Only
+  the glyph inside it, which is what `color` reaches on an `<svg>` with no explicit
+  fill of its own, changes on hover or focus.
+*/
 .social-link:hover,
 .social-link:focus-visible {
-  border-color: var(--glass-border-bright);
   color: var(--color-gold-light);
 }
 
@@ -250,7 +253,18 @@
   color: var(--color-text-subtle);
 }
 
+/*
+  `align-self: flex-start` IS THE FIX FOR THE HIT AREA, not decoration. `.email-row` is
+  a column flex container, and a flex item's default `align-self: stretch` blockifies
+  it to the FULL WIDTH of that container on the cross axis — so without this, the
+  anchor's clickable and hoverable box reached the row's whole width (as wide as
+  `.email-list`, up to 18rem, or wider still once that cap lifts on desktop) rather
+  than stopping at the text. This shrinks it back to its own content width, which is
+  what makes the hover/click area exactly the email string.
+*/
 .email-address {
+  align-self: flex-start;
+
   font-size: var(--text-sm);
   color: var(--color-text);
   transition: color var(--duration-fast) var(--ease-in-out);
@@ -412,11 +426,14 @@
   file" — rather than as a second call to action competing with the form's own submit
   button.
 
-  NO box-shadow / drop-shadow IN ANY STATE, by the brief — rest, hover and focus below
-  are all colour-only. The default `:focus-visible` outline from global.css is left
-  untouched: an outline is not a box-shadow, and removing the one visible focus
-  indicator a plain <a download> gets would be a real accessibility regression for no
-  reason the brief asked for.
+  NO box-shadow / drop-shadow IN ANY STATE, by the brief. NO HOVER EFFECT EITHER, by a
+  later request — rest and hover are now visually identical (no colour change, no
+  transform, nothing), so there is no `:hover` rule and no `transition` left to write:
+  nothing here changes on hover, so there is nothing to animate toward. The default
+  `:focus-visible` outline from global.css is left untouched: an outline is not a
+  box-shadow and not a hover effect, and removing the one visible focus indicator a
+  plain <a download> gets would be a real accessibility regression for no reason
+  either brief asked for.
 */
 .profile-download {
   display: inline-flex;
@@ -433,23 +450,11 @@
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-
-  transition:
-    background-color var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out),
-    color var(--duration-base) var(--ease-out);
 }
 
 /* react-icons draws at 1em; a touch larger than the label reads better beside caps text. */
 .profile-download svg {
   font-size: 1.1em;
-}
-
-.profile-download:hover,
-.profile-download:focus-visible {
-  border-color: var(--color-gold-light);
-  background-color: var(--color-gold-veil);
-  color: var(--color-text);
 }
 
 /* --- Breakpoints ---------------------------------------------------------------- */
@@ -477,9 +482,15 @@
     column. `.identity` stays flush left below (the icons and the emails are meant to
     line up against the seam, not float toward the middle of their track), so this is
     a margin on the logo specifically rather than a change to the column's alignment.
+
+    RAISED A SECOND TIME — the first cap (--space-xl, 48px) read as barely off the
+    edge against a ~300-350px column at typical desktop widths, closer to "left
+    aligned with a little air" than "centre-left". --space-3xl (112px) puts it closer
+    to a third of the way into the column, which is what actually reads as shifted
+    toward the middle rather than nudged.
   */
   .logo {
-    margin-inline-start: clamp(var(--space-md), 4vw, var(--space-xl));
+    margin-inline-start: clamp(var(--space-xl), 9vw, var(--space-3xl));
   }
 
   .social-list {
