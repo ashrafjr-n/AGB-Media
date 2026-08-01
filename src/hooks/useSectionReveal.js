@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 import { useReducedMotion } from 'framer-motion'
 
 /*
@@ -70,38 +70,87 @@ const REVEAL_EASE = [0.16, 1, 0.3, 1]
 const REVEAL_VIEWPORT = { once: true, amount: 0.25 }
 
 /*
-  WHICH SECTIONS HAVE ALREADY PLAYED THEIR LADDER, THIS SESSION.
+  WHICH REVEALS HAVE ALREADY PLAYED, THIS SESSION — and why returning `{}` afterwards is
+  the fix rather than a tidy-up.
 
-  `once: true` above stops a reveal replaying while the page stays mounted. It cannot stop
-  it replaying across a REMOUNT, and this site remounts constantly: every nav destination
-  except `/` is wired ahead of its page, so following one unmounts HomePage entirely and
-  coming back builds it again from scratch. Every section then faded in from opacity 0 a
-  second, third and fourth time — most obviously on About's "Discover Our Story" button,
-  because that is the link people actually click and therefore the element they come back
-  to. An entrance that replays every time you return is the thing that makes a reveal feel
-  cheap, which is the same argument `once: true` is already making one level down.
+  `once: true` in REVEAL_VIEWPORT is not the problem and never was: it works. What broke is
+  subtler and was found by measuring rather than by reading. These props attach an
+  `initial` — opacity 0, 12px down — for the element's whole life, and an element with
+  `whileInView` and no `animate` resolves to that `initial` whenever the viewport state is
+  re-evaluated while it is off screen. A component that never re-renders therefore keeps its
+  finished state forever, and one that re-renders on scroll silently snaps back to opacity 0
+  the moment it leaves the screen, then reveals again on the way back.
 
-  MODULE SCOPE, NOT STATE, and it is the pattern HeroHeader.jsx uses for the hero's own
-  one-per-session entrance. State would be destroyed by exactly the remount this exists to
-  survive.
+  That is exactly the split the page had. WhyAgb re-renders never, and its title stayed at
+  opacity 1 when scrolled away. About re-renders constantly — two `useInView` observers and
+  a `useScrollPosition` selector — and its "Discover Our Story" button was measured at
+  `opacity: 0; transform: translateY(12px)` while off screen, on the same DOM node, and
+  animated again on every return. Same hook, same props, opposite behaviour, decided by
+  something as incidental as whether the section happens to watch its own scroll position.
 
-  LATCHED ON COMPLETION, NOT ON MOUNT — also from HeroHeader, and also not optional.
-  StrictMode deliberately mounts, unmounts and remounts every component in development, so
-  a mount-latched flag would be set by that throwaway first mount and would suppress the
-  entrance before anyone ever saw it. An animation completing happens long after StrictMode
-  is finished.
+  So the guard has to REPLACE the props, not merely stop them from re-triggering. Once a
+  reveal is played its step returns SETTLED — `initial: false` with a static `animate` at
+  the end state. There is no `whileInView` and no `viewport`, so no observer is attached to
+  the element at all, and no `initial` for a re-render to fall back to.
 
-  A SET KEYED BY SECTION rather than one global boolean, and the distinction is the whole
-  design. A single flag would latch the moment ANY section revealed, so a reader who
-  followed a link out of the Story section would find the Founder, WhyAgb and Team rendered
-  flat on their return — sections they had never actually seen animate. Keyed per section,
-  each one keeps its entrance until it has genuinely played, and loses it only after.
+  IT IS NOT `{}`, AND THAT WAS MEASURED THE HARD WAY. Returning an empty object is the
+  obvious move and it is wrong for an element that has already rendered once with these
+  props: Framer leaves the inline `opacity: 0` that `initial` wrote, and dropping every
+  animation prop leaves nothing to clear it — the element played its reveal and then
+  vanished. `initial: false` says "you are already at the target", which both pins the
+  element for the rest of this mount and renders it correctly on a later one.
 
-  A section opts in by passing a scope. Calling `useSectionReveal()` with no argument keeps
-  the old behaviour — reveal on every mount — which is the right default for anything that
-  is not a section of this page.
+  MODULE SCOPE, NOT STATE, so it survives the remount that routing away and back causes —
+  every nav destination except `/` is wired ahead of its page. That is HeroHeader.jsx's
+  `entrancePlayed` pattern.
+
+  LATCHED ON COMPLETION, NOT ON MOUNT, also from HeroHeader, and load-bearing twice over.
+  StrictMode deliberately mounts, unmounts and remounts every component in development, so a
+  mount-latched flag would be set by that throwaway first mount and suppress the entrance
+  before anyone saw it. It is also what makes the swap invisible: an element only stops
+  carrying animation props after its own animation has finished, so there is never a
+  half-faded element snapped to its end state.
+
+  KEYED PER ELEMENT (`scope:step`), NOT PER SECTION AND NOT GLOBALLY. A single flag would
+  latch the moment any reveal completed, so a reader who scrolled quickly would find whole
+  sections rendered flat that they had never seen animate. Per section is not fine-grained
+  enough either, for the same reason one rung down: a tall section's first rung can complete
+  long before its last has entered the viewport.
+
+  RECORDING IS PASSIVE — a latch does NOT force a re-render, and that is a correction of
+  something tried and measured. Notifying every consumer on each latch made the swap take
+  effect the instant a key was recorded, which sounds better and is not: the rungs of a
+  ladder complete one after another, so the first rung's latch re-rendered the section while
+  the last rung was still animating, and the elements mid-flight reset to `initial` and
+  flashed to nothing. Measured at the CTA: it rose to 0.9 opacity, dropped to 0 for around
+  240ms, then reappeared.
+
+  So the key is simply written, and every consumer picks it up on its NEXT render, whenever
+  that naturally happens. This is not a compromise, because of what the two cases actually
+  need. A section that re-renders — About, which watches its own scroll position — swaps to
+  SETTLED on the first re-render after the animation finished, which is exactly the moment
+  the replay would otherwise have been armed. A section that never re-renders keeps its
+  original props for the life of the mount, and cannot replay either: with nothing
+  re-resolving the viewport state there is nothing to fall back to `initial` from. WhyAgb was
+  measured holding opacity 1 while off screen for precisely that reason. Either way the
+  element animates once, and a later mount reads `played` on its first render.
 */
-const playedScopes = new Set()
+/*
+  What a reveal that has already played renders as, and what reduced motion renders as: the
+  end of the ladder, held. `initial: false` is the load-bearing half — it tells Framer the
+  element is already at the target, so nothing writes an `opacity: 0` that would then need
+  clearing, on this mount or any later one.
+
+  Frozen so the identity is stable across every render and every consumer; a fresh object
+  here would be a new prop value on every render for no reason.
+*/
+const SETTLED = Object.freeze({
+  initial: false,
+  animate: Object.freeze({ opacity: 1, y: 0 }),
+  transition: Object.freeze({ duration: 0 }),
+})
+
+const played = new Set()
 
 /**
  * The scroll-in entrance every section shares.
@@ -117,50 +166,64 @@ const playedScopes = new Set()
  *   reach anything Framer drives inline (CLAUDE.md §4).
  *
  * @param {string} [scope]
- *   An id for the section calling this, and what makes the ladder play ONCE PER SESSION
- *   rather than once per mount. The first time this section's reveal finishes, the scope
- *   is recorded; on any later mount — after routing away and back — every step returns an
- *   empty object and the section renders in its final state with nothing to animate from.
- *   See `playedScopes` above. Omit it and the ladder reveals on every mount, as before.
+ *   An id for the ladder calling this. Combined with the step it forms the key a reveal is
+ *   remembered by, which is what makes each element animate EXACTLY ONCE per session —
+ *   the first time it ever enters the viewport, and never again, whether the second chance
+ *   comes from scrolling back, a re-render while off screen, or a route remount. After
+ *   that its step returns an empty object and the element carries no animation props and no
+ *   observer at all. See the note above `played`.
+ *
+ *   One scope per ladder, NOT per component: a component running two independent ladders
+ *   (WhyAgb's opening and its grid, which restarts the stagger at 0) needs two, or their
+ *   steps collide and one ladder latches the other's elements before they have played.
+ *
+ *   Omit it and the reveal runs on every mount and every re-intersection, as it did before.
  */
 function useSectionReveal(scope) {
   const shouldReduceMotion = useReducedMotion()
 
-  /*
-    Read once per mount and held, so the answer cannot change mid-ladder: the first
-    element to finish adds the scope, and without this the steps still animating would
-    start returning `{}` on the next render and snap to their end state.
-  */
-  const alreadyPlayed = useRef(
-    scope !== undefined && playedScopes.has(scope),
-  ).current
-
-  const markPlayed = useCallback(() => {
-    if (scope !== undefined) playedScopes.add(scope)
-  }, [scope])
-
   return useCallback(
-    (step = 0) =>
-      shouldReduceMotion || alreadyPlayed
-        ? {}
-        : {
-            initial: { opacity: 0, y: REVEAL_DISTANCE },
-            whileInView: { opacity: 1, y: 0 },
-            viewport: REVEAL_VIEWPORT,
-            transition: {
-              duration: REVEAL_DURATION,
-              delay: step * REVEAL_STAGGER,
-              ease: REVEAL_EASE,
-            },
-            /*
-              Every rung reports completion and they all write the same key, so the Set
-              write is idempotent and the scope is latched by whichever step finishes
-              first. That is deliberately not "the last step": a reader who scrolls past
-              mid-ladder has still seen the entrance.
-            */
-            onAnimationComplete: markPlayed,
-          },
-    [shouldReduceMotion, alreadyPlayed, markPlayed],
+    (step = 0) => {
+      const key = scope === undefined ? null : `${scope}:${step}`
+
+      /*
+        THE EARLY RETURN IS THE WHOLE FIX. `played` is read here, during render, on every
+        render — so the moment this element's own animation has completed it stops being
+        handed a `whileInView` and a `viewport`, and Framer has nothing left to re-observe
+        or re-resolve. Checking the flag while still returning the props would not have
+        worked: the replay came from the props existing, not from the observer being asked
+        twice.
+
+        Reduced motion takes the same branch, which is a small simplification on what this
+        used to do: SETTLED renders the element in its final state with nothing to animate
+        from, which is exactly what the empty object was achieving there.
+      */
+      if (shouldReduceMotion || (key !== null && played.has(key))) return SETTLED
+
+      return {
+        initial: { opacity: 0, y: REVEAL_DISTANCE },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: REVEAL_VIEWPORT,
+        transition: {
+          duration: REVEAL_DURATION,
+          delay: step * REVEAL_STAGGER,
+          ease: REVEAL_EASE,
+        },
+        /*
+          Latches this element alone, on its own completion. Omitted entirely when the
+          caller passed no scope, so an unscoped ladder keeps the old behaviour rather
+          than latching under a key it never supplied.
+        */
+        ...(key === null
+          ? {}
+          : {
+              onAnimationComplete: () => {
+                played.add(key)
+              },
+            }),
+      }
+    },
+    [shouldReduceMotion, scope],
   )
 }
 

@@ -79,6 +79,16 @@ function WhyAgb() {
   */
   const revealAt = useSectionReveal('why-agb')
 
+  /*
+    A SECOND LADDER, AND THEREFORE A SECOND SCOPE. The grid restarts the stagger at 0 (see
+    above), so its rungs 0 and 1 would otherwise share keys with the eyebrow and the title —
+    and a shared key means the first of the pair to finish latches the other before it has
+    played, leaving a cell rendered flat while its neighbours animate. On a window where the
+    whole section is on screen the two ladders fire together and the collision would never
+    show; on a phone, where the grid is a screen below the heading, it would.
+  */
+  const revealCell = useSectionReveal('why-agb-grid')
+
   return (
     <section className={styles.why} id="why-agb" aria-labelledby="why-agb-title">
       {/*
@@ -151,7 +161,7 @@ function WhyAgb() {
         */}
         <ol className={styles.grid}>
           {reasons.map(({ title, description }, index) => (
-            <motion.li className={styles.item} key={title} {...revealAt(index)}>
+            <motion.li className={styles.item} key={title} {...revealCell(index)}>
               <span className={styles.index} aria-hidden="true">
                 {String(index + 1).padStart(2, '0')}
               </span>

@@ -273,8 +273,10 @@
   cubic-bezier(0.22, 1, 0.36, 1), which is close to exponential: it covers about 90% of its
   travel in the first quarter of the duration, so at 180ms the colour had effectively
   arrived within ~45ms and the hover read as a snap rather than as a fade. --ease-in-out
-  (cubic-bezier(0.65, 0, 0.35, 1)) is symmetrical and spends its time in the middle, and
-  300ms is long enough to see without the label feeling like it lags the pointer. Symmetry
+  (cubic-bezier(0.65, 0, 0.35, 1)) is symmetrical and spends its time in the middle, which
+  is what makes the fade legible at a short duration. It sat at --duration-base (300ms) and
+  came back to --duration-fast: with this curve 180ms is a visible fade rather than the snap
+  the same number gave under --ease-out, and 300ms had started to lag the pointer. Symmetry
   matters here specifically because a hover is reversible — the fade out should take as long
   as the fade in, which an ease-out curve does not do.
 
@@ -293,7 +295,7 @@
   /* Nav links sit at 500 per the design system's weight ladder. */
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
-  transition: color var(--duration-base) var(--ease-in-out);
+  transition: color var(--duration-fast) var(--ease-in-out);
 }
 
 .nav-link:hover {
