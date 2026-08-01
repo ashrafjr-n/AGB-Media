@@ -1,0 +1,270 @@
+/*
+  The /services page: a centred title, then twelve service cards in a 3 x 4 grid.
+
+  THE GROUND IS A DUPLICATE OF AboutPage.module.css'S, NOT A SHARED IMPORT. `.page` and
+  `.atmosphere` below are the same rules, the same tokens (--about-ground,
+  --about-vignette, --about-sheen, --about-sheen-soft) and the same layering order as
+  that file — copied rather than factored out, so nothing done here can ever change how
+  /about renders. If a third page ever wants this ground, that is the point to extract
+  it; two call sites is not.
+*/
+
+.page {
+  --services-gap-major: clamp(var(--space-2xl), 12vh, var(--space-3xl));
+
+  position: relative;
+  min-block-size: 100vh;
+
+  background-color: var(--about-ground);
+
+  padding-block-start: calc(var(--header-height) + var(--services-gap-major));
+  padding-block-end: var(--services-gap-major);
+  padding-inline: var(--container-padding);
+}
+
+/*
+  Identical to AboutPage's `.atmosphere` — see that file for why each choice (fixed,
+  no blur, no blend mode, vignette painted first) is made. Duplicated verbatim rather
+  than shared, per the note at the top of this file.
+*/
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+
+  pointer-events: none;
+
+  background-image:
+    radial-gradient(
+      ellipse 125% 95% at 50% 42%,
+      transparent 48%,
+      var(--about-vignette) 100%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 82% 4%,
+      var(--about-sheen),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 10% 92%,
+      var(--about-sheen-soft),
+      transparent 70%
+    );
+}
+
+.inner {
+  position: relative;
+  z-index: var(--z-base);
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+}
+
+/* --- Masthead --------------------------------------------------------------- */
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin-block-end: clamp(var(--space-2xl), 8vh, var(--space-3xl));
+
+  text-align: center;
+}
+
+/* The site's micro-label, at the value About, WhyAgb and Team all open with. */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+
+  margin-block-end: var(--space-sm);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+.page-title {
+  max-inline-size: 20ch;
+
+  font-size: var(--text-4xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/* --- The grid ----------------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* --- The card ------------------------------------------------------------------ */
+
+/*
+  Glass DNA borrowed from .button-featured/.button-glass in shared/Button.module.css —
+  the same fill, blur and rim tokens — without touching that file or either call site.
+  A card is not a `motion.create(Link)` the way both buttons are, so there is no
+  Framer-transform conflict to design around; the whole surface, including its own
+  entrance, can sit on one element.
+*/
+.card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+
+  background-color: var(--glass-fill-light);
+  -webkit-backdrop-filter: blur(var(--glass-blur-tight));
+  backdrop-filter: blur(var(--glass-blur-tight));
+
+  transition: border-color var(--duration-base) var(--ease-out);
+}
+
+.card:hover {
+  border-color: var(--glass-border-bright);
+}
+
+/*
+  The numeral, at WhyAgb's exact `.index` values — same colour, size, weight and
+  tabular figures — so the two numbered treatments on the site read as one device.
+*/
+.number {
+  display: block;
+  margin-block-end: var(--space-md);
+
+  color: color-mix(in srgb, var(--color-gold) 70%, transparent);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-title {
+  margin-block-end: var(--space-2xs);
+
+  font-size: var(--text-xl);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.card-description {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- The border-reveal ring ------------------------------------------------- */
+
+/*
+  A local custom property rather than reusing --edge-angle from Button.module.css.
+  @property names are not hashed by CSS Modules (only class selectors are), so the two
+  would collide if this file ever registered the same identifier — giving this one its
+  own name keeps the two files independent by construction, not by convention.
+*/
+@property --services-card-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/*
+  The ring itself: the same two-mask xor construction .button-featured::after uses to
+  turn a conic-gradient into a hairline-thick border with no `border-image` involved.
+  See that rule in Button.module.css for the full geometry argument; only what differs
+  here is noted.
+
+  IT IS OFF BY DEFAULT (`opacity: 0`) AND ONLY ANIMATES ON HOVER — the deliberate
+  departure from the button's always-on rim light. That one is a single small box the
+  animation cost is negligible on; this is twelve of them, and a conic-gradient behind
+  an xor mask repaints the whole ring every frame it runs (no compositor transform to
+  hoist). Gating the `animation` itself to `:hover` means at most one card is ever
+  costing anything at a time, which reads as "the border reveals when you touch it"
+  and is also the only version of this effect worth shipping at this scale.
+*/
+.card::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+
+  inset: 0;
+  border-radius: calc(var(--radius-lg) - 1px);
+  padding: 1.5px;
+
+  background-image: conic-gradient(
+    from var(--services-card-angle),
+    transparent 0deg,
+    var(--color-gold-veil) 60deg,
+    var(--color-gold-light) 120deg,
+    var(--color-gold-veil) 180deg,
+    transparent 240deg,
+    transparent 360deg
+  );
+
+  -webkit-mask: linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+  pointer-events: none;
+}
+
+.card:hover::after {
+  opacity: 1;
+  animation: services-card-edge-travel 3s linear infinite;
+}
+
+/*
+  prefers-reduced-motion needs no JS branch here: this is a CSS animation, and the
+  block in global.css already covers it site-wide (the same reason .button-featured's
+  edge light and .button-glass's sheens need none). Reduced, the ring still fades in on
+  hover and simply renders parked at its initial angle.
+*/
+@keyframes services-card-edge-travel {
+  to {
+    --services-card-angle: 360deg;
+  }
+}

@@ -1,15 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import AboutPage from './pages/AboutPage'
+import ServicesPage from './pages/ServicesPage'
 
 /*
-  TWO ROUTES NOW. `/services` and `/contact` are still linked from data/navLinks.js
-  without a <Route> of their own — those links are deliberately wired ahead of their
-  pages, and following one renders an empty page until it exists. Adding one means adding
-  it here and checking whether navLinks.js needs anything.
+  THREE ROUTES NOW. `/contact` is still linked from data/navLinks.js without a <Route>
+  of its own — that link is deliberately wired ahead of its page, and following it
+  renders an empty page until it exists. `/services` was the second of the three to get
+  one; navLinks.js needed no change, since it was already pointing here.
 
-  No code splitting, deliberately. The app is one chunk, and AboutPage is type on a
-  painted ground with no assets of its own — a lazy boundary here would cost a round trip
+  No code splitting, deliberately. The app is one chunk, and neither AboutPage nor
+  ServicesPage carries assets of its own — a lazy boundary here would cost a round trip
   to defer a few kilobytes.
 */
 function App() {
@@ -18,6 +19,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/services" element={<ServicesPage />} />
       </Routes>
     </BrowserRouter>
   )
