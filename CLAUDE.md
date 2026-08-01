@@ -29,16 +29,23 @@ Single source of truth for every task in this repository. Read this before writi
 
 ### Routing, and what is wired ahead of itself
 
-`App.jsx` mounts a `BrowserRouter` with **exactly one route**: `/` → `pages/HomePage.jsx`, which renders `<Header />`, then `<main>` with a `.stage` wrapper holding `<HeroBackdrop />`, `<Hero />` and `<About />`, followed by `<Founder />`, `<WhyAgb />` and `<Team />`. **`<Footer />` renders inside `Team`**, as that section's last child, so there is no page-level element after it — see §7. There is no placeholder section any more — `WhyAgb` took that slot, and `Team` closes the page below it. `HomePage.module.css` went with it and has since come back, for the stage — see §7.
+`App.jsx` mounts a `BrowserRouter` with **two routes**: `/` → `pages/HomePage.jsx` and `/about` → `pages/AboutPage.jsx`.
 
-`/about`, `/services` and `/contact` are linked from `navLinks.js`, and About's CTA points at `/about`, but **none of them has a `<Route>`** — following one renders an empty page. The links are deliberately wired ahead of the pages. When adding one of those pages, add the route *and* check nothing in `navLinks.js` needs to change.
+`HomePage` renders `<Header />`, then `<main>` with a `.stage` wrapper holding `<HeroBackdrop />`, `<Hero />` and `<About />`, followed by `<Founder />`, `<WhyAgb />` and `<Team />`. **`<Footer />` renders inside `Team`**, as that section's last child, so there is no page-level element after it — see §7. There is no placeholder section any more — `WhyAgb` took that slot, and `Team` closes the page below it. `HomePage.module.css` went with it and has since come back, for the stage — see §7.
+
+`AboutPage` is the company profile, and it is the **only route that does not use `--color-black`** — see §2. It renders `<Header visible />` (always on, since there is no in-flow hero header on this route to collide with) and one `<main>`: a masthead, then three chapters — Vision, Mission, Our Capital — on a single asymmetric two-column axis. Its copy lives in `data/aboutPage.js`, the only page whose copy is not local to its component.
+
+`/services` and `/contact` are still linked from `navLinks.js` with **no `<Route>`** — following one renders an empty page. Those links are deliberately wired ahead of their pages. When adding one, add the route *and* check nothing in `navLinks.js` needs to change. `/about` was the first of the three to get a page and is the worked example.
+
+**There is no scroll restoration anywhere in the router.** React Router changes the URL without touching scroll, so a page reached from a link partway down another page opens partway down itself. `AboutPage` resets its own scroll in a mount effect; a new page needs the same three lines, or it inherits whatever offset the link was clicked at.
 
 ### Component inventory
 
 | File | What it is |
 | --- | --- |
-| `App.jsx` | Router shell. One route. |
-| `pages/HomePage.jsx` | The only page. Owns **`.stage`** — the wrapper holding `HeroBackdrop`, `Hero` and `About`, which is what scopes the sticky footage to those two sections (§7). Holds **one boolean**, reported by `About` and consumed by a component that knows nothing of it: whether the Story section is half on screen (→ `Header`'s `visible`, §4). It held a second until the backdrop became sticky and made the question unnecessary. |
+| `App.jsx` | Router shell. Two routes. |
+| `pages/AboutPage.jsx` | The `/about` page — the company profile. **The one route on a different ground** (`--about-ground`, a deep warm brown) lit by a single fixed layer of stacked radial gradients: a vignette over two warm bleeds, no blur, no blend mode, nothing animated. Its structure is one asymmetric two-column axis repeated four times — a rail carrying a Roman numeral and a heading, the copy on a wider track beside it — and the rail is `position: sticky` above `64rem`. Holds a local `Chapter` component, which exists so each chapter can run **its own** `useSectionReveal` ladder (a hook cannot be called inside a `.map()`). No video, no glass, no `backdrop-filter`. |
+| `pages/HomePage.jsx` | The home page. Owns **`.stage`** — the wrapper holding `HeroBackdrop`, `Hero` and `About`, which is what scopes the sticky footage to those two sections (§7). Holds **one boolean**, reported by `About` and consumed by a component that knows nothing of it: whether the Story section is half on screen (→ `Header`'s `visible`, §4). It held a second until the backdrop became sticky and made the question unnecessary. |
 | `components/Header/Header.jsx` | The **fixed** site header — floating glass pill, logo, desktop nav, mobile hamburger + `AnimatePresence` drawer. Hidden via `data-hidden` + `inert` until its `visible` prop says otherwise; it reads no scroll position of its own. See §4 "The two headers". |
 | `components/Hero/Hero.jsx` | `100svh` landing section: an `sr-only` `<h1>`, its own header, and a bottom metadata ticker built from a local `tickerItems` array (company, founded, HQ, founder, CEO, scope). Its middle is **intentionally empty**. **Takes no props and holds no video** — it carries `data-offscreen` at `viewportProgress >= 1` to stop the animations inside it, and nothing else. |
 | `components/Hero/HeroBackdrop.jsx` | The 4K footage under a `--color-scrim` overlay — **`position: sticky`, and a sibling of `Hero` and `About` rather than a child of either**, because the pinning spans both and a sticky box is constrained by its containing block. Owns the play/pause gate and the unmute-on-first-gesture effect. Lives in `Hero/` because the footage is the hero's, like `HeroHeader.jsx`. See §7. |
@@ -57,6 +64,7 @@ Single source of truth for every task in this repository. Read this before writi
 | `hooks/useSectionReveal.js` | **The** scroll-in entrance, as a ladder of steps. All three scrolling sections reveal from it, so retuning the feel is one edit rather than two that drift. Returns `revealAt(step)` — steps are indices, not seconds — and carries its own `prefers-reduced-motion` branch, so call sites never check. See §4 Motion. |
 | `hooks/useMediaQuery.js` | Subscribes to a media query from JS, for the case a CSS breakpoint cannot reach: deciding whether to **mount** at all. Exists for the lens, from when that meant a WebGL context, a model fetch and a video texture that `display: none` would still have paid for. It is far cheaper to mount now, but the gate is kept: a pointer-following disc has almost nowhere to travel in a ~300px circle and there is usually no pointer to follow. |
 | `hooks/useScrollPosition.js` | Passive, rAF-coalesced scroll reader → `{ scrollY, viewportHeight, viewportProgress }`. **One module-scoped listener and one `scrollY` read per frame** shared by every consumer, so a fourth costs nothing. Takes an **optional selector**, which narrows what is stored in state so a consumer that only wants a threshold does not re-render on every scroll frame; all three current consumers pass the file's own `isPastFirstViewport` export, which *is* the header and video-gate threshold rather than a matching copy of it. |
+| `data/aboutPage.js` | `/about`'s copy — the intro paragraphs and the three chapters (`id`, `marker`, `title`, `body`, and `closing` on the last one). **The only copy on the site that is not local to its component**, and the exception is volume: fourteen paragraphs inlined would bury the layout. A section with a paragraph or six short lines still keeps its text local, the way `About`, `WhyAgb` and `Founder` do. |
 | `data/navLinks.js` | The nav model, shared by both headers, by **Team**'s CTA (which reads the `featured` entry for its route, so it cannot point somewhere the headers do not) and by **Footer** (which filters that entry out — it sits directly above as a button). `Contact` carries `featured: true`. |
 | `styles/variables.css` | Design tokens **only** — no selectors beyond `:root`. |
 | `styles/global.css` | The `@import`s, reset, base element styles, film-grain overlay, `.noise-overlay` and `.sr-only`. Imported once, by `main.jsx`. |
@@ -116,15 +124,21 @@ All colors live as CSS custom properties in `src/styles/variables.css`. **Never 
 
 | Token | Value | Role |
 | --- | --- | --- |
-| `--color-black` | `#010101` | Near-true-black, exactly neutral — all three channels equal, no steel, slate, or blue lean. **The one and only background colour on the site**, for every section. The lineage runs `#0C0F14` → `#1B1D20` → `#131315` → `#070708` → `#0B0B0C` → `#050505` → `#030303` → here; the early values were set while the grain overlay was still adding luminance on top of them, so the page rendered lighter than its token. The grain has blended in soft-light since `#131315`, so this value is what reaches the screen. **This is the final ground tone — the token is settled and takes no further adjustment.** |
+| `--color-black` | `#010101` | Near-true-black, exactly neutral — all three channels equal, no steel, slate, or blue lean. **The ground for every section of the home page, and the only background colour on that route.** (`/about` is a separate ground — see `--about-ground` below.) The lineage runs `#0C0F14` → `#1B1D20` → `#131315` → `#070708` → `#0B0B0C` → `#050505` → `#030303` → here; the early values were set while the grain overlay was still adding luminance on top of them, so the page rendered lighter than its token. The grain has blended in soft-light since `#131315`, so this value is what reaches the screen. **This is the final ground tone — the token is settled and takes no further adjustment.** |
 | `--color-gold` | `#C97014` | **Signature accent**, sampled from the logo's midtone. Headings, highlights, borders, interactive states. |
 | `--color-gold-light` | `#E09A3C` | Hover / focus / raised state of the accent. |
 | `--color-gold-deep` | `#8F2804` | Rust from the logo's lower band. Gradient endpoint only. |
 | `--color-text` | `#F5F5F0` | Warm off-white. Body text. |
 | `--color-text-bright` | `#FFFFFF` | **Pure white, and the only place on the site it is allowed.** The hover state of a nav link in both headers, and nothing else — those links rest at `--color-text-muted`, and the lift only reads as a lift if it lands past `--color-text`. It does not replace `--color-text` anywhere; running copy stays warm off-white. A third consumer is a sign the palette has drifted, not a licence. |
 | `--color-text-muted` | `rgba(245,245,240,0.65)` | De-emphasized text. |
+| `--about-ground` | `#130C07` | **The `/about` page's ground, and the one thing on the site that is not `--color-black`.** The accent's own hue taken almost to black (hue ~21°, the logo's warm lean), a couple of points lighter than the site ground — which is most of what makes it register as brown, since at this luminance hue alone is nearly invisible. |
+| `--about-vignette` | `rgba(8,5,2,0.8)` | The `/about` vignette: that ground's **own** tone deepened, never raw black. Pure black over a warm ground greys the corners rather than deepening them, which is the flat edge a vignette exists to avoid. |
+| `--about-sheen` / `--about-sheen-soft` | gold at `0.12` / `0.05` | The warm bleed across `/about` — a key light high on the inline end and a much weaker fill diagonally opposite. Above roughly `0.15` the first stops reading as light and becomes a coloured band across the copy. |
+| `--about-hairline` | `rgba(201,112,20,0.22)` | The rule opening each `/about` chapter. Brighter than `--glass-border` for WhyAgb's reason: there is no pane edge under it for the eye to find it against. |
 
 The gold was sampled directly from `/public/assets/images/agb-logo.png`. Do not re-derive it.
+
+**One ground per route, and the rule is about seams rather than about tone.** "The site is one tone end to end" holds *within* a route, and it is what the translucent-surfaces note below protects: two ground values that meet at a section boundary leave a visible step. `/about` shares no edge, no scroll and no composited surface with anything on the home page, so a second ground there costs nothing and reads as a different room in the same building. A second ground **inside** a route is still the bug that note describes.
 
 ### Translucent surfaces — one tone, no seams
 
@@ -266,6 +280,8 @@ src/
   pages/                    # route-level components
     HomePage.jsx            # owns .stage, and wires About's report to Header
     HomePage.module.css     # .stage and .stage-content — the sticky backdrop's scope
+    AboutPage.jsx           # /about — the one route on its own ground
+    AboutPage.module.css    # the brown ground, the fixed light, the two-column axis
   styles/
     variables.css           # design tokens ONLY
     global.css              # reset, base element styles, noise overlay
@@ -276,6 +292,7 @@ src/
     useScrollPosition.js
   data/                     # static content (copy, project lists)
     navLinks.js             # the nav model, shared by BOTH headers
+    aboutPage.js            # /about's copy — the one page whose text is not local
   assets/
     videos/story.webm       # bundled; hero.webm is in public/, see Assets
     nael/nael.webp          # the CEO's portrait, for Team
@@ -304,7 +321,7 @@ public/
 
 Framer Motion is the only animation library.
 
-**Every scroll-in reveal on the site comes from `hooks/useSectionReveal.js` — About, Founder, WhyAgb and Team — and a new section reveals from it too.** It is one ladder — `revealAt(0)`, `revealAt(1)`, … — with the travel (12px), the duration (0.58s), the stagger (0.09s), the easing (`[0.16, 1, 0.3, 1]`, a long flat-tailed decelerating curve) and `viewport: { once: true, amount: 0.25 }` all set in that one file. Steps are **indices, not delays**, so re-ordering a ladder is renumbering it. Do not write a `whileInView` transition inline in a section — two sections tuned separately stop reading as one gesture, which is the whole reason this was hoisted out of `About.jsx` and `Founder.jsx`.
+**Every scroll-in reveal on the site comes from `hooks/useSectionReveal.js` — About, Founder, WhyAgb, Team and every block on `/about` — and a new section reveals from it too.** It is one ladder — `revealAt(0)`, `revealAt(1)`, … — with the travel (12px), the duration (0.58s), the stagger (0.09s), the easing (`[0.16, 1, 0.3, 1]`, a long flat-tailed decelerating curve) and `viewport: { once: true, amount: 0.25 }` all set in that one file. Steps are **indices, not delays**, so re-ordering a ladder is renumbering it. Do not write a `whileInView` transition inline in a section — two sections tuned separately stop reading as one gesture, which is the whole reason this was hoisted out of `About.jsx` and `Founder.jsx`.
 
 **`once: true` is necessary and was never sufficient**, and the reason is worth reading before touching this hook — it was diagnosed by measurement after two wrong fixes.
 
