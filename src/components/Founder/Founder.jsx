@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
   HiOutlineFlag,
   HiOutlineMicrophone,
@@ -19,31 +20,21 @@ import { TbMasksTheater } from 'react-icons/tb'
 
 import useSectionReveal from '../../hooks/useSectionReveal'
 import backdrop from '../../assets/images/founder.webp'
-import LogoLoop from '../shared/LogoLoop'
+import buttonStyles from '../shared/Button.module.css'
 import styles from './Founder.module.css'
 
 /*
-  The portrait comes from the full-size originals; the strip does not.
-
   .portrait is drawn at roughly 440x350 CSS px, so its 1280x720 source is about right
-  for a 2x screen. The strip is a different case entirely: LogoLoop sizes each still by
-  height alone, at most clamp(5rem, 15vh, 9.5rem) — 152px, so around 270px wide — and
-  the track holds two or three copies of the set. Feeding it the 1280x720 originals meant
-  1.8MB of JPEG over the wire and, worse, a dozen images decoded to full size and held in
-  a permanently composited layer: about 44MB of pixels to draw a strip 152px tall.
+  for a 2x screen.
 
-  src/assets/abdullah/strip/ holds 640x360 copies — 2x the largest size they are ever
-  drawn at, so nothing is visibly softer — for 368KB and around 11MB decoded. The
-  originals are kept where they are; nothing imports them, so Vite does not bundle them,
-  and they are there to re-cut from if the strip ever grows.
+  This used to share the file with a second sourcing note, for the two LogoLoop strips
+  that ran below the intro block — a photo filmstrip and a scrolling line of production
+  titles. Both are gone, removed 2026-08-01 to free the section's height for the
+  remaining content to centre in; LogoLoop, its six work stills and the 31-title credits
+  list all went with them. Nothing here imports react-icons for those roles or the strip
+  crop any more.
 */
 import portrait from '../../assets/abdullah/abdullah.jpg'
-import work002 from '../../assets/abdullah/strip/002.jpg'
-import work003 from '../../assets/abdullah/strip/003.jpg'
-import work004 from '../../assets/abdullah/strip/004.jpg'
-import work005 from '../../assets/abdullah/strip/005.jpg'
-import work006 from '../../assets/abdullah/strip/006.jpg'
-import work007 from '../../assets/abdullah/strip/007.jpg'
 
 /*
   The founder's page-within-a-section, and an ordinary section of the home page: it sits
@@ -53,8 +44,10 @@ import work007 from '../../assets/abdullah/strip/007.jpg'
   It used to be a tenant of About's scroll-zoom stage — pinned across the Story section's
   runway and faded up over the finished zoom, painting no ground of its own because the
   blurred frozen frame behind it *was* its background. That whole transition is gone, so
-  this now owns its own ground, and its four areas arrive one after another on the ladder
-  the Story section uses — see useSectionReveal.
+  this now owns its own ground, and its areas arrive one after another on the ladder the
+  Story section uses — see useSectionReveal. Three areas now (intro, career timeline,
+  closing button), down from four before the two scrolling strips were removed
+  2026-08-01 — see the note on that below.
 
   THE GROUND IS A STILL IMAGE, and it used to be footage.
 
@@ -141,87 +134,25 @@ const milestones = [
   },
 ]
 
-/*
-  The body of work, as one continuous line of titles — television first, then theatre,
-  then cinema, which is the order the work was given in and roughly its weight.
-
-  It replaces the "Awards & Honours" / "Contribution" pair that used to close the
-  section. Those were two labels over two summaries of things not actually listed; this
-  is the list, and a scrolling line holds thirty-one titles in the height the two notes
-  took.
-
-  TITLES ARE TRANSLITERATED OR TRANSLATED, never both, and the choice is per title
-  rather than by rule: a name carries over (Al Dana, Jameela, Boudariya) and a phrase
-  translates (The Golden Shoe, Who Laughs Last), because a transliterated phrase reads as
-  noise to an English reader and a translated name stops being the name of the work. The
-  site is English throughout (CLAUDE.md §1) — there is no Arabic anywhere in this file.
-
-  Categories are deliberately not labelled. The strip is a single flowing line and a
-  heading inside it would break the rhythm for information the titles carry well enough
-  in aggregate; if the sections ever need naming, they want a different component.
-*/
-const works = [
-  /* Television */
-  'Al Dana',
-  'Fayez Al-Toosh',
-  "Al Ta'iha",
-  'Adventures of Saadoun',
-  'Mohsen Minkum wa Fikum',
-  'Al Nas Al Tayyebin',
-  'Ahlam Al Busata',
-  'Afwan Sayyidi Al-Walid',
-  '29 Salfa wa Salfa',
-  'Al Dalloub',
-  'Jameela',
-  'Bait Al Mughtani',
-  'Al Sidra',
-
-  /* Theatre */
-  'Min Fawq Ha Allah Allah',
-  'Boudariya',
-  'Al Mahara: Queen of Ancient Times',
-  'The Lost Treasure in the Land of Wonders',
-  'Al Mutaraqishoon',
-  'Who Laughs Last',
-  'Ya Layl Ya Layl',
-  'The Golden Shoe',
-  'Antar and Abla',
-  'Al Munaqasha',
-  'Mawwal Al Farah wal Huzn',
-  'Official Records',
-  'Mazloum Dhulm Mazloum',
-  'Hammam Al Mahabba',
-  'The Elephant O King of Time',
-  'Rahma and the Enchanted Forest',
-  "Hal Al Shakl Ya Za'faran",
-
-  /* Cinema */
-  'Aqarib Al Saa',
-].map((title) => ({ label: title }))
-
-/*
-  Alt text is deliberately generic: these are production stills whose subjects are not
-  documented here, and a specific claim about each would be a guess. The strip announces
-  itself once through LogoLoop's own label.
-*/
-const workImages = [work002, work003, work004, work005, work006, work007].map(
-  (src, index) => ({ src, alt: `AGB Media production still ${index + 1}` }),
-)
-
 function Founder() {
   /*
-    The reveal ladder, one rung per area: the intro block, the photo strip, the titles,
-    then the career timeline — the timeline moved to close the section (2026-08-01), so
-    it is the last rung now rather than the second. It replaces a single reveal on the
-    section itself, and the swap is worth stating because the old comment argued for
-    that: four areas arriving in sequence would supposedly read as "the page assembling
-    itself".
+    The reveal ladder, one rung per area: the intro block, the career timeline, then the
+    closing button. It used to be four — a photo filmstrip and a scrolling line of
+    thirty-one production titles sat between the timeline and the end — both removed
+    2026-08-01 to let the section's remaining content centre in the space they freed
+    rather than leaving a gap where they used to be (see .founder in the stylesheet).
+    Nothing here replaced them; the section is genuinely shorter now.
+
+    It replaces a single reveal on the section itself, and the swap is worth stating
+    because the old comment argued for that: several areas arriving in sequence would
+    supposedly read as "the page assembling itself".
 
     What made that true was the *distance* — the section moved 24px as one slab. At the
     12px this ladder travels, in 0.09s steps that overlap each other, the areas land as
-    one gesture with a direction to it rather than as four events. The shared hook is
-    what keeps it identical to About's; see useSectionReveal for the timings and for the
-    reduced-motion branch, which is why there is no preference check in this file.
+    one gesture with a direction to it rather than as several separate events. The
+    shared hook is what keeps it identical to About's; see useSectionReveal for the
+    timings and for the reduced-motion branch, which is why there is no preference
+    check in this file.
 
     It also takes the entrance off the section element itself, which is a small win the
     glass cares about: an animating `opacity` on <section> isolates the whole subtree
@@ -367,76 +298,17 @@ function Founder() {
         </div>
       </motion.div>
 
-      {/* --- The work: bordered card, continuously scrolling ------------------- */}
-      <motion.div className={styles.strip} {...revealAt(1)}>
-        <LogoLoop
-          logos={workImages}
-          speed={60}
-          /*
-            LEFT TO RIGHT, and it is the opposite of the titles below on purpose: two
-            strips running the same way read as one mechanism repeated, where two running
-            against each other read as a page with depth to it. This is the one that
-            changed direction; keep them opposed if either is ever retuned.
-          */
-          direction="right"
-          /*
-            A CSS length rather than a number, which LogoLoop accepts so that a strip
-            inside a fixed-height section can scale with the viewport instead of pinning
-            itself to one figure. Tops out at 152px, inside the 140–160 asked for.
-          */
-          logoHeight="clamp(5rem, 15vh, 9.5rem)"
-          gap={16}
-          /*
-            NEVER pauses. The photographs are the section's one piece of continuous
-            motion and the cursor spends most of its time in the middle of the page,
-            which is exactly where this strip is — so pausing on hover stopped it for
-            reasons that had nothing to do with wanting it stopped. The titles below keep
-            the behaviour, where it is useful: they are text, and stopping to read one is
-            a real intent.
-          */
-          pauseOnHover={false}
-          /*
-            fadeOut stays off. The strip sits inside a bordered card and is meant to be
-            clipped cleanly by it rather than dissolve at the edges — LogoLoop's own
-            `.loop { overflow: hidden }` already does that clip on its own, with nothing
-            further required at this call site. See .strip in the stylesheet.
-          */
-          ariaLabel="AGB Media productions"
-        />
-      </motion.div>
-
-      {/* --- The body of work, as a line of titles ---------------------------- */}
-      <motion.div className={styles.works} {...revealAt(2)}>
-        <LogoLoop
-          logos={works}
-          /*
-            Slower than the photographs, because these are words. 60px/s is a comfortable
-            pace for a picture arriving and leaving; at that speed a title is gone before
-            it can be read, and a strip nobody can read is decoration wearing the clothes
-            of information.
-          */
-          speed={30}
-          /* Right to left, against the photo strip above — see the note there. */
-          direction="left"
-          /*
-            Wider than the photo strip's, and it sets the rhythm of the whole line: the
-            gap sits on both sides of each separator dot (LogoLoop.module.css), so this
-            is the space around the dot rather than merely between titles.
-          */
-          gap={20}
-          /* Text, so stopping to read one is a real intent — see the strip above. */
-          pauseOnHover={true}
-          ariaLabel="Selected works of Abdullah Ghayfan"
-        />
-      </motion.div>
-
       {/*
-        --- Career: an icon timeline, closing the section --------------------
+        --- Career: an icon timeline --------------------------------------
 
-        MOVED TO THE END, 2026-08-01 — it used to sit directly after the intro block; it
-        now closes the section, below both scrolling strips, per the corrected order.
+        SAT SECOND, THEN FOURTH, NOW SECOND AGAIN — but for a different reason each time.
+        It opened directly after the intro; the 2026-08-01 correction pass moved it to
+        close the section, below two scrolling strips; those strips are gone as of the
+        same day's later pass, so this is once again the last thing in the section — not
+        because the order was reverted, but because there is nothing left after the intro
+        to put it after.
       */}
-      <motion.div className={styles.career} {...revealAt(3)}>
+      <motion.div className={styles.career} {...revealAt(1)}>
         <p className={`${styles.eyebrow} ${styles['career-label']}`}>
           Career Highlights
         </p>
@@ -475,6 +347,33 @@ function Founder() {
             </li>
           ))}
         </ol>
+      </motion.div>
+
+      {/*
+        --- The closing call to action -------------------------------------
+
+        A solid gold button, deliberately not glass — CLAUDE.md §2's one-material rule is
+        about the site's raised surfaces, and this is the one place the site wants a
+        button to read as a plain, warm, unmissable stop rather than another pane of the
+        same glass everything else is built from. `.button-solid` is the new variant in
+        shared/Button.module.css that carries that; nothing about it is styled here.
+
+        NO ROUTE YET. `to="#"` is a placeholder — there is no founder bio page for this
+        to open, so it goes nowhere rather than to somewhere wrong. Wire it up when that
+        page exists rather than guessing at its path now.
+
+        Wrapped in its own motion.div rather than being the reveal target itself, the
+        same construction Team's Contact button uses and for the same reason: Link is a
+        plain anchor here, not a motion.create(Link), so there is only one thing writing
+        transform to this subtree.
+      */}
+      <motion.div className={styles.cta} {...revealAt(2)}>
+        <Link
+          to="#"
+          className={`${buttonStyles.button} ${buttonStyles['button-solid']}`}
+        >
+          Discover More
+        </Link>
       </motion.div>
     </section>
   )

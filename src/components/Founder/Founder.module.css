@@ -15,19 +15,28 @@
   above every static in-flow block in the same stacking context, so a static section here
   would be drawn *underneath* the hero's video whatever colour it was given.
 
-  ONE SCREEN. The column is centred in the viewport and every area takes its natural
-  height, so what fills the screen is the content rather than any single stretched block.
-  Vertical values are clamps with a vh middle term rather than rems: a layout tuned to
-  look right at 900px tall would overflow at 700 and float at 1100, and scaling the few
-  things that own real height — block padding, the gaps, the portrait, the photo strip —
-  keeps it inside one screen across the range.
+  ONE SCREEN, AND NOW WITH ROOM TO SPARE. The column is centred in the viewport and every
+  area takes its natural height, so what fills the screen is the content rather than any
+  single stretched block. It used to hold four areas — the intro, a photo filmstrip, a
+  scrolling line of production titles, then the career timeline — snug enough against
+  100vh that the gap between them had to be kept deliberately small. The two scrolling
+  strips are gone (2026-08-01, to free the section's height rather than to leave a gap
+  where they used to be), so what remains — the intro, the career timeline, a closing
+  button — sits well inside one screen with slack either side, which `justify-content:
+  center` on .founder spends as even air above and below rather than the tight rhythm the
+  four-area version needed. Vertical values are still clamps with a vh middle term rather
+  than rems: a layout tuned to look right at 900px tall would overflow at 700 and float
+  at 1100, and scaling the few things that own real height — block padding, the gaps, the
+  portrait — keeps it inside one screen across the range.
 
   `min-block-size` rather than `block-size`, so a phone — where the content is far taller
   than the screen — simply grows past it and scrolls, instead of being cropped by a box
   that used to be a pinned 100vh.
 
-  There is no padding-inline on the section. Two areas are full bleed and two are
-  contained, so the container is applied per block rather than pulled back out.
+  There is no padding-inline on the section. .intro and .timeline each cap themselves at
+  --container-max with their own centred margin and padding-inline, rather than the
+  section setting one container both would inherit; .cta needs neither; a single
+  centred button has nothing to overflow a container-max would need to stop.
 
   COLOUR. Values are derived from --color-gold and --color-text with color-mix rather
   than written as new rgba()s, so the accent stays sampled from the logo in exactly one
@@ -53,16 +62,16 @@
   --timeline-node-size: clamp(1.5rem, 4vh, 1.75rem);
 
   /*
-    One small gap between all four areas, and the first dial to reach for if the section
-    ever needs to breathe more or fit into less.
-
-    It used to be clamp(0.75rem, 2vh, 1.75rem) with .intro taking `flex: 1` — and that
-    combination, not the gap, is what put a chasm above the career line: the hero block
-    absorbed every spare pixel in the column and then aligned its content to the top,
-    leaving all of the slack in one place. The slack now goes to justify-content below,
-    which spreads it above and below the whole column instead.
+    THE GAP BETWEEN THE THREE REMAINING AREAS, sized up 2026-08-01 now there are three
+    instead of four and each one has real air around it rather than fighting for a share
+    of one screen. It was clamp(0.4rem, 1.1vh, 0.85rem) — barely there, because four
+    areas including two scrolling strips had to fit inside 100vh with something left
+    over for justify-content to centre. With the strips gone, the same three-area column
+    (intro, career timeline, closing button) sits well under one screen at most sizes, so
+    this can afford to read as a deliberate, even gap rather than the tightest value that
+    still fit.
   */
-  --founder-gap: clamp(0.4rem, 1.1vh, 0.85rem);
+  --founder-gap: clamp(1.5rem, 4vh, 3rem);
   --founder-pad: clamp(0.75rem, 2.5vh, 2rem);
 
   position: relative;
@@ -70,36 +79,21 @@
 
   display: flex;
   flex-direction: column;
-  /* Centred as a block, which is what leaves even air top and bottom. */
+  /* Centred as a block, which is what leaves even air top and bottom — see the note
+     above the areas got shorter, and there is more of that slack for this to spend
+     now than there used to be. */
   justify-content: center;
   gap: var(--founder-gap);
 
   min-block-size: 100vh;
   /*
-    Symmetric now — corrected 2026-08-01. This used to be asymmetric, with the block-start
-    term inflated by `--founder-shift * 1.5`: a counterweight meant to hold the intro
-    block still while the career line (which sat directly after it then) and the two
-    strips below dropped away from it, on the argument that `justify-content: center`
-    redistributes added height as an equal push up/down from the column's own middle.
-
-    That scheme assumed there was free space to redistribute — content close enough to
-    one screen that centring had slack either side of it — and the redesign broke the
-    assumption before this fix: five padded cards, a floating-icon timeline and two
-    bordered strip cards pushed the column's natural height well past 100vh on ordinary
-    desktop windows, not just on a phone (the one case the old comment already accounted
-    for). Once there is no free space, `justify-content: center` has nothing to
-    distribute and the extra block-start padding was pure dead weight — the section's
-    least defensible source of excess height, and the most likely thing a reader would
-    describe as "the container is too tall" or "there's a gap before the section starts".
-
-    The reorder in Founder.jsx (career now closes the section, after both strips rather
-    than straight after the intro) also broke the OTHER half of the scheme's premise: it
-    was tuned for a specific order (intro, then career at the full shift, then the strip
-    at half of it) that no longer exists. Rebuilding an equivalent for the new order was
-    not worth it — a flat gap between four blocks reads just as clearly as a compensated
-    "drop", without a fragile piece of order-coupled arithmetic to keep in step with any
-    future reorder. See .strip and .career below for what replaced the two margins that
-    used to reference this.
+    Symmetric. This carried an asymmetric, shift-compensated block-start term for a
+    while — a counterweight meant to hold the intro block still while other areas
+    dropped away from it — tuned for a four-area section where content sat close
+    enough to 100vh that the scheme's premise (free space for justify-content to
+    redistribute) actually held. Neither is true any more now that the section is
+    three short areas with real slack in it, so a flat value replaced it; the full
+    history is in git rather than repeated here.
   */
   padding-block: var(--founder-pad);
 
@@ -122,8 +116,8 @@
   A stacking context is NOT a backdrop root, so .glass's backdrop-filter still reaches the
   image beneath it. What would break that is a `filter`, a `mask`, `isolation: isolate` or
   an `opacity < 1` on .founder itself. Nothing animates the section any more — the
-  entrance moved onto the four content areas individually (see the ladder in Founder.jsx),
-  so the two layers here never fade at all and the question of what an animating opacity
+  entrance moved onto the content areas individually (see the ladder in Founder.jsx), so
+  the two layers here never fade at all and the question of what an animating opacity
   would isolate no longer arises. Putting a reveal back on <section> would raise it again:
   it was safe then only because the ground sits *inside* the subtree being isolated.
 */
@@ -131,9 +125,9 @@
   BOTH LAYERS ARE EXACTLY ONE SCREEN TALL, pinned to the BOTTOM of the section, where they
   used to be `inset: 0` and therefore however tall the section turned out to be.
 
-  `min-block-size: 100vh` on .founder is a floor, not a height: on a short window the
-  four areas push well past it, and the backdrop and its pane grew with them — a
-  background of no fixed height, stretching a wide source over an ever-taller box and
+  `min-block-size: 100vh` on .founder is a floor, not a height: on a short enough window
+  the content can still push past it, and the backdrop and its pane used to grow with it
+  — a background of no fixed height, stretching a wide source over an ever-taller box and
   blurring the whole of it. They are now a fixed screen-sized ground that content scrolls
   past, which is the same treatment .about::before takes. Anything outside that screen
   falls onto .founder's own opaque --color-black, which is why that fill stays full height.
@@ -203,11 +197,12 @@
   cropped away, which takes most of the lamp with them), composited under this pane: the
   ground is at relative luminance 0.002 through the median and 0.039 at the 99th percentile
   — a lit floor, a rim of the lamp, and its reflections. Over that 99th-percentile
-  brightness the name holds ~8:1 and the bio and facts ~3.7:1, while the career line falls
-  to ~2.7:1 and the gold micro-labels to ~1.6:1. The gold loses because it is warm text on a
-  warm highlight, which no fill alpha really fixes (it was still only 1.8:1 at 0.75 under
-  the previous image). Over the ~95% of the section that is at 0.015 or below, everything is
-  far above AA.
+  brightness the name holds ~8:1 and the bio and facts ~3.7:1, while the career area's
+  type — a single wrapped line at the time this was measured, since replaced by the icon
+  timeline — fell to ~2.7:1 and the gold micro-labels to ~1.6:1. The gold loses because
+  it is warm text on a warm highlight, which no fill alpha really fixes (it was still
+  only 1.8:1 at 0.75 under the previous image). Over the ~95% of the section that is at
+  0.015 or below, everything is far above AA.
 */
 .glass {
   composes: pane from '../shared/SectionGlass.module.css';
@@ -255,12 +250,12 @@
   background-color: var(--color-gold);
 }
 
-/* --- Area 1: the profile column, against the portrait ---------------------- */
+/* --- The profile column, against the portrait ------------------------------ */
 
 /*
   Natural height, like every other area. It took `flex: 1` while the column stretched to
   fill the screen; with the column centred instead there is nothing for it to absorb, and
-  leaving it flexible is exactly what opened the gap above the career line.
+  leaving it flexible is exactly what opened the gap above the career timeline.
 */
 .intro {
   flex: 0 0 auto;
@@ -356,10 +351,17 @@
   0.75rem is 12px, written in rem to match the rest of the file but not drawn from the
   radius scale: --radius-md is 8px and --radius-lg is 16px, and neither is near enough to
   pass for the value asked for. Adding a token for one image would be worse than this.
+
+  A SMALL DROP, margin-block-start rather than a change to align-items on .intro — the
+  grid stays `align-items: start` for both tracks, and this nudges the portrait alone off
+  that shared line rather than changing what either track aligns to. Modest on purpose:
+  enough to read as a deliberate offset from the name/eyebrow row it used to line up
+  with, not enough to look like the two columns have drifted out of registration.
 */
 .portrait-frame {
   overflow: hidden;
   inline-size: 100%;
+  margin-block-start: clamp(0.75rem, 3vh, 1.75rem);
   block-size: clamp(8rem, 28vh, 22rem);
   border-radius: 0.75rem;
 }
@@ -427,12 +429,22 @@
   The bio is the longest run of text here and its leading is where its height lives — a
   tenth off the line-height saves more than the font-size drop does.
 
-  42ch caps the measure well short of the profile column's own width, which runs past
-  60ch at the top of the breakpoint range — a line that long is uncomfortable to track
-  back from regardless of how much column is free to fill.
+  84ch, widened from 42ch on 2026-08-01 now the two scrolling strips are gone and the
+  section has height to spend rather than to guard: the paragraph is 350 characters, and
+  a greedy word-wrap at roughly this measure lands it on four lines rather than the eight
+  or nine 42ch produced. That count is arithmetic on the copy as written, not a rendered
+  measurement — this codebase cannot run a browser to confirm it — so treat four as the
+  target this value was chosen for rather than a verified fact, and re-check it if the
+  bio copy ever changes length.
+
+  Still short of the profile column's own width at the top of the breakpoint range,
+  where it runs well past 84ch — the cap is what fixes the line count regardless of how
+  much column is free to fill, not the column's own width. Below roughly 64rem the
+  column itself is narrower than 84ch and binds instead, so the paragraph wraps to more
+  than four lines there; that is the column doing its job, not this cap failing to.
 */
 .bio p {
-  max-inline-size: 42ch;
+  max-inline-size: 84ch;
 
   font-size: 0.8rem;
   font-weight: var(--font-weight-light);
@@ -505,23 +517,20 @@
   color: var(--founder-text-strong);
 }
 
-/* --- Area 4: career, an icon timeline, closing the section ----------------- */
+/* --- The career timeline ---------------------------------------------------- */
 
 /*
   Full bleed by simply not being constrained — the section sets no inline padding, so this
   block is already the width of the section. There is no negative-margin breakout in this
   file.
 
-  MOVED TO CLOSE THE SECTION, 2026-08-01 — this used to sit directly after the intro
-  block; it now comes last, below both scrolling strips (see the order in Founder.jsx).
-  Its margin-block-start is a flat clamp for that reason: the old value added
-  `--founder-shift`, a term that existed to drop this block (and .strip, at half the
-  amount) away from the intro while a compensating padding on .founder held the intro
-  itself still. That scheme was built for this block sitting second, right after the
-  intro; now that it sits fourth, after .strip and .works have already provided their own
-  separation, reaching for the same mechanism would mean re-deriving fractions for an
-  order they were never written for. A flat gap reads exactly as clearly and does not
-  need to change if the order ever does again.
+  NO MARGIN OF ITS OWN ANY MORE. This has sat second, then closed the section after two
+  scrolling strips, and is second again now that those strips are gone — three different
+  reasons for the same position. While it closed the section it carried its own
+  margin-block-start on top of --founder-gap, separating it from .works's scrolling
+  titles; now that .intro is directly above it again, the section's own --founder-gap
+  (sized up for three short, breathing areas rather than four tight ones — see .founder)
+  is the whole separation, and a second margin here would just be double-spacing it.
 */
 .career {
   flex: 0 0 auto;
@@ -529,12 +538,6 @@
   display: flex;
   flex-direction: column;
   gap: clamp(0.3rem, 1vh, 0.6rem);
-
-  /* A little air above the label, on top of .works's own margin and the column's
-     --founder-gap — the titles end as a scrolling line of small type and the timeline
-     opens with a centred eyebrow, so without this the two read as one continuous run
-     rather than as the end of one area and the start of another. */
-  margin-block-start: clamp(1.25rem, 3vh, 2rem);
 
   inline-size: 100%;
 }
@@ -701,130 +704,23 @@
   color: var(--color-text-subtle);
 }
 
-/* --- Area 2: the work strip, a bordered card ------------------------------ */
+/* --- The closing button ----------------------------------------------------- */
 
 /*
-  A CARD NOW, where the edges used to fade into the ground with a mask. The strip sits on
-  the same container-max column as .intro and .timeline instead of insetting itself with
-  its own margin, so its border lines up with everything above it rather than sitting at
-  a different inset.
+  Just a centred flex row, the same construction Team's own .cta uses below its team
+  row — see the note there. No container-max, no padding-inline: a single button has
+  nothing wide enough to need a measure cap, unlike .intro's copy or .timeline's row.
 
-  --glass-fill (0.55) rather than --color-glass (0.5) — a touch heavier than the fact
-  cards, because this one has to hold a wall of photographs legible against the section's
-  own photograph rather than a few lines of type. --radius-lg matches the radius already
-  on the stills inside it (.strip img), so the card and its contents read as one scale of
-  rounding rather than two.
-
-  `overflow: hidden` belongs here for the same reason CLAUDE.md's Team section documents
-  for its own rounded edge: LogoLoop's `.loop` already clips its own track, but stating
-  the clip again on the card that owns the radius is what guarantees nothing ever draws
-  past this box's rounded corner.
-
-  The height is passed to LogoLoop from Founder.jsx rather than set here — it is the
-  component's own prop, and it is a clamp for the same reason everything else here is.
+  margin-block-start on top of the column's own --founder-gap (see .founder), the same
+  layering .strip and .works used to add their own extra air over the shared gap — a
+  button closing the section wants to read as a deliberate final beat, not just the
+  next item in the same rhythm as everything above it.
 */
-.strip {
-  flex: 0 0 auto;
-  overflow: hidden;
+.cta {
+  display: flex;
+  justify-content: center;
 
-  /* Extra air above, on top of the column's own --founder-gap and the intro's own
-     content. A flat clamp, not a shift-compensated one — see .founder and .career for
-     why that mechanism is gone. */
-  margin-block-start: clamp(1.5rem, 3.5vh, 2.25rem);
-
-  max-inline-size: var(--container-max);
-  margin-inline: auto;
-  padding: clamp(0.85rem, 2.4vh, 1.35rem) var(--container-padding);
-
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  background-color: var(--glass-fill);
-}
-
-/*
-  ROUNDED CORNERS ON THE STILLS, at --radius-lg.
-
-  It is set here rather than in shared/LogoLoop.module.css deliberately. That component
-  draws both of this section's strips and would happily take a radius, but a corner
-  treatment is the calling section's look and not the component's contract — the titles
-  strip below is text with no box to round, and a future caller might want square edges.
-  The same rule the buttons follow: the shared file owns behaviour, the call site owns
-  where and how it sits.
-
-  --radius-lg (1rem / 16px) rather than --radius-md (0.5rem), and the scale is what the
-  choice was made against rather than a number picked by eye. The stills are drawn at up to
-  152px tall, so 8px reads as a corner that was very slightly softened — barely visible at
-  this size — where 16px is unmistakably rounded and still nowhere near the pill the strip's
-  own aspect would make of --radius-full. The Founder's portrait sits at 12px and is the
-  only other rounded photograph on the site; these are smaller and moving, so a touch more
-  radius reads as the same amount of rounding.
-
-  On the <img> rather than on a wrapper, because LogoLoop puts the image in the flow
-  directly and there is no box around it to clip against. Nothing here has a background, so
-  a radius on the image is the whole effect.
-*/
-.strip img {
-  border-radius: var(--radius-lg);
-}
-
-/* --- Area 3: the body of work, as a scrolling line of titles -------------- */
-
-/*
-  Where "Awards & Honours" and "Contribution" used to close the section — two labels
-  over two summaries of things the page never actually listed. This is the list: every
-  title, running as one continuous line under the photographs.
-
-  It is the same LogoLoop the strip above uses, given text entries instead of images,
-  and it runs the OTHER WAY. Two strips scrolling in the same direction read as one
-  mechanism used twice; opposed, they read as two planes of a section that has depth.
-  The direction is set at the call site — keep the two opposed if either is retuned.
-
-  --logo-loop-label-size is LogoLoop's own hook for the type size and defaults to
-  --text-xs (0.75rem), which is what this wants; it is named here rather than set so the
-  dial is findable from the section that owns the look.
-
-  The colour is set here and inherited into the strip's labels, because the ground is
-  this section's business and not the shared component's: --founder-text-mid is
-  --color-text at 55%, quiet enough to sit under the photographs without competing —
-  the career timeline below it is at --color-text-subtle (40%), the site's own quieter
-  register for a body of type further from the eye's first landing point.
-*/
-.works {
-  flex: 0 0 auto;
-
-  /*
-    Less air than .strip takes above it. The photographs need separating from the titles
-    below them because they are a different kind of object; this is small type following
-    a wall of images, and the change in scale is already the separation.
-  */
-  margin-block-start: clamp(0.75rem, 2vh, 1.25rem);
-  /* Matching .strip's inline inset exactly, so the two lines share an edge. */
-  margin-inline: clamp(1rem, 4vw, 3rem);
-
-  color: var(--founder-text-mid);
-
-  /*
-    The same mask as .strip, and for the same reason: a gradient painted *in a colour*
-    would be a pair of dark smudges over a frosted photograph, where a mask removes the pixels
-    and lets the titles dissolve into whatever is behind them.
-
-    Narrower than the photo strip's 60px — a title cut off mid-fade is harder to read
-    than a photograph cut off mid-fade is to see, so the run-in is shorter.
-  */
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 40px,
-    black calc(100% - 40px),
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 40px,
-    black calc(100% - 40px),
-    transparent
-  );
+  margin-block-start: clamp(0.75rem, 2vh, 1.5rem);
 }
 
 /* --- Breakpoints ---------------------------------------------------------- */
@@ -848,10 +744,6 @@
       under the pill as the section arrived. Same figure About uses, for the same reason.
     */
     padding-block-start: calc(var(--header-height) + var(--space-2xs));
-  }
-
-  .strip {
-    margin-block-start: clamp(1rem, 2.5vh, 1.5rem);
   }
 
   /*

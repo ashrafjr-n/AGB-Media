@@ -1,47 +1,58 @@
 /*
   THE buttons for the site. Every call to action pulls from this file — nothing is
-  restyled inside a section module. There is one shared base plus two variants, and
+  restyled inside a section module. There is one shared base plus three variants, and
   a call site applies the base *and* exactly one variant:
 
     .button .button-featured  glass, frozen texture, travelling edge light
                                                                    (hero nav "Contact")
     .button .button-glass     glass, drifting gold sheen           (About)
+    .button .button-solid     solid gold fill, no glass at all     (Founder)
 
-  Both live surfaces are glass. Two earlier variants — .button-quiet (a gold hairline
-  pill) and .button-reveal (a sliding-panel hover) — were deleted in a cleanup pass once
-  the glass pair had replaced them at both call sites; neither had been referenced from
-  any JSX for some time. They are in the git history if a non-glass surface ever needs a
-  starting point.
+  Two earlier variants — .button-quiet (a gold hairline pill) and .button-reveal (a
+  sliding-panel hover) — were deleted in a cleanup pass once the glass pair had replaced
+  them at both call sites; neither had been referenced from any JSX for some time. They
+  are in the git history if a non-glass surface ever needs a starting point.
 
-  .button-featured is the site's single high-emphasis button. It was a solid gold fill
-  with a near-black label, then glass with liquid gold drifting behind it; it is now glass
-  over a still fluid texture. Through all three it has been the one button that reads as a
-  *button* rather than a link, and that holds only while it stays the only one — a second
-  emphatic call to action anywhere cancels the distinction.
+  .button-featured was the site's single high-emphasis button for most of this file's
+  life — glass, one per screen, never sharing a viewport with another emphatic surface
+  (CLAUDE.md §2). .button-solid, added 2026-08-01, is a second one by the same
+  definition: a plain filled surface reads at least as strongly as glass over a frozen
+  texture, arguably more so. It was added anyway, on explicit request for a "clearly
+  different, warmer treatment" than either glass variant, and the two are kept apart by
+  where they can appear rather than by one of them being quieter: .button-featured lives
+  in the hero nav and at the foot of Team, both screens away from Founder, so the two
+  never share a viewport in practice. If a future call site would put .button-solid on
+  screen at the same time as .button-featured, that is the moment to revisit this rather
+  than adding a fourth surface to duplicate the effect at lower emphasis.
 
-  .button-glass shares the glass body but not what happens inside it. Both take the same
-  fill, blur and label from the rule below; featured carries a frozen turbulence texture
-  plus a gold light travelling its rim, and glass carries the drifting gold sheen.
+  .button-featured and .button-glass share a glass body; .button-solid shares nothing
+  with either beyond the base rule — no fill, blur, isolation or overflow, because there
+  is no pseudo-element material to contain. It is the simplest of the three for exactly
+  that reason: a flat colour needs none of the machinery a translucent one does.
 
-  Note what that does to the "only the hero ticker moves" rule the rest of the site holds
-  to: featured's *texture* is still frozen, and what animates is a light crossing it. The
-  distinction is deliberate and is argued where the ring is defined, but it does mean this
-  file now has two variants with motion in them rather than one.
+  Note what .button-featured and .button-glass do to the "only the hero ticker moves"
+  rule the rest of the site holds to: featured's *texture* is still frozen, and what
+  animates is a light crossing it. The distinction is deliberate and is argued where the
+  ring is defined, but it does mean this file has two variants with motion in them.
+  .button-solid has none — a flat fill has nothing for the ticker's exception to apply to.
 
-  Their rims also differ, and for a reason the surfaces force: featured sits over the
-  hero's footage, where a backdrop blur has detail to work with and a faint rim is enough
-  to find the edge, while glass sits on About's flat --color-black, where the blur has
-  nothing to soften and the rim does all the work of separating the button from the
-  ground.
+  .button-featured and .button-glass differ in their rims too, for a reason the surfaces
+  force: featured sits over the hero's footage, where a backdrop blur has detail to work
+  with and a faint rim is enough to find the edge, while glass sits on About's flat
+  --color-black, where the blur has nothing to soften and the rim does all the work of
+  separating the button from the ground. .button-solid needs neither argument — its own
+  fill already separates it from anything behind it, so its border is transparent rather
+  than a third rim colour to justify.
 
-  Adding a third surface means adding a third variant here, not styling a button in a
+  Adding a fourth surface means adding a fourth variant here, not styling a button in a
   component.
 
   A module without a .jsx sibling, which is the one deviation from the layout in
-  CLAUDE.md §4. It is deliberate: both current call sites need to *be* the element
-  they animate (each is a `motion.create(Link)`, carrying an entrance transform on
-  the anchor itself), so wrapping them in a Button component would put a layer
-  between Framer Motion and the DOM node for no gain.
+  CLAUDE.md §4. It is deliberate: the two Framer Motion call sites need to *be* the
+  element they animate (each is a `motion.create(Link)`, carrying an entrance transform
+  on the anchor itself), so wrapping them in a Button component would put a layer
+  between Framer Motion and the DOM node for no gain. .button-solid's own call site
+  is a plain, unanimated Link inside its own motion.div instead — see the note at Founder.
 
   Layout is NOT this file's business. Nothing here sets a margin: where a button
   sits is the calling section's decision, so each call site pairs these classes with
@@ -199,18 +210,62 @@
   border-color: var(--glass-border-white);
 }
 
-
 /*
-  Neither has a hover state, deliberately — but a gap rather than a finished decision.
-  The gold fill's brighten went with the fill and nothing has replaced it, so both look
-  identical under the cursor. Keyboard users are still served, since the global
-  :focus-visible ring in global.css is untouched, but a pointer gets no feedback.
+  NEITHER GLASS VARIANT HAS A HOVER STATE, deliberately — but a gap rather than a
+  finished decision. The gold fill's brighten went with the fill when .button-featured
+  moved to glass, and nothing has replaced it, so both look identical under the cursor.
+  Keyboard users are still served, since the global :focus-visible ring in global.css is
+  untouched, but a pointer gets no feedback on either glass surface.
 
   Whatever lands here, keep it to colour: the base rule's transition is scoped to
   colour properties on purpose (a transform transition would smooth over Framer
   Motion's own per-frame writes at About's call site and make that entrance drag), so
   a hover needing `transition: transform` on the base is the one thing not to add.
 */
+
+/* --- The solid button ------------------------------------------------------ */
+
+/*
+  A flat gold fill, near-black label — the pairing this file used to open with before
+  .button-featured went to glass, and the reason CLAUDE.md §2's "one material" argument
+  is about the site's *raised* surfaces rather than every button: this one is deliberately
+  not raised. It is a plain warm stop, not a pane of the glass everything else is built
+  from, which is the whole point of it existing as a second surface at all.
+
+  --color-black on --color-gold rather than --color-text, matching the historical
+  precedent noted in the file's own top comment: near-black on gold measured 5.8:1 at
+  rest and 9.3:1 on hover, both clearing WCAG AA, where a light label on the same gold
+  does not.
+
+  border-color: transparent rather than removing the base rule's border outright — the
+  base reserves --btn-border (1px) of box for it, and dropping the border instead of
+  just hiding its colour would make this button a pixel shorter and narrower than its
+  neighbours in the same row, the same reasoning .button-featured's own rim comment
+  gives for keeping a border under a rim that already does the visible work.
+
+  No isolation, no overflow, no backdrop-filter — nothing here paints outside the fill,
+  so none of the containment the glass variants need for their pseudo-elements applies.
+*/
+.button-solid {
+  border-radius: var(--radius-md);
+  border-color: transparent;
+
+  background-color: var(--color-gold);
+
+  color: var(--color-black);
+  /* Bolder than the shared base, matching the weight both glass variants carry. */
+  font-weight: var(--font-weight-bold);
+}
+
+/*
+  THE ONE VARIANT WITH A REAL HOVER STATE. --color-gold-light is already the token for
+  exactly this — "hover / focus / raised state of the accent" — and unlike the glass
+  pair there is no compositing to protect: a flat fill can just change colour. The base
+  rule's transition already covers background-color, so this needs nothing further.
+*/
+.button-solid:hover {
+  background-color: var(--color-gold-light);
+}
 
 /* --- The featured button's frozen texture --------------------------------- */
 
