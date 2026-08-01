@@ -107,6 +107,10 @@ function HomePage() {
         */}
         <Founder />
         <WhyAgb />
+        {/*
+          Team closes the page, and the footer is INSIDE it — see the note in Team.jsx.
+          There is no page-level element after this one.
+        */}
         <Team />
       </main>
     </>

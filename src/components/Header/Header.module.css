@@ -254,6 +254,22 @@
   gap: var(--space-xl);
 }
 
+/*
+  THE HOVER IS ONE PROPERTY: the label brightens from --color-text-muted to
+  --color-text-bright. Nothing else moves.
+
+  It used to go to --color-gold-light with a Framer-driven gold hairline sweeping out
+  from the centre beneath it. Both are gone — the underline element, its variants and the
+  `motion.span` that carried them are out of Header.jsx too, so this is a plain <Link>
+  again. HeroHeader's links took the identical change and the two rules are written to
+  match: same resting colour, same target, same duration and curve. Change one and change
+  the other, or the same gesture reads differently at the top and bottom of the page.
+
+  A CSS transition rather than a Framer one, which is what removing the underline buys:
+  the prefers-reduced-motion block in global.css governs CSS transitions site-wide, so
+  unlike a JS-driven animation this needs no reduced-motion branch. It is also the same
+  mechanism the header's own show/hide already uses.
+*/
 .nav-link {
   color: var(--color-text-muted);
   font-family: var(--font-body);
@@ -265,28 +281,18 @@
 }
 
 .nav-link:hover {
-  color: var(--color-gold-light);
-}
-
-/* Positioning context for the animated underline. */
-.nav-link-inner {
-  position: relative;
-  display: inline-block;
-  /* Roomy enough to hold the underline inside the box — see below. */
-  padding-block: var(--space-2xs);
+  color: var(--color-text-bright);
 }
 
 /*
-  Sits at inset-block-end: 0, i.e. inside its parent's box rather than 2px
-  below it. `.bar` is overflow: hidden so the drawer clips to the pill radius,
-  and anything hanging outside this box would be cut off.
+  A plain wrapper now. It was the underline's positioning context; what it still does is
+  hold the block padding, and that is worth keeping on its own terms — it is the link's
+  hit area, taller than the cap height of the label inside it, and removing it would
+  shorten every link in the row and with it the pill that takes its height from them.
 */
-.nav-link-underline {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  block-size: 1px;
-  background-color: var(--color-gold);
+.nav-link-inner {
+  display: inline-block;
+  padding-block: var(--space-2xs);
 }
 
 /* --- Mobile toggle and drawer -------------------------------------------- */

@@ -13,29 +13,27 @@ import styles from './Header.module.css'
 */
 const EASE_OUT = [0.22, 1, 0.36, 1]
 
-/* The underline sweeps out from the center on hover. */
-const underlineVariants = {
-  rest: { scaleX: 0 },
-  hover: { scaleX: 1 },
-}
+/*
+  A PLAIN LINK, AND IT USED TO BE THREE NESTED MOTION ELEMENTS.
 
-function NavLink({ to, label, onClick, duration }) {
+  The hover state was a colour change to --color-gold-light plus a gold hairline that
+  swept out from the centre — a `motion.span` wrapper carrying `whileHover`, a second
+  `motion.span` for the underline, and an `underlineVariants` map to drive it. The hover
+  is now a single CSS colour transition on .nav-link (see Header.module.css), so all of
+  that is gone and this component is a <Link> with a span inside it.
+
+  The span stays because it carries the link's block padding — its hit area — not because
+  anything is positioned against it any more.
+
+  Losing the Framer layer is a real simplification rather than a like-for-like swap: a CSS
+  transition is covered by the prefers-reduced-motion block in global.css, where a
+  JS-driven animation needs its own gate, and `whileHover` on a re-rendering nav row was
+  three subscriptions per link for one property.
+*/
+function NavLink({ to, label, onClick }) {
   return (
     <Link to={to} onClick={onClick} className={styles['nav-link']}>
-      <motion.span
-        initial="rest"
-        whileHover="hover"
-        animate="rest"
-        className={styles['nav-link-inner']}
-      >
-        {label}
-        <motion.span
-          variants={underlineVariants}
-          transition={{ duration, ease: EASE_OUT }}
-          style={{ originX: 0.5 }}
-          className={styles['nav-link-underline']}
-        />
-      </motion.span>
+      <span className={styles['nav-link-inner']}>{label}</span>
     </Link>
   )
 }
@@ -69,9 +67,10 @@ function Header({ visible = false }) {
   }, [visible])
 
   /*
-    0.18s is --duration-fast, the timing the bar's corner radius now runs at —
-    the drawer, the corners, and the hover underline are one gesture, and any
-    slower here makes the drawer trail the pill it opens out of.
+    0.18s is --duration-fast, the timing the bar's corner radius runs at — the drawer and
+    the corners are one gesture, and any slower here makes the drawer trail the pill it
+    opens out of. It fed the hover underline too until that was removed; the links are a
+    CSS transition now and read this value from the token directly.
   */
   const motionDuration = shouldReduceMotion ? 0 : 0.18
   const closeMenu = () => setIsMenuOpen(false)
@@ -146,7 +145,7 @@ function Header({ visible = false }) {
 
           <nav className={styles['desktop-nav']}>
             {navLinks.map((link) => (
-              <NavLink key={link.to} {...link} duration={motionDuration} />
+              <NavLink key={link.to} {...link} />
             ))}
           </nav>
 
@@ -172,12 +171,7 @@ function Header({ visible = false }) {
             >
               <div className={styles['mobile-nav-list']}>
                 {navLinks.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    {...link}
-                    onClick={closeMenu}
-                    duration={motionDuration}
-                  />
+                  <NavLink key={link.to} {...link} onClick={closeMenu} />
                 ))}
               </div>
             </motion.nav>

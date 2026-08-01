@@ -1,0 +1,170 @@
+/*
+  The footer: one compact bar closing the page, and it lives INSIDE the Team section as
+  that section's last flex child rather than as a page-level element after it.
+
+  SHORT ON PURPOSE. Its height is its padding plus one line of micro-type, so it reads as
+  the page ending rather than as a final section. Nothing here uses `min-block-size`, and
+  it should not — every other block on this site is at least a screen tall, and this is the
+  one that earns its place by being the opposite. Staying short is also what makes the
+  nesting work: it has to fit inside Team's screen alongside the content above it.
+
+  IT PAINTS NO BACKGROUND OF ITS OWN, and that is the change nesting forced. It used to
+  carry an opaque --color-black, which was correct when nothing was behind it; here that
+  fill would cover the footage this bar is supposed to be frosted over, and the pane below
+  would have an opaque black surface to blur. The section's own ground is what shows
+  through now.
+
+  IT BREAKS OUT OF THE SECTION'S PADDING ON THREE SIDES. Team sets `padding-inline:
+  --container-padding` and `padding-block: --team-pad`, which would leave this bar floating
+  inset from the edges it is meant to sit on — a card at the bottom of a section rather
+  than the bottom of the section. The negative margins cancel exactly those two values and
+  the inline padding is then re-applied here, so the bar is full-bleed and flush to the
+  section's block end while its contents stay aligned with the column above. THE THREE
+  VALUES ARE COPIES OF TEAM'S: if --container-padding or --team-pad changes there, these
+  follow, and a mismatch shows immediately as a strip of ground down one edge.
+
+  `position: relative` + --z-base puts it above Team's ground and pane, which sit at
+  z-index 0 — the same relationship Team's `.inner` has.
+*/
+.footer {
+  position: relative;
+  z-index: var(--z-base);
+
+  /* Cancels Team's inline padding, then re-applies it to the bar's own contents. */
+  margin-inline: calc(-1 * var(--container-padding));
+  /* Cancels Team's block-end padding so the bar sits on the section's bottom edge. */
+  margin-block-end: calc(-1 * var(--team-pad));
+
+  padding-block: clamp(1.25rem, 3vh, 2rem);
+  padding-inline: var(--container-padding);
+}
+
+/*
+  THE PANE, and it is `.pane` — the site's standard section glass.
+
+  IT DOES REAL WORK NOW, which it did not before this bar moved inside Team. As a
+  page-level element after that section there was nothing painted behind it: Team's video
+  is `block-size: 100vh` pinned to the top of its own section, so it stopped exactly where
+  the footer began, and the backdrop-filter had flat black to blur. Nested here the bar
+  sits over the section's own frosted footage, so the blur has detail to soften and the
+  fill has something to darken.
+
+  WHAT IT COMPOSITES TO, since this is the one place on the site where two panes stack.
+  Team's ground is already under `.pane-lighter` (0.55) and a 7px blur; this adds 0.4 and
+  another 7px on top of that, so the strip lands near 0.73 against the section's 0.55 and
+  the footage under it is softened roughly half again as much. That is the intent: the bar
+  reads as a quieter, deeper band closing the section rather than as a panel dropped on it,
+  and it needs no border or shadow to separate itself.
+
+  `.pane` RATHER THAN `.pane-lighter`. Two panes of the *same* value would double a number
+  that was tuned for a single layer — 0.55 twice composites past 0.8, which is heavier than
+  About's video treatment and would read as a black bar with the footage lost behind it.
+  0.4 is the site's standard section fill and lands the sum where a footer wants to be. It
+  is also the honest relationship between the two variants: the lighter one exists for a
+  ground being seen directly, and this is not that.
+
+  Structure only below this line — everything optical is in the shared file.
+*/
+.glass {
+  composes: pane from '../shared/SectionGlass.module.css';
+
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  pointer-events: none;
+}
+
+/*
+  The bar itself. `space-between` puts the rights line against the inline start and the
+  links against the inline end, with the whole row capped at --container-max and centred —
+  so the footer's content aligns with every other contained block on the page rather than
+  running to the window's edges.
+
+  IT WRAPS, and the wrap is what keeps this compact on a phone: below roughly 30rem the
+  two halves stack, the row-gap separates them, and `justify-content` stops mattering
+  because each line is full width. No breakpoint is needed for that — the flex container
+  does it at whatever width the content actually runs out of room, which is the correct
+  place rather than a guessed one.
+
+  `align-items: center` so the two halves share a baseline band even though the link row is
+  a hair taller than the single line beside it.
+*/
+.inner {
+  position: relative;
+  /* Above the pane, inside this element's own stacking context. */
+  z-index: var(--z-base);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: var(--space-lg);
+  row-gap: var(--space-xs);
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+}
+
+/*
+  THE SITE'S SMALL META REGISTER, and it is the Team section's `.role` rule in everything
+  but colour: 0.65rem, medium weight, 0.2em tracking, uppercase. That combination is how
+  this site sets a label, and repeating it here rather than inventing a footer type style
+  is what keeps the bar reading as part of the same page.
+
+  --color-text-muted (0.65) where Team's labels are opaque. Those are opaque only because
+  they sit over moving footage under the lightest pane on the site and needed the alpha to
+  clear AA; there is no footage here, so this can take the muted value the rest of the
+  site's meta text uses. Over --color-black that is about 12:1 — far above AA at this size.
+*/
+.rights {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /*
+    Wider than the type's own tracking so the labels read as separate destinations rather
+    than as one tracked-out string — at 0.2em letter-spacing, a tight gap between two
+    uppercase micro-labels is indistinguishable from the space inside them.
+  */
+  column-gap: var(--space-md);
+  row-gap: var(--space-2xs);
+}
+
+/*
+  Matching .rights exactly at rest, and lifting to full --color-text on hover and focus.
+
+  A colour change and nothing else — no underline, no transform, no size change. The bar is
+  two lines of micro-type and anything more would turn the quietest element on the page
+  into the busiest.
+
+  `transition` is scoped to `color` rather than `all`, the same discipline
+  shared/Button.module.css keeps: an unscoped transition catches properties nobody intended
+  to animate. Reduced motion needs no branch — the block in global.css governs CSS
+  transitions site-wide, which is exactly what this is.
+
+  :focus-visible alongside :hover so the row is navigable by keyboard at the same contrast
+  a pointer gets. It is deliberately not `:focus`, which would fire on a mouse click too.
+*/
+.link {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.link:hover,
+.link:focus-visible {
+  color: var(--color-text);
+}

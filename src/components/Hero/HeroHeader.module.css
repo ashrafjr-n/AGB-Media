@@ -134,19 +134,35 @@
 }
 
 /*
-  A CSS-driven underline rather than the site header's Framer one: this is a plain
-  hover state, and keeping it in CSS means the prefers-reduced-motion block in
-  global.css already covers it with no reduced-motion branch in JS.
+  THE HOVER IS ONE PROPERTY: the label brightens from --color-text-muted to
+  --color-text-bright. Nothing else moves.
+
+  It used to be three things at once — the colour went to --color-gold-light and a gold
+  hairline swept out from the centre on a ::after. Both are gone, along with the
+  `position: relative` that existed only to be the underline's containing block. The
+  brightening is the whole state now, in both headers, and the two are written to match:
+  same resting colour, same target, same timing. See the matching rule in
+  Header.module.css.
+
+  Gold specifically had to go rather than be softened. It is the site's one accent, and
+  spending it on the ordinary state of four nav links made it the least significant thing
+  on the page; it now appears in the header only on the Contact button, which is the one
+  element in the row that is actually a call to action.
+
+  Keeping it in CSS means the prefers-reduced-motion block in global.css already covers
+  the transition with no reduced-motion branch in JS.
 
   `display: none` until 48rem: three links plus the Contact button cannot share a row
   with a logo this size without wrapping. The button stays at every width, so the plain
   links are what get dropped. Restored to `block` rather than `inline-block` in the
-  breakpoint below — it is a flex item either way, so the used value is blockified, and
-  `block` keeps the ::after underline's containing block the full link box.
+  breakpoint below — it is a flex item either way, so the used value is blockified.
+
+  `padding-block` stays although the underline it used to make room for is gone: it is
+  what gives the link a hit area taller than its cap height, which is a pointer-target
+  concern rather than a decorative one.
 */
 .nav-link {
   display: none;
-  position: relative;
   padding-block: var(--space-2xs);
 
   color: var(--color-text-muted);
@@ -158,27 +174,9 @@
   transition: color var(--duration-fast) var(--ease-out);
 }
 
-.nav-link::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  block-size: 1px;
-  background-color: var(--color-gold);
-
-  /* Sweeps out from the centre, matching the site header's underline. */
-  transform: scaleX(0);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
 .nav-link:hover,
 .nav-link:focus-visible {
-  color: var(--color-gold-light);
-}
-
-.nav-link:hover::after,
-.nav-link:focus-visible::after {
-  transform: scaleX(1);
+  color: var(--color-text-bright);
 }
 
 /*

@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useInView } from 'framer-motion'
 import { HiOutlineUser } from 'react-icons/hi'
 
@@ -9,8 +10,11 @@ import useExclusiveVideo, {
   PLAYBACK_PRIORITY,
 } from '../../hooks/useExclusiveVideo'
 import useSectionReveal from '../../hooks/useSectionReveal'
+import navLinks from '../../data/navLinks'
 import nael from '../../assets/nael/nael.webp'
 import teamVideo from '../../assets/videos/story.webm'
+import Footer from '../Footer/Footer'
+import buttonStyles from '../shared/Button.module.css'
 import styles from './Team.module.css'
 
 /*
@@ -75,6 +79,27 @@ const lead = {
 }
 
 /*
+  THE CTA'S DESTINATION IS READ FROM THE NAV MODEL, not written here.
+
+  src/data/navLinks.js is where the site's destinations live, and its `featured` entry is
+  the Contact button both headers render from — so taking the route from there is what
+  guarantees this button and the hero header's cannot ever point at different places. That
+  is the same rule the two headers are held to (CLAUDE.md §4: "they must never offer
+  different destinations"), extended to a third consumer of the same list.
+
+  `/contact` has no <Route> in App.jsx yet — the links are wired ahead of the pages, as
+  /about and /services are. Mirroring the hero's button means inheriting that too.
+
+  The `?? '/contact'` is a floor, not a guess: if the featured flag is ever moved to a
+  different entry this button follows it, and if it is dropped entirely the button still
+  goes somewhere sensible rather than rendering a <Link to={undefined}>.
+*/
+const contactLink = navLinks.find((link) => link.featured) ?? {
+  label: 'Contact',
+  to: '/contact',
+}
+
+/*
   A fifth of the section on screen before the video is allowed to decode — the same
   threshold About uses for the Story circle, so the two claimants ask the same question of
   their own boxes and the registry sees one consistent kind of intent.
@@ -125,6 +150,24 @@ function Team() {
       id="team"
       aria-labelledby="team-title"
       ref={sectionRef}
+      /*
+        `data-offscreen` IS NOT DECORATION HERE — it is what stops this section's Contact
+        button burning a frame of raster per tick for the whole life of the page.
+
+        .button-featured's rim light is a CSS animation on a registered custom property
+        feeding a conic-gradient cut to a ring by two xor-composited masks: every frame is
+        a full re-raster, not a compositor transform. Button.module.css already pauses it
+        with `[data-offscreen='true'] .button-featured::after`, an ancestor-attribute
+        selector rather than a class precisely so a component other than the stylesheet's
+        owner can drive it (CLAUDE.md §7). Until now the only ancestor setting it was
+        `.hero`, because HeroHeader was the variant's only call site. Putting the same
+        attribute on this section opts the second call site into the same gate with no
+        change to the shared stylesheet at all.
+
+        It reuses `inView` rather than observing the box again: the threshold that decides
+        the video may decode is a perfectly good answer to "can anyone see the button".
+      */
+      data-offscreen={inView ? 'false' : 'true'}
     >
       {/*
         THE GROUND, and it must stay FIRST — it and the pane below it are both at z-index
@@ -219,7 +262,77 @@ function Team() {
             </li>
           ))}
         </motion.ul>
+
+        {/* --- The call to action ------------------------------------------- */}
+        {/*
+          THE HERO HEADER'S CONTACT BUTTON, IN A SECOND PLACE — the same base class plus
+          the same single variant from shared/Button.module.css, with a local class that
+          carries spacing and nothing else. No visual property is set here and no new
+          variant was added, which is the rule that file states for every call site.
+
+          Two things this inherits are worth knowing, because neither is visible in the
+          markup:
+
+          1. .button-featured's texture is `filter: url(#hero-cta-turbulence)`, and that
+             <filter> is defined in an inline <svg> inside HeroHeader.jsx. SVG filter
+             references resolve by id across the whole document, so this renders identically
+             here — but only because HeroHeader is always mounted. If the hero is ever
+             removed from the page, this button loses its texture rather than erroring, and
+             the fix is to move that <svg> somewhere both call sites own. The texture itself
+             matches because feTurbulence's baseFrequency is in user-space units and both
+             buttons are the same size; a differently sized button would show a visibly
+             different grain from the same filter.
+
+          2. Its rim light is paused by an ancestor carrying `data-offscreen='true'` — see
+             the note on this section's own element above.
+
+          NOTE, because it is a rule this crosses: CLAUDE.md §2 says .button-featured is the
+          site's one high-emphasis button and that the distinction holds only while it stays
+          the only one. There are two now. That was asked for deliberately and the button is
+          unchanged; what has changed is that the claim in §2 is no longer true, and it has
+          been updated there rather than left to contradict the code.
+
+          A plain <Link>, not a motion one: the parent already animates on the reveal
+          ladder, and a motion child would compound both transforms and multiply both
+          opacities against its parent's fade — the same reason HeroHeader's is plain.
+        */}
+        <motion.div className={styles.cta} {...revealAt(4)}>
+          <Link
+            to={contactLink.to}
+            className={`${buttonStyles.button} ${buttonStyles['button-featured']}`}
+          >
+            {contactLink.label}
+          </Link>
+        </motion.div>
       </div>
+
+      {/*
+        THE PAGE'S FOOTER, INSIDE THIS SECTION — a sibling of `.inner`, last in the flex
+        column, so it lands on the section's bottom edge and is on screen with the rest of
+        the section rather than a scroll further down. `.inner` centres itself in whatever
+        space is left above it; see the auto margins in the stylesheet.
+
+        IT IS A SEPARATE COMPONENT AND STAYS ONE. Nesting is a placement decision, not a
+        reason to inline forty lines of bar into this file — Footer owns its own markup,
+        links and glass, and moving it back out later is one line in each of two files.
+
+        TWO CONSEQUENCES OF NESTING, both real and neither visible in the markup:
+
+        1. The pane behind it now has something to sample. When the footer sat after Team
+           as a page-level element, nothing was painted behind it and its `backdrop-filter`
+           was a no-op over flat black. Here it sits over this section's frosted footage, so
+           the glass genuinely reads as glass and darkens the bar away from the section
+           above it. Its variant choice is argued at `.glass` in Footer.module.css.
+
+        2. It is no longer a `contentinfo` landmark. HTML scopes a <footer> to its nearest
+           sectioning ancestor, so a <footer> inside <section> is that section's footer
+           rather than the document's, and assistive technology stops exposing it as the
+           page-level one. That is the cost of the placement and it is not fixable by
+           adding `role="contentinfo"` here — the role is invalid on an element nested in
+           sectioning content, so asserting it would misreport the structure rather than
+           restore it. Worth knowing if the footer ever moves back out.
+      */}
+      <Footer />
     </section>
   )
 }

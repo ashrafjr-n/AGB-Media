@@ -40,6 +40,24 @@
 
   /* Warm off-white so body text never reads as clinical pure white. */
   --color-text: #f5f5f0;
+
+  /*
+    PURE WHITE, AND THE ONLY PLACE ON THE SITE IT IS ALLOWED.
+
+    It exists for exactly one job: the hover state of a nav link, in both headers. Those
+    links rest at --color-text-muted, and the hover is now a single change — brighten —
+    with no gold, no underline and no transform. For that to register as a *lift* rather
+    than as a slight warming, the top of the ramp has to be past --color-text; landing on
+    the same off-white the body copy uses reads as the link merely catching up with
+    everything around it.
+
+    It deliberately does NOT replace --color-text anywhere. The note above that token is
+    still the rule — running copy on this site is warm off-white and never clinical white —
+    and this is the exception that proves it: a momentary state on one interactive element,
+    not a text colour. If a third thing ever wants pure white, that is the point to ask
+    whether the palette has drifted rather than to reach for this.
+  */
+  --color-text-bright: #ffffff;
   --color-text-muted: rgba(245, 245, 240, 0.65);
   --color-text-subtle: rgba(245, 245, 240, 0.4);
 

@@ -132,19 +132,30 @@
 /* --- Content -------------------------------------------------------------- */
 
 /*
-  THE GROUP SITS SLIGHTLY ABOVE THE SECTION'S MIDDLE, and this is the one thing here that
-  is not inherited from the Founder or WhyAgb.
+  THE GROUP SITS SLIGHTLY ABOVE THE MIDDLE OF THE SPACE ABOVE THE FOOTER.
 
-  `justify-content: center` on the section centres the whole column, which would put the
-  title well above centre and the group's own middle exactly on it. The brief wants the
-  title above centre without the block reading as top-aligned, so the group is biased
-  upward by a block-end margin: extra space below the content pushes the centred block up
-  by half of it. A margin rather than a translate, so it is real layout — nothing overlaps,
-  and the bias simply disappears on a window where the content already overflows.
+  `margin-block: auto` IS WHAT PINS THE FOOTER TO THE SECTION'S BOTTOM EDGE, and it is the
+  whole mechanism — there is no absolute positioning anywhere in this section. An auto
+  margin on the main axis of a flex container absorbs the free space before
+  `justify-content` gets to distribute any, so with this element taking auto on both block
+  sides and the footer taking none, the leftover height splits evenly above and below THIS
+  box and the footer is left sitting on the section's block-end padding. The section's
+  `justify-content: center` is consequently inert while both children are present; it is
+  kept because it is still the correct declaration for the section on its own terms, and
+  because removing it would change nothing until someone removed the footer and then
+  everything.
 
-  8vh is the bias, capped at 5rem: on a 900px window that is 72px up, which is enough to
-  read as deliberate placement and far short of the section looking top-heavy. It is a vh
-  value because what it is offsetting against is a fraction of the viewport.
+  Why not `position: absolute` on the footer: it would leave the flow, so on a short window
+  the content column and the bar would overlap instead of the section growing. In flow, an
+  overflow just pushes the section past 100vh and scrolls, which is what every other
+  section here does.
+
+  `padding-block-end` RATHER THAN THE `margin-block-end` THIS USED TO CARRY. The upward
+  bias was a block-end margin, which auto margins now occupy — so the same offset moves to
+  padding, and it produces exactly the same result: with the margin box centred, adding P
+  below the content lifts the visible group by P/2, which is the identical arithmetic the
+  margin gave. 8vh capped at 5rem, so about 72px up on a 900px window: enough to read as
+  deliberate placement, far short of top-heavy.
 */
 .inner {
   position: relative;
@@ -158,7 +169,9 @@
   inline-size: 100%;
   max-inline-size: var(--container-max);
   margin-inline: auto;
-  margin-block-end: min(8vh, 5rem);
+  /* Absorbs the free space above and below — see the note above. */
+  margin-block: auto;
+  padding-block-end: min(8vh, 5rem);
 
   text-align: center;
 }
@@ -261,6 +274,15 @@
   box-shadow: var(--shadow-soft);
 
   /*
+    Every circle is interactive-looking and should say so under the pointer. The circles
+    are not links today — the section's one destination is the Contact button below them —
+    so this is the cursor describing an affordance the hover state already implies rather
+    than promising a click target. It goes if the portraits ever become links to bios, at
+    which point the anchor brings its own.
+  */
+  cursor: pointer;
+
+  /*
     A LIGHT HOVER, and the transition is scoped to the two properties that move rather than
     written as `all`. It is CSS rather than Framer Motion on purpose: this is a two-state
     toggle, not choreography, and the `prefers-reduced-motion` block in global.css already
@@ -269,10 +291,26 @@
     A 2% scale and a warmer rim. Both are deliberately at the edge of noticeable: these are
     portraits, and a circle that leaps at the cursor turns a page of people into a control
     panel. Nothing about the layout moves, since a transform does not affect flow.
+
+    THE TIMING IS THE SLOW RAMP, NOT THE FAST ONE. This ran at --duration-fast (180ms), the
+    timing the header's toggles use, and at that speed a 2% scale arrives before the eye
+    has followed the cursor onto the circle — it reads as a snap rather than as weight.
+    --duration-slow (600ms) with --ease-in-out is the opposite feel: the circle takes up
+    the movement gradually, holds most of its travel in the middle of the curve, and
+    settles rather than stops.
+
+    --ease-in-out (cubic-bezier(0.65, 0, 0.35, 1)) rather than --ease-out, and the
+    difference is what the two curves are for. --ease-out starts at full speed and
+    decelerates, which is right for something arriving — a drawer, a reveal, a colour
+    landing on a nav link. This is a continuous, reversible state that has to feel equally
+    unhurried leaving as arriving, and a symmetrical curve is the one that does both. It
+    is also the first call site --duration-slow has ever had; CLAUDE.md §7 listed it among
+    the tokens kept as unused rungs of a scale, and this is exactly the use it was kept
+    for.
   */
   transition:
-    transform var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
+    transform var(--duration-slow) var(--ease-in-out),
+    border-color var(--duration-slow) var(--ease-in-out);
 }
 
 .portrait:hover {
@@ -452,6 +490,29 @@
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.12em;
   color: var(--color-text);
+}
+
+/* --- The call to action --------------------------------------------------- */
+
+/*
+  SPACING AND NOTHING ELSE. shared/Button.module.css is the only place a button is styled
+  on this site, and a local class at a call site may carry where the button sits and never
+  what it looks like — the same contract HeroHeader's `.nav-cta` keeps. If this rule ever
+  grows a colour, a radius or a border, the button has been forked.
+
+  `display: flex` rather than leaving the <a> inline, so the block centres its own child:
+  the column above is centred by `align-items: center` on .inner, but a bare inline-flex
+  anchor inside a motion div would sit at the start of that div's own line box.
+
+  The gap above is a full step larger than the one between the seats and their labels. The
+  row of four is a group; this is the section's exit, and it needs to read as a separate
+  move rather than as a fifth thing in the row.
+*/
+.cta {
+  display: flex;
+  justify-content: center;
+
+  margin-block-start: clamp(1.75rem, 4.5vh, 3rem);
 }
 
 /* --- Breakpoints ---------------------------------------------------------- */
