@@ -43,6 +43,16 @@
   --founder-text-mid: color-mix(in srgb, var(--color-text) 55%, transparent);
 
   /*
+    The timeline's shared rail size — the one number that keeps the big first node, the
+    connecting line's position and every item's own rail slot landing on one centre line.
+    See .timeline-node-row. --timeline-node-size is the smaller circle every other node
+    draws inside that same slot — big enough to hold an icon legibly, still clearly
+    smaller than the first node that fills the whole rail.
+  */
+  --timeline-rail: clamp(2.25rem, 5.5vh, 2.75rem);
+  --timeline-node-size: clamp(1.5rem, 4vh, 1.75rem);
+
+  /*
     One small gap between all four areas, and the first dial to reach for if the section
     ever needs to breathe more or fit into less.
 
@@ -55,40 +65,6 @@
   --founder-gap: clamp(0.4rem, 1.1vh, 0.85rem);
   --founder-pad: clamp(0.75rem, 2.5vh, 2rem);
 
-  /*
-    HOW FAR THE CAREER LINE AND EVERYTHING BELOW IT DROPS, and the reason it takes a token
-    rather than a bigger number on .career's own margin.
-
-    The column is `justify-content: center`, so it is measured from its own middle: adding
-    height anywhere inside it pushes the *top* of the column up by half of what it pushes
-    the bottom down. A drop written only as extra margin above .career would therefore move
-    the name, the portrait and the profile up by half of it — the one block that has to stay
-    exactly where it is.
-
-    The fix is to add the same amount back as block-start padding on the section. With
-    `min-block-size: 100vh` and border-box sizing, that padding comes out of the container's
-    inner height, so the free space the centring divides shrinks by the same amount it
-    grew — and the two cancel exactly at the top. Worked through: intro top is
-    `pad + (inner - column) / 2`; adding X to the column and X to the pad gives
-    `pad + X + (inner - X - column - X) / 2`, which is the same number. The areas below the
-    intro keep the whole X.
-
-    .strip takes half of it again on top of that, so the two scrolling lines open away from
-    the career line rather than travelling with it as one slab. The section's block padding
-    therefore compensates for 1.5 x this value, which is the only place the two are added
-    up — if either drop changes, that multiplier changes with it.
-
-    Measured at 1440x900, 1280x720 and 1920x1080: the name, the portrait, the eyebrow and
-    the facts grid all move by exactly 0px, the career line by the shift, and both strips by
-    one and a half times it. THE CANCELLATION NEEDS FREE SPACE TO CANCEL AGAINST, though,
-    and on a phone there is none — the four areas run past 100vh, `justify-content: center`
-    has nothing left to redistribute, and the block-start padding becomes a plain offset
-    that moves the whole column down by 1.5 x the shift (about 25px at 390x844). That is
-    benign rather than a bug: at that width the section is a scrolling column instead of a
-    composed screen, so everything in it simply starts slightly lower and nothing is clipped.
-  */
-  --founder-shift: clamp(0.75rem, 2vh, 1.75rem);
-
   position: relative;
   z-index: var(--z-base);
 
@@ -100,13 +76,32 @@
 
   min-block-size: 100vh;
   /*
-    Asymmetric on purpose, and the block-start term is not padding in the usual sense: it
-    is the counterweight that holds the intro still while the three areas below it drop.
-    See --founder-shift. The block-end stays at --founder-pad, so the column's bottom edge
-    moves down by the full shift, which is what makes the drop visible at all.
+    Symmetric now — corrected 2026-08-01. This used to be asymmetric, with the block-start
+    term inflated by `--founder-shift * 1.5`: a counterweight meant to hold the intro
+    block still while the career line (which sat directly after it then) and the two
+    strips below dropped away from it, on the argument that `justify-content: center`
+    redistributes added height as an equal push up/down from the column's own middle.
+
+    That scheme assumed there was free space to redistribute — content close enough to
+    one screen that centring had slack either side of it — and the redesign broke the
+    assumption before this fix: five padded cards, a floating-icon timeline and two
+    bordered strip cards pushed the column's natural height well past 100vh on ordinary
+    desktop windows, not just on a phone (the one case the old comment already accounted
+    for). Once there is no free space, `justify-content: center` has nothing to
+    distribute and the extra block-start padding was pure dead weight — the section's
+    least defensible source of excess height, and the most likely thing a reader would
+    describe as "the container is too tall" or "there's a gap before the section starts".
+
+    The reorder in Founder.jsx (career now closes the section, after both strips rather
+    than straight after the intro) also broke the OTHER half of the scheme's premise: it
+    was tuned for a specific order (intro, then career at the full shift, then the strip
+    at half of it) that no longer exists. Rebuilding an equivalent for the new order was
+    not worth it — a flat gap between four blocks reads just as clearly as a compensated
+    "drop", without a fragile piece of order-coupled arithmetic to keep in step with any
+    future reorder. See .strip and .career below for what replaced the two margins that
+    used to reference this.
   */
-  padding-block: calc(var(--founder-pad) + var(--founder-shift) * 1.5)
-    var(--founder-pad);
+  padding-block: var(--founder-pad);
 
   background-color: var(--color-black);
 }
@@ -260,7 +255,7 @@
   background-color: var(--color-gold);
 }
 
-/* --- Area 1: name and portrait, against the profile ----------------------- */
+/* --- Area 1: the profile column, against the portrait ---------------------- */
 
 /*
   Natural height, like every other area. It took `flex: 1` while the column stretched to
@@ -281,13 +276,24 @@
   padding-inline: var(--container-padding);
 }
 
-.identity {
+/*
+  EYEBROW, NAME, BIO, FACTS — one column of copy, corrected 2026-08-01. It used to be two:
+  the name shared a column with the portrait (.identity) while everything else shared a
+  second one (.profile), which put the eyebrow and the name — one label and the thing it
+  labels — in different tracks of the grid. There is no more .identity; this is now all
+  four text pieces in reading order, and the portrait is .intro's other, plain grid child.
+
+  No offset while the columns are stacked (the base rule, below 48rem) — .founder's own
+  gap is all the separation the column needs from whatever comes before it. The
+  two-column grid and its fr split live in the 48rem block at the foot of this file.
+*/
+.profile {
   display: flex;
   flex-direction: column;
   gap: clamp(0.4rem, 1.2vh, 0.9rem);
 
-  /* A grid child's automatic minimum is its content; without this the name's own
-     measure would push the track past its share of the row. */
+  /* A grid child's automatic minimum is its content; without this the bio's own
+     measure could push the track past its share of the row. */
   min-inline-size: 0;
 }
 
@@ -295,14 +301,12 @@
   ONE LINE — "Abdullah Ghayfan" side by side, where it was stacked in two block spans.
 
   The size is what pays for that, and it had to come down: clamp(2rem, 4vw, 3.2rem) was
-  set for eight characters a row, and sixteen at 3.2rem is about 430px against a 2fr
-  column that is 432px at --container-max. It would have fitted on precisely no window.
-
-  clamp(1.5rem, 3vw, 2.5rem) is measured against the narrowest the column ever gets,
-  which is NOT the phone — a single-column phone layout gives the name the full content
-  width. It is just above 48rem, where the two-column grid takes hold and the 2fr track
-  is only ~270px: 3vw is 23px there, so the 1.5rem floor holds and the name sets at
-  ~180px. It has room at every width from there up.
+  set for eight characters a row, and sixteen at 3.2rem is about 430px, which is wider
+  than this column gets at some widths still in play. clamp(1.5rem, 3vw, 2.5rem) holds
+  comfortable slack at every breakpoint the column passes through — including now that
+  the name sets in the wider of .intro's two tracks (see the 48rem block) rather than the
+  narrower one it used to share with the portrait, which is more room than this clamp was
+  ever tuned against, not less.
 
   `white-space: nowrap` states the intent rather than merely hoping the arithmetic
   holds. With the clamp above there is comfortable slack at every breakpoint, so it
@@ -331,10 +335,19 @@
 }
 
 /*
-  Raw image: no radius, no frame, no card, no shadow. The clean edge against the blurred
+  Raw image: no radius, no card, no shadow, no ring. The clean edge against the blurred
   backdrop is the whole effect, and anything drawn around it would turn the portrait into
-  a component. This element is not a frame in that sense — it draws nothing, it only
-  clips, and it carries the box the image itself used to have.
+  a component. This element is not a frame in that decorative sense — it draws nothing
+  itself, it only clips, and it carries the box the image itself used to have.
+
+  A GOLD HALO LIVED HERE BRIEFLY, 2026-08-01, AND IS GONE. It was a ring on a sibling
+  wrapper behind this element, sized off the frame's own width — and this frame is wide
+  and short (a rectangle, not the square the ring assumed), so a width-derived circle
+  cleared its top and bottom edges by a wide margin before the ring's own blurred
+  box-shadow was even added on top. With only .founder's own small block-start padding
+  above it, that glow reached past the section's own top edge into the Story section
+  above — visible bleed into a neighbouring section, and the reason it was removed
+  rather than re-sized. Nothing here clips past its own box any more.
 
   A fixed height, because the file's natural one was by itself enough to make the section
   unfittable. It gives up height first on a short window, which is right for the one block
@@ -353,14 +366,11 @@
 
 /*
   ONE PIXEL LARGER THAN ITS FRAME, ON EVERY SIDE, and clipped back by it — which is the
-  whole fix for the dark hairline that ran down the portrait's trailing edge.
-
-  The column is an `fr` track, so its width is fractional at most window sizes (~361.6px
-  at 1024px). At `inline-size: 100%` the image's right edge landed mid-pixel, the browser
-  antialiased that column, and the image's own alpha fell off across it — so the
-  section's ground showed through as a thin dark line. The left edge was crisp because
-  the track begins on a whole pixel; only its end was fractional, which is exactly why
-  the seam was one-sided.
+  whole fix for a dark hairline that ran down one edge of the portrait. The column is an
+  `fr` track, so its width is routinely fractional (~361.6px at a 1024px window); an
+  image at `inline-size: 100%` of that can end on a half pixel, which the browser
+  antialiases — so the image's own alpha falls off across that column and the section's
+  ground shows through as a thin dark line.
 
   `calc(100% + 2px)` with `margin: -1px` puts the image's real edges 1px outside the
   frame in all four directions, so the rounded clip cuts through opaque pixels rather
@@ -383,19 +393,6 @@
   block-size: calc(100% + 2px);
   margin: -1px;
   object-fit: cover;
-}
-
-/*
-  No offset while the columns are stacked — the name sits directly above this and .intro's
-  own gap is all the separation it needs. The alignment offset belongs to the two-column
-  layout and lives in the 48rem block at the foot of this file.
-*/
-.profile {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.5rem, 1.7vh, 1.2rem);
-
-  min-inline-size: 0;
 }
 
 /*
@@ -429,30 +426,62 @@
 /*
   The bio is the longest run of text here and its leading is where its height lives — a
   tenth off the line-height saves more than the font-size drop does.
+
+  42ch caps the measure well short of the profile column's own width, which runs past
+  60ch at the top of the breakpoint range — a line that long is uncomfortable to track
+  back from regardless of how much column is free to fill.
 */
 .bio p {
+  max-inline-size: 42ch;
+
   font-size: 0.8rem;
   font-weight: var(--font-weight-light);
   line-height: 1.7;
   color: var(--founder-text-mid);
 }
 
-/* Two by two from the start — four short pairs stack badly as a single column. */
+/*
+  ONE COLUMN AT THE BASE, stacked — four cards this tall read badly two abreast in
+  anything narrower than a tablet. The two wider layouts (2 up, then a single row of 4)
+  are added in the 48rem and 64rem blocks at the foot of this file, alongside every other
+  breakpoint this section already carries, rather than invented as a new query here.
+*/
 .facts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.4rem, 1.4vh, 1rem) var(--space-md);
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(0.5rem, 1.6vh, 0.85rem);
 }
 
+/*
+  THE CARD. --color-glass is the site's dark glass fill that has carried no call site
+  since the header pill went to white glass (CLAUDE.md §7's unreferenced-token list) —
+  this is the "future raised surface" that note was kept for. --glass-border is the same
+  hairline every other glass edge on the site uses, and --radius-md keeps the corner on
+  the shared scale rather than a bespoke number for four small cards.
+
+  Icon, then label, then value, top to bottom — a plain flex column does that with
+  nothing more, since .fact-label already stacks its own icon above its text (see below).
+*/
 .fact {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3xs);
+  align-items: flex-start;
+  gap: var(--space-2xs);
+
+  padding: clamp(0.65rem, 1.8vh, 1rem);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-glass);
 }
 
+/*
+  The icon lives inside dt, stacked above the label text by this being a flex column —
+  see the note at the dl in Founder.jsx for why it is not a sibling of dt/dd instead.
+*/
 .fact-label {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3xs);
 
   color: var(--founder-gold-soft);
@@ -462,14 +491,10 @@
   text-transform: uppercase;
 }
 
-.fact-label::before {
-  content: '';
-  flex-shrink: 0;
-
-  inline-size: 4px;
-  block-size: 4px;
-  border-radius: 50%;
-  background-color: var(--color-gold);
+.fact-icon {
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  color: var(--founder-gold-strong);
 }
 
 /* dd's UA indent is already zeroed by the `*` reset in global.css. */
@@ -480,12 +505,23 @@
   color: var(--founder-text-strong);
 }
 
-/* --- Area 2: career, one flowing line ------------------------------------ */
+/* --- Area 4: career, an icon timeline, closing the section ----------------- */
 
 /*
   Full bleed by simply not being constrained — the section sets no inline padding, so this
   block is already the width of the section. There is no negative-margin breakout in this
   file.
+
+  MOVED TO CLOSE THE SECTION, 2026-08-01 — this used to sit directly after the intro
+  block; it now comes last, below both scrolling strips (see the order in Founder.jsx).
+  Its margin-block-start is a flat clamp for that reason: the old value added
+  `--founder-shift`, a term that existed to drop this block (and .strip, at half the
+  amount) away from the intro while a compensating padding on .founder held the intro
+  itself still. That scheme was built for this block sitting second, right after the
+  intro; now that it sits fourth, after .strip and .works have already provided their own
+  separation, reaching for the same mechanism would mean re-deriving fractions for an
+  order they were never written for. A flat gap reads exactly as clearly and does not
+  need to change if the order ever does again.
 */
 .career {
   flex: 0 0 auto;
@@ -494,116 +530,215 @@
   flex-direction: column;
   gap: clamp(0.3rem, 1vh, 0.6rem);
 
-  /*
-    A little air above the label, on top of the column's own --founder-gap. The facts grid
-    ends on a run of short values and the career line begins with a centred eyebrow, so
-    without this the two read as one continuous block of small type rather than as the end
-    of the profile and the start of something else.
-
-    Plus --founder-shift, which is what drops this line and the two strips below it away
-    from the intro block. It is added here rather than folded into the clamp so the base
-    separation and the deliberate drop stay two readable numbers — and so the section's
-    padding compensation, which counts this shift once and .strip's half of it again, has
-    something to point at. See --founder-shift.
-  */
-  margin-block-start: calc(clamp(1.5rem, 3.5vh, 2.5rem) + var(--founder-shift));
+  /* A little air above the label, on top of .works's own margin and the column's
+     --founder-gap — the titles end as a scrolling line of small type and the timeline
+     opens with a centred eyebrow, so without this the two read as one continuous run
+     rather than as the end of one area and the start of another. */
+  margin-block-start: clamp(1.25rem, 3vh, 2rem);
 
   inline-size: 100%;
 }
 
-/* The only centred eyebrow on the site; it labels a line rather than a column. */
+/* The only centred eyebrow on the site; it labels the row below rather than a column. */
 .career-label {
   justify-content: center;
 }
 
 /*
-  Five milestones set as one wrapping line, where they were five bordered cells. The row
-  of cards cost roughly three times this height for the same words, and at this size a
-  card's worth of chrome around thirty characters read as a table rather than as a life.
+  FIVE ITEMS SHARING ONE CONNECTING RAIL — horizontal here, vertical on a phone (see the
+  media query at the foot of this file), but the same technique either way: each item
+  draws its own segment of the line as a full-length pseudo-element trimmed only at the
+  two ends of the list, rather than one list-level line sized against a fixed item count.
 
-  Centred and wrapping, so it breaks to a second line gracefully on a narrow window
-  instead of forcing five columns through it.
+  `flex: 1 1 0` with no gap between items is what makes the segments join seamlessly —
+  adjoining items' boxes touch, so two abutting 0%-to-100% segments read as one
+  unbroken line. This is also what replaced the previous version's 10%-inset line, which
+  was correct only because there happened to be exactly five items; this generalises to
+  any count without a number anywhere that has to agree with milestones.length.
+
+  No clearance padding on this list any more — see .timeline-node for why: every icon
+  now renders INSIDE its node rather than floating above it, so there is nothing left
+  that needs room reserved above the row.
 */
-.career-list {
+.timeline {
+  position: relative;
+
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  column-gap: var(--space-2xs);
-  row-gap: 0.15rem;
+  list-style: none;
+  gap: 0;
 
   max-inline-size: var(--container-max);
   margin-inline: auto;
   padding-inline: var(--container-padding);
-  list-style: none;
 }
 
-.career-item {
+.timeline-item {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-inline-size: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: 0 var(--space-3xs);
+
+  text-align: center;
+}
+
+/*
+  THIS ITEM'S OWN SEGMENT OF THE RAIL. Spans the item's full inline size by default —
+  0% to 100% of its own box — which is what lets it join edge-to-edge with the segments
+  either side of it. inset-block-start sits at the rail box's own vertical centre
+  (--timeline-rail / 2), which is constant across every item because .timeline-node-row
+  is a fixed square regardless of which node variant it holds.
+
+  TRIMMED ONLY AT THE TWO ENDS OF THE LIST. The first item's segment starts at its own
+  horizontal centre rather than its inline-start edge, and the last item's ends at its
+  own centre rather than its inline-end edge — both percentages resolve against that
+  item's own box, so neither needs to know the list's total width or how many items
+  there are. The effect: the rail begins exactly at the first node and ends exactly at
+  the last one, with no line dangling past either end.
+*/
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  inset-block-start: calc(var(--timeline-rail) / 2);
+
+  block-size: 1px;
+  background-color: var(--founder-gold-soft);
+}
+
+.timeline-item:first-child::before {
+  inset-inline-start: 50%;
+}
+
+.timeline-item:last-child::before {
+  inset-inline-end: 50%;
+}
+
+/*
+  THE SHARED RAIL BOX — --timeline-rail square, centred in the item. Every node variant
+  sits inside this same box, which is what puts the big first node and every smaller one
+  after it on one straight line: the box's own centre is always the rail's centre,
+  whatever size node it holds.
+*/
+.timeline-node-row {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  inline-size: var(--timeline-rail);
+  block-size: var(--timeline-rail);
+}
+
+/*
+  THE NODE ITSELF, icon inside it, always — corrected 2026-08-01. Every node used to
+  float its icon above a separate dot except the first, which held its icon inside a
+  bigger, filled circle; now every node is built the first node's way; only the SIZE
+  still differs. --timeline-node-size is deliberately smaller than --timeline-rail but
+  still large enough to hold a small icon legibly, which a bare 0.55rem dot (the old
+  size, back when nothing needed to fit inside it) could not.
+
+  color: var(--color-black) on a solid gold fill for the same reason on every node: a
+  dark mark is what reads against this section's one solid accent fill, not a second
+  gold tone on top of it.
+*/
+.timeline-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  inline-size: var(--timeline-node-size);
+  block-size: var(--timeline-node-size);
+  border-radius: 50%;
+  background-color: var(--color-gold);
+  color: var(--color-black);
+  font-size: 0.8rem;
+  box-shadow: 0 0 10px 2px var(--founder-gold-soft);
+}
+
+/*
+  THE FIRST NODE — still visually distinct, still the whole rail box rather than a
+  smaller circle centred within it, and still a stronger glow. The icon inside it is no
+  longer a structural difference from the rest, though (see .timeline-node) — data-first
+  only changes size and glow now, nothing about where the icon renders.
+*/
+.timeline-item[data-first='true'] .timeline-node {
+  inline-size: var(--timeline-rail);
+  block-size: var(--timeline-rail);
+  font-size: 1.1rem;
+  box-shadow: 0 0 18px 4px var(--founder-gold-soft);
+}
+
+/* Groups the title and description as one flex child, so the item's own flex-direction
+   (column on the row layout, row on the phone one) can reflow the pair as a block
+   without either of them needing to know which orientation it is in. */
+.timeline-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.timeline-title {
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.timeline-description {
   font-size: 0.65rem;
   font-weight: var(--font-weight-light);
-  line-height: 1.7;
+  line-height: 1.5;
   color: var(--color-text-subtle);
 }
 
-/*
-  The separator, as a pseudo-element rather than a character in the copy — a screen reader
-  hears five list items, not one sentence peppered with punctuation. It also means the
-  dots never end a wrapped line, since each belongs to the item that follows it.
-*/
-.career-item + .career-item::before {
-  content: '·';
-  margin-inline-end: var(--space-2xs);
-  color: var(--founder-gold-soft);
-}
-
-/* --- Area 3: the work strip, full bleed ---------------------------------- */
+/* --- Area 2: the work strip, a bordered card ------------------------------ */
 
 /*
+  A CARD NOW, where the edges used to fade into the ground with a mask. The strip sits on
+  the same container-max column as .intro and .timeline instead of insetting itself with
+  its own margin, so its border lines up with everything above it rather than sitting at
+  a different inset.
+
+  --glass-fill (0.55) rather than --color-glass (0.5) — a touch heavier than the fact
+  cards, because this one has to hold a wall of photographs legible against the section's
+  own photograph rather than a few lines of type. --radius-lg matches the radius already
+  on the stills inside it (.strip img), so the card and its contents read as one scale of
+  rounding rather than two.
+
+  `overflow: hidden` belongs here for the same reason CLAUDE.md's Team section documents
+  for its own rounded edge: LogoLoop's `.loop` already clips its own track, but stating
+  the clip again on the card that owns the radius is what guarantees nothing ever draws
+  past this box's rounded corner.
+
   The height is passed to LogoLoop from Founder.jsx rather than set here — it is the
   component's own prop, and it is a clamp for the same reason everything else here is.
-
-  The edges fade with a MASK rather than with LogoLoop's own fadeOut, and the distinction
-  matters here: fadeOut paints a gradient *in a colour*, which works over a known ground
-  and would be a pair of dark smudges over a frosted photograph. A mask removes the pixels
-  instead, so the strip genuinely dissolves into whatever is behind it. LogoLoop's fadeOut
-  is left off at the call site for that reason.
-
-  The inline margin is a clamp rather than a flat 3rem so a phone does not lose a sixth of
-  its width to it; 3rem is what it resolves to from about 1000px up.
 */
 .strip {
   flex: 0 0 auto;
+  overflow: hidden;
 
-  /*
-    Extra air above, on top of the column's own --founder-gap. The career line ends as a
-    centred run of small type and the strip begins as a wall of photographs; without the
-    separation the images read as a caption to it.
+  /* Extra air above, on top of the column's own --founder-gap and the intro's own
+     content. A flat clamp, not a shift-compensated one — see .founder and .career for
+     why that mechanism is gone. */
+  margin-block-start: clamp(1.5rem, 3.5vh, 2.25rem);
 
-    Plus half of --founder-shift. The career line has already dropped by the whole shift and
-    this strip travels with it; the extra half is what makes the two scrolling lines open
-    away from the career line instead of moving down as one slab with it. Half rather than
-    the whole because this is the block that gives up height first on a short window — the
-    photographs are the one area here with nothing to read.
-  */
-  margin-block-start: calc(
-    clamp(1.5rem, 3.5vh, 2.25rem) + var(--founder-shift) * 0.5
-  );
-  margin-inline: clamp(1rem, 4vw, 3rem);
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: clamp(0.85rem, 2.4vh, 1.35rem) var(--container-padding);
 
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 60px,
-    black calc(100% - 60px),
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 60px,
-    black calc(100% - 60px),
-    transparent
-  );
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--glass-fill);
 }
 
 /*
@@ -632,7 +767,7 @@
   border-radius: var(--radius-lg);
 }
 
-/* --- Area 4: the body of work, as a scrolling line of titles -------------- */
+/* --- Area 3: the body of work, as a scrolling line of titles -------------- */
 
 /*
   Where "Awards & Honours" and "Contribution" used to close the section — two labels
@@ -650,16 +785,17 @@
 
   The colour is set here and inherited into the strip's labels, because the ground is
   this section's business and not the shared component's: --founder-text-mid is
-  --color-text at 55%, quiet enough to sit under the photographs without competing with
-  the career line, which is at --color-text-subtle (40%) above them.
+  --color-text at 55%, quiet enough to sit under the photographs without competing —
+  the career timeline below it is at --color-text-subtle (40%), the site's own quieter
+  register for a body of type further from the eye's first landing point.
 */
 .works {
   flex: 0 0 auto;
 
   /*
-    Less air than .strip takes above it. The photographs need separating from the career
-    line because they are a different kind of object; this is small type following a wall
-    of images, and the change in scale is already the separation.
+    Less air than .strip takes above it. The photographs need separating from the titles
+    below them because they are a different kind of object; this is small type following
+    a wall of images, and the change in scale is already the separation.
   */
   margin-block-start: clamp(0.75rem, 2vh, 1.25rem);
   /* Matching .strip's inline inset exactly, so the two lines share an edge. */
@@ -705,21 +841,6 @@
 @media (max-width: 47.9375rem) {
   .founder {
     /*
-      THE SHIFT IS OFF, and the file already predicted this: the note at --founder-shift
-      says in full that the cancellation "NEEDS FREE SPACE TO CANCEL AGAINST, and on a
-      phone there is none" — the four areas run past 100vh, `justify-content: center` has
-      nothing left to redistribute, and the block-start padding that pays for the drop
-      becomes a plain ~25px offset pushing the whole column down.
-
-      It was called benign there, and it was, right up until the block-start padding below
-      had to earn its height. Zeroing the token rather than rewriting the three rules that
-      read it keeps the arithmetic in one place: the padding compensation, .career's drop
-      and .strip's half-drop all fall out together, and every one of them is a desktop
-      composition device with nothing to compose at this width.
-    */
-    --founder-shift: 0px;
-
-    /*
       HEADER CLEARANCE, which this section did not need before. On desktop it is centred
       in a 100vh box with slack above and below, so the fixed pill never lands on
       anything. Here the column overflows, the padding *is* the top gap, and at
@@ -729,18 +850,68 @@
     padding-block-start: calc(var(--header-height) + var(--space-2xs));
   }
 
-  /*
-    The facts grid ends on a run of short values and the career line opens with a centred
-    eyebrow, so the two need separating — but on desktop that separation is measured
-    against a column with air around it, and stacked it landed as ~70px of empty ground in
-    the middle of the section. Enough to read as a break, and no more.
-  */
-  .career {
-    margin-block-start: clamp(1.25rem, 3vh, 2rem);
-  }
-
   .strip {
     margin-block-start: clamp(1rem, 2.5vh, 1.5rem);
+  }
+
+  /*
+    THE RAIL TURNS VERTICAL, rail on the left of each entry rather than a row of five
+    columns under a horizontal line — a phone has nowhere near the width for five columns
+    and the milestone text to both stay legible.
+
+    STILL ONE CONTINUOUS LINE, though, built the same way as the horizontal one: each
+    item draws its own full-length segment (see .timeline-item::before) and the segments
+    join edge-to-edge because items still sit with zero gap between them, just stacked in
+    a column instead of a row. Nothing about the technique changes, only which axis it
+    runs along — that symmetry is why this block is short: everything that isn't
+    orientation-specific is inherited from the base rules above.
+
+    ITEM BECOMES A ROW rather than a column, rail on the left and .timeline-copy on the
+    right — the same two flex children the desktop layout uses, just reflowed. Centring
+    the rail box vertically within the item (align-items: center on a row) is what keeps
+    the node at the item's own vertical midpoint regardless of how tall its text runs,
+    exactly mirroring how the desktop item centres it horizontally — which is what lets
+    the first/last-child trims below use a plain 50% on both axes without rewriting the
+    logic for a vertical line specifically.
+  */
+  .timeline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timeline-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding: var(--space-2xs) 0;
+
+    text-align: start;
+  }
+
+  /*
+    Rotated from the horizontal version: a vertical segment at the rail's own horizontal
+    centre, spanning the item's full block size instead of its full inline size. The
+    first/last-child trims are the same idea turned 90 degrees — inset-block-start: 50%
+    on the first item, inset-block-end: 50% on the last — resolving against each item's
+    own (variable, text-dependent) height, which is exactly why no measurement of that
+    height is needed anywhere in this rule.
+  */
+  .timeline-item::before {
+    inset-inline-start: calc(var(--timeline-rail) / 2);
+    inset-inline-end: auto;
+    inset-block-start: 0;
+    inset-block-end: 0;
+
+    inline-size: 1px;
+    block-size: auto;
+  }
+
+  .timeline-item:first-child::before {
+    inset-block-start: 50%;
+  }
+
+  .timeline-item:last-child::before {
+    inset-block-end: 50%;
   }
 
   /*
@@ -788,41 +959,39 @@
 
 @media (min-width: 48rem) {
   /*
-    The 40/60 split. The profile takes the larger share because it carries three blocks
-    against the identity column's two, and both tracks are minmax(0, …) so neither can be
-    forced past its share by its own content.
+    THE 60/40 SPLIT, profile then portrait — the order flipped 2026-08-01 along with the
+    markup (the portrait used to come first, sharing a track with the name; now .profile
+    carries all four text pieces and is the wider track, with the portrait alone in the
+    narrower one). Both tracks are minmax(0, …) so neither can be forced past its share
+    by its own content. The ratio itself is unchanged — 3fr of copy against 2fr of
+    photograph was the balance before, and moving the photograph to the other side of the
+    row didn't change how much of each the section actually wants.
   */
   .intro {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     gap: var(--space-xl);
   }
 
   /*
-    The eyebrow set level with the TOP OF THE PORTRAIT rather than with the name, so the
-    row reads as two blocks side by side instead of one heading with notes beside it.
-
-    Derived rather than guessed, and that is the point. The distance to clear is exactly
-    what sits above the portrait in the other column — two lines of the name plus
-    .identity's gap — and the name is sized in **vw** while every spacing value here is in
-    vh. A vh offset can only match it at one window shape: the 8vh asked for lands around
-    72px on a 900px-tall window against the ~108px actually needed, and barely half of it
-    at 720px. Mirroring the two values instead holds the alignment at every size.
-
-    The 0.95 is the name's own `line-height: 0.95` times its ONE line — it was 1.9 for
-    two, and it halved when "Abdullah Ghayfan" went onto a single row. The clamp is the
-    name's own, and has to stay a copy of it. If the font size, the line-height, or the
-    number of lines in .name changes, this changes with it: they are the only three
-    things it depends on.
+    TWO UP. Not yet the single row of four the spec asks for — .profile is the wider
+    track of .intro at this width, but "wider" here is still not very wide: four cards
+    across it would leave each one holding an icon, a label and a wrapping value in less
+    width than the mobile single column already gives them. Two keeps every card's
+    content comfortable; the single row waits for 64rem, where .intro's own gap already
+    steps up and the column has genuinely more to give.
   */
-  .profile {
-    padding-block-start: calc(
-      clamp(1.5rem, 3vw, 2.5rem) * 0.95 + clamp(0.4rem, 1.2vh, 0.9rem)
-    );
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 64rem) {
   .intro {
     gap: var(--space-2xl);
+  }
+
+  /* THE SINGLE ROW OF FOUR the cards were designed for — see the 48rem note above. */
+  .facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
