@@ -77,7 +77,7 @@ function WhyAgb() {
     the tail at 0.45s. The cells reveal in reading order, which across two columns means
     the stagger runs left-to-right then down rather than straight down a single column.
   */
-  const revealAt = useSectionReveal()
+  const revealAt = useSectionReveal('why-agb')
 
   return (
     <section className={styles.why} id="why-agb" aria-labelledby="why-agb-title">

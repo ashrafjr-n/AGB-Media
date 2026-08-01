@@ -114,7 +114,7 @@ function Team() {
     four, because they are one row of equals and staggering them would imply an order the
     placeholders do not have.
   */
-  const revealAt = useSectionReveal()
+  const revealAt = useSectionReveal('team')
 
   const sectionRef = useRef(null)
 

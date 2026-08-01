@@ -27,6 +27,30 @@
     for if it ever needs to breathe more or fit into less.
   */
   --team-pad: clamp(1.75rem, 5vh, 4.5rem);
+
+  /*
+    THE AIR ABOVE THE TITLE, and the counterweight that keeps it from eating the section.
+
+    These two are one dial in two halves. `.inner` is centred by auto margins (see below),
+    so its padding does not move the block one-for-one: with the padded box centred, the
+    visible content sits at `(start - end) / 2` from the middle of the space. The pair below
+    therefore reads as "push the group down by about a quarter of their difference, and
+    leave it that far above centre".
+
+    It replaced a single `padding-block-end: min(8vh, 5rem)` that biased the group UPWARD by
+    half of itself — the group now sits lower, which is the change, and it still clears
+    centre rather than sitting on it. At 900px tall that is roughly 50px further down than
+    before; at 720px, roughly 40px.
+
+    THE TOTAL IS BUDGETED, not free. The two together add ~7px of height over the single
+    value they replace, and at 1280x720 the section has only about 22px of slack between the
+    content column and the footer before it stops fitting one screen. That is why the lead-in
+    is not simply larger and why the block-end term came down to pay for most of it — the
+    section's one-screen promise (and the footer being visible inside it) outranks the
+    spacing. Re-measure at 720px before raising either.
+  */
+  --team-lead-in: min(6vh, 4rem);
+  --team-drop-bias: min(3vh, 2rem);
   --team-title-gap: clamp(1.5rem, 4vh, 3rem);
   --team-lead-gap: clamp(1.25rem, 3.2vh, 2.5rem);
 
@@ -150,12 +174,17 @@
   overflow just pushes the section past 100vh and scrolls, which is what every other
   section here does.
 
-  `padding-block-end` RATHER THAN THE `margin-block-end` THIS USED TO CARRY. The upward
-  bias was a block-end margin, which auto margins now occupy — so the same offset moves to
-  padding, and it produces exactly the same result: with the margin box centred, adding P
-  below the content lifts the visible group by P/2, which is the identical arithmetic the
-  margin gave. 8vh capped at 5rem, so about 72px up on a 900px window: enough to read as
-  deliberate placement, far short of top-heavy.
+  `padding-block` RATHER THAN THE `margin-block-end` THIS USED TO CARRY. The upward bias was
+  a block-end margin, which auto margins now occupy — so the offset moved to padding, which
+  produces the same geometry: with the margin box centred, the visible group sits at
+  `(padding-start - padding-end) / 2` from the middle of the available space.
+
+  BOTH TERMS ARE SET, and the block-start one is what this section's air above the title is.
+  It was 0 / min(8vh, 5rem), which put the group half of that value ABOVE centre; it is now
+  --team-lead-in / --team-drop-bias, which lands it a little below the midpoint of that old
+  offset — the group is lower and the title has visibly more room over it, while still not
+  sitting dead centre. The two tokens are defined together at the top of this file with the
+  arithmetic and the one-screen budget that constrains them.
 */
 .inner {
   position: relative;
@@ -171,7 +200,8 @@
   margin-inline: auto;
   /* Absorbs the free space above and below — see the note above. */
   margin-block: auto;
-  padding-block-end: min(8vh, 5rem);
+  padding-block-start: var(--team-lead-in);
+  padding-block-end: var(--team-drop-bias);
 
   text-align: center;
 }

@@ -14,9 +14,11 @@
   `[data-menu-open='true'] .bar` alone. It was removed in a cleanup pass; nothing here
   ever read it.
 
-  What is left to time is the menu open/close: the bar's corner radius here, and
-  the drawer height and hover underline driven from Header.jsx. All three run at
-  the fast end of the ramp with --ease-out so they read as a single movement.
+  What is left to time is the menu open/close: the bar's corner radius here and the
+  drawer height driven from Header.jsx. Both run at the fast end of the ramp with
+  --ease-out so they read as a single movement. The nav links' hover used to be timed
+  with them; it is a plain CSS colour transition now and runs slower and on a
+  symmetrical curve — see .nav-link.
 */
 
 .header {
@@ -60,10 +62,11 @@
 
 .bar {
   /*
-    Required so the drawer is clipped by the bar's radius. Anything that needs
-    to paint outside the bar's box (the nav underline, notably) has to stay
-    inside it — see .nav-link-underline. It clips the shimmer layer below too,
-    which is twice the pill's width.
+    Required so the drawer is clipped by the bar's radius. Anything that needs to
+    paint outside the bar's box has to stay inside it — the nav underline was the
+    reason this note existed and is gone, but the constraint still binds anything
+    added here. It clips the shimmer layer below too, which is twice the pill's
+    width.
   */
   overflow: hidden;
 
@@ -265,6 +268,19 @@
   match: same resting colour, same target, same duration and curve. Change one and change
   the other, or the same gesture reads differently at the top and bottom of the page.
 
+  THE TIMING IS --duration-base + --ease-in-out, NOT the --duration-fast + --ease-out this
+  started on, and the change is about the curve as much as the number. --ease-out is
+  cubic-bezier(0.22, 1, 0.36, 1), which is close to exponential: it covers about 90% of its
+  travel in the first quarter of the duration, so at 180ms the colour had effectively
+  arrived within ~45ms and the hover read as a snap rather than as a fade. --ease-in-out
+  (cubic-bezier(0.65, 0, 0.35, 1)) is symmetrical and spends its time in the middle, and
+  300ms is long enough to see without the label feeling like it lags the pointer. Symmetry
+  matters here specifically because a hover is reversible — the fade out should take as long
+  as the fade in, which an ease-out curve does not do.
+
+  The hamburger toggle below keeps --duration-fast + --ease-out on purpose: that is a
+  control responding to a press, not a label warming under a pointer.
+
   A CSS transition rather than a Framer one, which is what removing the underline buys:
   the prefers-reduced-motion block in global.css governs CSS transitions site-wide, so
   unlike a JS-driven animation this needs no reduced-motion branch. It is also the same
@@ -277,7 +293,7 @@
   /* Nav links sit at 500 per the design system's weight ladder. */
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-base) var(--ease-in-out);
 }
 
 .nav-link:hover {

@@ -606,6 +606,32 @@
   );
 }
 
+/*
+  ROUNDED CORNERS ON THE STILLS, at --radius-lg.
+
+  It is set here rather than in shared/LogoLoop.module.css deliberately. That component
+  draws both of this section's strips and would happily take a radius, but a corner
+  treatment is the calling section's look and not the component's contract — the titles
+  strip below is text with no box to round, and a future caller might want square edges.
+  The same rule the buttons follow: the shared file owns behaviour, the call site owns
+  where and how it sits.
+
+  --radius-lg (1rem / 16px) rather than --radius-md (0.5rem), and the scale is what the
+  choice was made against rather than a number picked by eye. The stills are drawn at up to
+  152px tall, so 8px reads as a corner that was very slightly softened — barely visible at
+  this size — where 16px is unmistakably rounded and still nowhere near the pill the strip's
+  own aspect would make of --radius-full. The Founder's portrait sits at 12px and is the
+  only other rounded photograph on the site; these are smaller and moving, so a touch more
+  radius reads as the same amount of rounding.
+
+  On the <img> rather than on a wrapper, because LogoLoop puts the image in the flow
+  directly and there is no box around it to clip against. Nothing here has a background, so
+  a radius on the image is the whole effect.
+*/
+.strip img {
+  border-radius: var(--radius-lg);
+}
+
 /* --- Area 4: the body of work, as a scrolling line of titles -------------- */
 
 /*

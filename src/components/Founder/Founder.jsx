@@ -175,7 +175,7 @@ function Founder() {
     glass cares about: an animating `opacity` on <section> isolates the whole subtree
     while it runs, and the ground below is now the only thing in here that never fades.
   */
-  const revealAt = useSectionReveal()
+  const revealAt = useSectionReveal('founder')
 
   return (
     <section

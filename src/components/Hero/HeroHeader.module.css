@@ -149,6 +149,19 @@
   on the page; it now appears in the header only on the Contact button, which is the one
   element in the row that is actually a call to action.
 
+  THE TIMING IS --duration-base + --ease-in-out, NOT the --duration-fast + --ease-out this
+  started on, and the change is about the curve as much as the number. --ease-out is
+  cubic-bezier(0.22, 1, 0.36, 1), which is close to exponential: it covers about 90% of its
+  travel in the first quarter of the duration, so at 180ms the colour had effectively
+  arrived within ~45ms and the hover read as a snap rather than as a fade. --ease-in-out
+  (cubic-bezier(0.65, 0, 0.35, 1)) is symmetrical and spends its time in the middle, and
+  300ms is long enough to see without the label feeling like it lags the pointer. Symmetry
+  matters here specifically because a hover is reversible — the fade out should take as long
+  as the fade in, which an ease-out curve does not do.
+
+  It is the same pair Header.module.css uses for the same rule — the two headers' hover is
+  one gesture and must stay one edit.
+
   Keeping it in CSS means the prefers-reduced-motion block in global.css already covers
   the transition with no reduced-motion branch in JS.
 
@@ -171,7 +184,7 @@
   /* Nav links sit at 500 per the design system's weight ladder. */
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-wide);
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-base) var(--ease-in-out);
 }
 
 .nav-link:hover,

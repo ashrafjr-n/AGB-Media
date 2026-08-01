@@ -304,7 +304,7 @@ function About({ onHalfVisibleChange }) {
     reveals from too so the two sections read as one gesture. It carries its own
     reduced-motion branch, so there is nothing to check here.
   */
-  const revealAt = useSectionReveal()
+  const revealAt = useSectionReveal('about')
 
   return (
     <section

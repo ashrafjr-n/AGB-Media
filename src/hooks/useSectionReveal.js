@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useReducedMotion } from 'framer-motion'
 
 /*
@@ -69,6 +69,40 @@ const REVEAL_EASE = [0.16, 1, 0.3, 1]
 */
 const REVEAL_VIEWPORT = { once: true, amount: 0.25 }
 
+/*
+  WHICH SECTIONS HAVE ALREADY PLAYED THEIR LADDER, THIS SESSION.
+
+  `once: true` above stops a reveal replaying while the page stays mounted. It cannot stop
+  it replaying across a REMOUNT, and this site remounts constantly: every nav destination
+  except `/` is wired ahead of its page, so following one unmounts HomePage entirely and
+  coming back builds it again from scratch. Every section then faded in from opacity 0 a
+  second, third and fourth time — most obviously on About's "Discover Our Story" button,
+  because that is the link people actually click and therefore the element they come back
+  to. An entrance that replays every time you return is the thing that makes a reveal feel
+  cheap, which is the same argument `once: true` is already making one level down.
+
+  MODULE SCOPE, NOT STATE, and it is the pattern HeroHeader.jsx uses for the hero's own
+  one-per-session entrance. State would be destroyed by exactly the remount this exists to
+  survive.
+
+  LATCHED ON COMPLETION, NOT ON MOUNT — also from HeroHeader, and also not optional.
+  StrictMode deliberately mounts, unmounts and remounts every component in development, so
+  a mount-latched flag would be set by that throwaway first mount and would suppress the
+  entrance before anyone ever saw it. An animation completing happens long after StrictMode
+  is finished.
+
+  A SET KEYED BY SECTION rather than one global boolean, and the distinction is the whole
+  design. A single flag would latch the moment ANY section revealed, so a reader who
+  followed a link out of the Story section would find the Founder, WhyAgb and Team rendered
+  flat on their return — sections they had never actually seen animate. Keyed per section,
+  each one keeps its entrance until it has genuinely played, and loses it only after.
+
+  A section opts in by passing a scope. Calling `useSectionReveal()` with no argument keeps
+  the old behaviour — reveal on every mount — which is the right default for anything that
+  is not a section of this page.
+*/
+const playedScopes = new Set()
+
 /**
  * The scroll-in entrance every section shares.
  *
@@ -81,13 +115,33 @@ const REVEAL_VIEWPORT = { once: true, amount: 0.25 }
  *   renders in its final state with no `initial` to animate back from. That branch has
  *   to live in JS: the media query in global.css governs CSS animations only and cannot
  *   reach anything Framer drives inline (CLAUDE.md §4).
+ *
+ * @param {string} [scope]
+ *   An id for the section calling this, and what makes the ladder play ONCE PER SESSION
+ *   rather than once per mount. The first time this section's reveal finishes, the scope
+ *   is recorded; on any later mount — after routing away and back — every step returns an
+ *   empty object and the section renders in its final state with nothing to animate from.
+ *   See `playedScopes` above. Omit it and the ladder reveals on every mount, as before.
  */
-function useSectionReveal() {
+function useSectionReveal(scope) {
   const shouldReduceMotion = useReducedMotion()
+
+  /*
+    Read once per mount and held, so the answer cannot change mid-ladder: the first
+    element to finish adds the scope, and without this the steps still animating would
+    start returning `{}` on the next render and snap to their end state.
+  */
+  const alreadyPlayed = useRef(
+    scope !== undefined && playedScopes.has(scope),
+  ).current
+
+  const markPlayed = useCallback(() => {
+    if (scope !== undefined) playedScopes.add(scope)
+  }, [scope])
 
   return useCallback(
     (step = 0) =>
-      shouldReduceMotion
+      shouldReduceMotion || alreadyPlayed
         ? {}
         : {
             initial: { opacity: 0, y: REVEAL_DISTANCE },
@@ -98,8 +152,15 @@ function useSectionReveal() {
               delay: step * REVEAL_STAGGER,
               ease: REVEAL_EASE,
             },
+            /*
+              Every rung reports completion and they all write the same key, so the Set
+              write is idempotent and the scope is latched by whichever step finishes
+              first. That is deliberately not "the last step": a reader who scrolls past
+              mid-ladder has still seen the entrance.
+            */
+            onAnimationComplete: markPlayed,
           },
-    [shouldReduceMotion],
+    [shouldReduceMotion, alreadyPlayed, markPlayed],
   )
 }
 
