@@ -2,20 +2,26 @@
   The /contact page: one card, centred on both axes, split into an identity column and
   a form column.
 
-  THE GROUND IS A DUPLICATE OF AboutPage.module.css'S AND ServicesPage.module.css'S,
-  NOT A SHARED IMPORT — same reasoning as Services: `.page` and `.atmosphere` below are
-  copies of that construction (same tokens, same layering order), kept local so nothing
-  done here can ever change how the other two render. Three call sites is still not
-  the line for extracting a shared module; if a fourth page wants this ground, that is
-  the point to revisit it.
+  THE GROUND IS A PHOTOGRAPH — contact.webp — under the site's standard section glass,
+  the same `.pane` Founder and WhyAgb compose from shared/SectionGlass.module.css. It
+  used to be a painted brown ground copied from /about; that construction is gone.
+  `.backdrop` and `.glass` below are fixed to the viewport rather than pinned to one
+  section, the same choice Services' ground makes and for the same reason — see the
+  note there.
 
-  UNLIKE THE OTHER TWO, `.page` IS A VIEWPORT-CENTRING FLEX BOX RATHER THAN A SCROLLING
-  COLUMN. This page has exactly one piece of content — the card — so centring it is the
-  whole layout; there is no masthead, no reveal ladder, nothing above or below it.
+  ONE SCREEN ON DESKTOP, THE SAME WAY FOUNDER AND WhyAgb GET ONE: `min-block-size:
+  100vh` with the column centred (`display: flex; align-items: center; justify-content:
+  center`), and every value inside the card that owns real block space written as a
+  clamp with a vh middle term. `min-block-size` rather than `block-size` is the same
+  floor-not-a-cap choice those two sections make — nothing on this site hard-clips a
+  section to one screen; the floor plus tuned spacing is what makes it read as exactly
+  one on a normal desktop window, and what lets a short window or a narrow stacked
+  layout simply grow past it and scroll instead of clipping content. See
+  Founder.module.css's own note on `min-block-size` for the same argument in full.
 */
 
 .page {
-  --contact-gap: clamp(var(--space-lg), 6vh, var(--space-2xl));
+  --contact-gap: clamp(var(--space-md), 5vh, var(--space-xl));
 
   position: relative;
   min-block-size: 100vh;
@@ -24,7 +30,8 @@
   align-items: center;
   justify-content: center;
 
-  background-color: var(--about-ground);
+  /* Fallback only — the fixed photo below covers the viewport before this ever shows. */
+  background-color: var(--color-black);
 
   /*
     Clears the fixed header the same way About's and Services' top padding does, plus
@@ -35,47 +42,46 @@
   padding-inline: var(--container-padding);
 
   /*
-    THE GRAIN BOOST FOR THIS ROUTE, and the reason it lives here rather than in
-    global.css. `body::after` already grains every page site-wide at the shared
-    --noise-opacity (0.03) — deliberately subtle, tuned for the video-and-glass home
-    page. This route (and About's, and Services') asked for grain that reads as
-    "premium film stock" rather than "barely there", and raising the shared token
-    would have retuned the home page along with it. `.noise-overlay`'s own ::after
-    reads --noise-opacity too, so redeclaring it here on `.page` — the element the
-    utility class is applied to — overrides it for this subtree only. Same value as
-    About's and Services' pages; the three should read as one texture at one strength.
+    THE GRAIN BOOST FOR THIS ROUTE — see the matching note on `.page` in
+    AboutPage.module.css for the full argument. `.noise-overlay` (applied to this
+    element in ContactPage.jsx) reads --noise-opacity, so redeclaring it here
+    overrides the site-wide 0.03 for this subtree only. Same value as About's and
+    Services' pages.
   */
   --noise-opacity: 0.07;
 }
 
 /*
-  Identical to AboutPage's `.atmosphere` — see that file for why each choice (fixed,
-  no blur, no blend mode, vignette painted first) is made. Duplicated verbatim rather
-  than shared, per the note at the top of this file.
+  THE GROUND. Fixed rather than pinned to a section — see the identical rule and its
+  full argument in ServicesPage.module.css. This route is shorter still (one screen on
+  desktop, a stacked column on mobile), so the distinction matters less here than
+  there, but the same construction keeps all three secondary pages built the same way.
 */
-.atmosphere {
+.backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
 
   pointer-events: none;
 
-  background-image:
-    radial-gradient(
-      ellipse 125% 95% at 50% 42%,
-      transparent 48%,
-      var(--about-vignette) 100%
-    ),
-    radial-gradient(
-      ellipse 55% 45% at 82% 4%,
-      var(--about-sheen),
-      transparent 68%
-    ),
-    radial-gradient(
-      ellipse 70% 45% at 10% 92%,
-      var(--about-sheen-soft),
-      transparent 70%
-    );
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+  THE FROSTED PANE — `.pane` from shared/SectionGlass.module.css, composed rather than
+  copied. See the identical rule in ServicesPage.module.css for the full argument for
+  the light variant over the strong one.
+*/
+.glass {
+  composes: pane from '../components/shared/SectionGlass.module.css';
+
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+
+  pointer-events: none;
 }
 
 .inner {
@@ -83,18 +89,25 @@
   z-index: var(--z-base);
 
   inline-size: 100%;
-  max-inline-size: 64rem;
+  max-inline-size: 70rem;
 }
 
 /* --- The card ------------------------------------------------------------------ */
 
 /*
-  A DARK NAVY FILL, DELIBERATELY DISTINCT FROM THE BROWN GROUND BEHIND IT — see
-  --contact-card-fill in variables.css for why it leans cool where the page leans
-  warm. The border is --glass-border-white, the same "built up from white" rim the
-  site header's pill uses, at the same alpha; --contact-card-glow adds a very soft
-  bloom behind it rather than a second, heavier border, which is what keeps the edge
-  reading as a hairline with light on it instead of an outline.
+  A LIGHT GLASS PANE, NOT A DARK FILL — the same "built up from white" material the
+  site header's pill uses (--glass-fill-white / --glass-border-white /
+  --glass-blur-wide, the wide blur because, like the pill, this card sits over
+  whatever the page happens to be — a photograph here rather than a scrolling page,
+  but still not a single known backdrop the way About's own frosted ground is).
+  --contact-card-glow adds a soft outer bloom behind the hairline rather than a second,
+  heavier border, which is what keeps the edge reading as light rather than as an
+  outline.
+
+  WIDER THAN IT IS TALL, DELIBERATELY. `.inner`'s cap widened to 70rem and this card's
+  own padding and internal gaps are tuned tighter than a first pass would reach for —
+  together they are what turns a form-plus-sidebar into a single low, wide panel
+  instead of two stacked squares.
 */
 .card {
   position: relative;
@@ -102,13 +115,15 @@
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2xl);
+  gap: var(--space-lg);
 
-  padding: clamp(var(--space-xl), 5vw, var(--space-2xl));
+  padding: clamp(var(--space-lg), 4vw, var(--space-xl));
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border-white);
 
-  background-color: var(--contact-card-fill);
+  background-color: var(--glass-fill-white);
+  -webkit-backdrop-filter: blur(var(--glass-blur-wide));
+  backdrop-filter: blur(var(--glass-blur-wide));
   box-shadow: 0 0 3rem 0 var(--contact-card-glow), var(--shadow-soft);
 }
 
@@ -118,48 +133,48 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 
   text-align: center;
 }
 
 /*
   Height-driven, per CLAUDE.md's rule for this mark: the logo is portrait (360x672),
-  so block-size sets the constraint and inline-size derives from it.
+  so block-size sets the constraint and inline-size derives from it. Smaller than a
+  standalone hero mark would be — this is one element among four in a card that has
+  to hold its height budget on a single screen.
 */
 .logo {
-  block-size: clamp(5rem, 14vw, 7.5rem);
+  block-size: clamp(3.5rem, 9vw, 5rem);
   inline-size: auto;
 
-  margin-block-end: var(--space-lg);
+  margin-block-end: clamp(var(--space-md), 3vh, var(--space-lg));
 }
 
 .social-list {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-
-  margin-block-end: var(--space-xl);
 }
 
 /*
   A round glass swatch per icon — the site's light/frosted glass fill and rim
-  (--glass-fill-light, --glass-border), the same family Services' cards and the
-  Contact button pull from, at icon-button scale. Not a new material, just a new
-  size of the existing one.
+  (--glass-fill-light, --glass-border), the same family Services' cards pull from, at
+  icon-button scale. Not a new material, just a new size of the existing one.
 */
 .social-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  inline-size: 2.75rem;
-  block-size: 2.75rem;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
 
   background-color: var(--glass-fill-light);
   color: var(--color-text-muted);
-  font-size: 1.05rem;
+  font-size: 1rem;
 
   transition:
     border-color var(--duration-fast) var(--ease-in-out),
@@ -172,13 +187,40 @@
   color: var(--color-gold-light);
 }
 
+/*
+  THE ONE INTERNAL DIVIDER IN THIS COLUMN — a short rule rather than a full-width one,
+  which is what keeps it reading as a soft break between two related groups (how to
+  follow us / how to write to us) instead of a hard rule cutting the column in half.
+  Fades at both ends for the same reason About's chapter hairline does: a gradient run
+  flat to full transparency at a hard edge reads as a rendering artefact.
+*/
+.identity-divider {
+  inline-size: 5rem;
+  block-size: 1px;
+  margin-block: clamp(var(--space-md), 3vh, var(--space-lg));
+
+  /*
+    The same plateau-then-fade shape `.divider` uses in the 48rem breakpoint below —
+    a flat bright run through the middle 60%, fading only in the outer 20% at each
+    end — so the two genuinely read as one device turned 90 degrees rather than two
+    different gradients that happen to share a token.
+  */
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    var(--glass-border-bright) 20%,
+    var(--glass-border-bright) 80%,
+    transparent
+  );
+}
+
 .email-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
 
   inline-size: 100%;
-  max-inline-size: 20rem;
+  max-inline-size: 18rem;
 }
 
 .email-row {
@@ -205,6 +247,18 @@
 .email-address:hover,
 .email-address:focus-visible {
   color: var(--color-gold-light);
+}
+
+/* --- The column divider ------------------------------------------------------ */
+
+/*
+  Hidden below the breakpoint at the foot of this file, where the two columns stack
+  and there is no seam to mark. See the note at this element's call site in
+  ContactPage.jsx for why it is a real grid track rather than a percentage-positioned
+  pseudo-element the way WhyAgb's divider is.
+*/
+.divider {
+  display: none;
 }
 
 /* --- Right column: the form -------------------------------------------------- */
@@ -241,7 +295,7 @@
 }
 
 .form-title {
-  margin-block-end: var(--space-lg);
+  margin-block-end: clamp(var(--space-md), 3vh, var(--space-lg));
 
   font-size: var(--text-3xl);
   line-height: 1.05;
@@ -252,7 +306,7 @@
 .form-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: clamp(var(--space-sm), 2.5vh, var(--space-md));
 }
 
 .field {
@@ -270,22 +324,33 @@
 }
 
 /*
-  The white-glass fill again (--glass-fill-white / --glass-border-white), the same
-  pair the site header's pill is built from — a field wants the same small lift off
-  a dark surface a nav bar does. --color-gold on focus, which is exactly the role
-  variables.css documents for that token ("borders, interactive states").
+  GLASS-STYLE INPUT FIELDS — the site's white-glass fill again
+  (--glass-fill-white / --glass-border-white), the same pair the card itself and the
+  header's pill are built from, so a field reads as a well sunk into the same material
+  rather than as a plain form control dropped on top of it. The inset shadow is what
+  sells "sunk into" over "sitting on": a flat fill alone reads as another flat panel,
+  where a soft inward shadow gives the well a shallow depth the card's own surface
+  does not have.
+
+  --color-gold on focus is the role variables.css documents for that token ("borders,
+  interactive states"); the veil ring reuses --color-gold-veil, already the site's
+  token for "the panel catching light" (the quiet button's old hover fill) rather than
+  a new low-alpha gold value.
 */
 .field-control {
-  padding: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border-white);
 
   background-color: var(--glass-fill-white);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: var(--text-base);
 
-  transition: border-color var(--duration-fast) var(--ease-in-out);
+  transition:
+    border-color var(--duration-fast) var(--ease-in-out),
+    box-shadow var(--duration-fast) var(--ease-in-out);
 }
 
 .field-control::placeholder {
@@ -294,16 +359,19 @@
 
 .field-control:focus {
   border-color: var(--color-gold);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.18),
+    0 0 0 3px var(--color-gold-veil);
 }
 
 .field-textarea {
   resize: vertical;
-  min-block-size: 8rem;
+  min-block-size: clamp(4rem, 10vh, 6rem);
 }
 
 .submit {
   align-self: flex-start;
-  margin-block-start: var(--space-xs);
+  margin-block-start: var(--space-2xs);
 }
 
 .confirmation {
@@ -316,12 +384,14 @@
 @media (min-width: 48rem) {
   .card {
     /*
-      A NARROW IDENTITY RAIL, A WIDER FORM — the same uneven split About's masthead
-      uses, for the same reason: the left column holds a mark, five icons and three
-      short lines, and the right holds a heading and three form fields. An even split
-      gives the identity column room it cannot use.
+      A NARROW IDENTITY RAIL, A THIN DIVIDER TRACK, A WIDER FORM. The divider is a real
+      grid column rather than a percentage-positioned pseudo-element, because the two
+      content columns are deliberately uneven (0.85fr / 1.15fr) — a line placed at a
+      literal 50% would sit inside the wider form column instead of on the seam.
     */
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 0.85fr) auto minmax(0, 1.15fr);
+    /* Both gaps either side of the divider track — see the note above. */
+    column-gap: var(--space-xl);
   }
 
   .identity {
@@ -335,5 +405,24 @@
 
   .email-list {
     max-inline-size: none;
+  }
+
+  /*
+    A fading vertical hairline, matching the fade direction of `.identity-divider`
+    beside it — the two are the same device turned 90 degrees.
+  */
+  .divider {
+    display: block;
+
+    inline-size: 1px;
+    align-self: stretch;
+
+    background-image: linear-gradient(
+      to bottom,
+      transparent,
+      var(--glass-border-bright) 20%,
+      var(--glass-border-bright) 80%,
+      transparent
+    );
   }
 }

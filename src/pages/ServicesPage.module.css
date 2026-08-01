@@ -1,12 +1,12 @@
 /*
   The /services page: a centred title, then twelve service cards in a 3 x 4 grid.
 
-  THE GROUND IS A DUPLICATE OF AboutPage.module.css'S, NOT A SHARED IMPORT. `.page` and
-  `.atmosphere` below are the same rules, the same tokens (--about-ground,
-  --about-vignette, --about-sheen, --about-sheen-soft) and the same layering order as
-  that file — copied rather than factored out, so nothing done here can ever change how
-  /about renders. If a third page ever wants this ground, that is the point to extract
-  it; two call sites is not.
+  THE GROUND IS A PHOTOGRAPH — services.webp — under the site's standard section
+  glass, the same `.pane` Founder and WhyAgb compose from
+  shared/SectionGlass.module.css. It used to be the /about page's painted brown
+  ground (duplicated CSS, no image); that construction is gone from this file
+  entirely, replaced by the shared overlay system rather than a second invented
+  treatment.
 */
 
 .page {
@@ -15,7 +15,8 @@
   position: relative;
   min-block-size: 100vh;
 
-  background-color: var(--about-ground);
+  /* Fallback only — the fixed photo below covers the viewport before this ever shows. */
+  background-color: var(--color-black);
 
   padding-block-start: calc(var(--header-height) + var(--services-gap-major));
   padding-block-end: var(--services-gap-major);
@@ -32,33 +33,47 @@
 }
 
 /*
-  Identical to AboutPage's `.atmosphere` — see that file for why each choice (fixed,
-  no blur, no blend mode, vignette painted first) is made. Duplicated verbatim rather
-  than shared, per the note at the top of this file.
+  THE GROUND, `position: fixed` rather than pinned to one section the way Founder's
+  and WhyAgb's grounds are. Those two are one screen each, pinned to the section they
+  belong to, because the home page has other grounds above and below them to hand off
+  to. This route has exactly one ground for its whole scrollable length, so it stays
+  fixed to the viewport the way About's painted atmosphere used to — the photograph is
+  the room, not the content, and holds still while the cards scroll past it.
+
+  `object-fit: cover` fills the viewport at any ratio; `inline-size: 100%` is required
+  for the reason Founder's `.backdrop` documents — an absolutely positioned replaced
+  element with `inline-size: auto` takes its intrinsic width instead of being sized by
+  its insets.
 */
-.atmosphere {
+.backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
 
   pointer-events: none;
 
-  background-image:
-    radial-gradient(
-      ellipse 125% 95% at 50% 42%,
-      transparent 48%,
-      var(--about-vignette) 100%
-    ),
-    radial-gradient(
-      ellipse 55% 45% at 82% 4%,
-      var(--about-sheen),
-      transparent 68%
-    ),
-    radial-gradient(
-      ellipse 70% 45% at 10% 92%,
-      var(--about-sheen-soft),
-      transparent 70%
-    );
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+  THE FROSTED PANE — literally `.pane` from shared/SectionGlass.module.css, the same
+  rule Founder and WhyAgb compose, not a matching copy of its values. The light variant
+  (--section-glass-fill-light / --section-glass-blur-light) rather than About's strong
+  pair: this ground is a still photograph with a subject in it, the same case Founder's
+  and WhyAgb's grounds are, and the strong pair is reserved for a moving one (CLAUDE.md
+  §2). Fixed and full-viewport, matching `.backdrop` exactly, so the two never drift
+  apart as the page scrolls.
+*/
+.glass {
+  composes: pane from '../components/shared/SectionGlass.module.css';
+
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+
+  pointer-events: none;
 }
 
 .inner {

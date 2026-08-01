@@ -4,18 +4,23 @@ import { HiOutlineMail } from 'react-icons/hi'
 
 import Header from '../components/Header/Header'
 import buttonStyles from '../components/shared/Button.module.css'
+import backdrop from '../assets/images/contact.webp'
 import styles from './ContactPage.module.css'
 
 /*
-  THE /contact PAGE — the site's fourth route, and it shares /about's and /services'
-  ground (deep warm brown, lit and vignetted) rather than the home page's
-  --color-black. See the note at `.atmosphere` in the stylesheet for why that CSS is a
-  duplicate rather than a shared import.
+  THE /contact PAGE — the site's fourth route.
 
-  UNLIKE THOSE TWO, THE PAGE IS NOT A SCROLLING COLUMN — it is one card, centred in the
-  viewport on both axes, and the card is the whole page. There is no masthead above it
-  and no reveal ladder: the card is the first and only thing on screen, so there is
-  nothing for a scroll-triggered entrance to trigger on.
+  THE GROUND IS A PHOTOGRAPH under the site's standard section glass — the same
+  `.pane` Founder and WhyAgb compose from shared/SectionGlass.module.css, fixed to
+  the viewport the way Services' ground is (see the note on `.backdrop` in the
+  stylesheet). It used to be the /about page's painted brown ground; that
+  construction is gone from this file entirely.
+
+  THE PAGE IS NOT A SCROLLING COLUMN — it is one card, centred in the viewport on
+  both axes, and on desktop the section holding it is exactly one screen tall (see
+  `.page` in the stylesheet for the Founder/WhyAgb technique this borrows). There is
+  no masthead above the card and no reveal ladder: the card is the first and only
+  thing on screen, so there is nothing for a scroll-triggered entrance to trigger on.
 
   Social hrefs are placeholders (`#`) by design — see `socialLinks` below — and the
   form has no backend: submitting it validates natively (`required` + `type="email"`)
@@ -74,11 +79,20 @@ function ContactPage() {
 
       <main className={`${styles.page} noise-overlay`}>
         {/*
-          Identical construction to About's and Services' `.atmosphere` — see either
-          stylesheet for why it is fixed, unfiltered and unblended. Duplicated rather
-          than imported, per the note at the top of ContactPage.module.css.
+          THE GROUND, and it must stay FIRST — it and the pane below it are both at
+          z-index 0, so document order is the only thing putting the photo behind the
+          glass. `alt=""` marks it decorative, matching Founder's and WhyAgb's grounds.
         */}
-        <div className={styles.atmosphere} aria-hidden="true" />
+        <img
+          className={styles.backdrop}
+          src={backdrop}
+          alt=""
+          loading="eager"
+          decoding="async"
+        />
+
+        {/* The shared section pane — see the note at the top of this file. */}
+        <div className={styles.glass} aria-hidden="true" />
 
         <div className={styles.inner}>
           <div className={styles.card}>
@@ -109,6 +123,13 @@ function ContactPage() {
                 ))}
               </ul>
 
+              {/*
+                A short rule between the icon row and the emails — the one internal
+                divider this column gets, marking "here is how to reach us" as two
+                related but distinct groups rather than one long list.
+              */}
+              <div className={styles['identity-divider']} aria-hidden="true" />
+
               <ul className={styles['email-list']}>
                 {emails.map(({ label, address }) => (
                   <li className={styles['email-row']} key={address}>
@@ -123,6 +144,16 @@ function ContactPage() {
                 ))}
               </ul>
             </div>
+
+            {/*
+              THE COLUMN DIVIDER — a real grid track rather than a percentage-positioned
+              pseudo-element, because the two columns are deliberately uneven (see the
+              grid-template-columns in the stylesheet). WhyAgb's grid divider can afford
+              to sit at a literal 50% because its two columns are equal; these are not,
+              so the line has to be an actual middle track for its position to follow
+              the columns rather than assume them.
+            */}
+            <div className={styles.divider} aria-hidden="true" />
 
             {/* --- Right column: the form ------------------------------------ */}
             <div className={styles.form}>
@@ -170,7 +201,7 @@ function ContactPage() {
                     className={`${styles['field-control']} ${styles['field-textarea']}`}
                     id="contact-message"
                     name="message"
-                    rows={5}
+                    rows={4}
                     required
                   />
                 </div>

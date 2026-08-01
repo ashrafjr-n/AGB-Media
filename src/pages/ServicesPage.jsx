@@ -3,15 +3,19 @@ import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Header from '../components/Header/Header'
+import backdrop from '../assets/images/services.webp'
 import styles from './ServicesPage.module.css'
 
 /*
-  THE /services PAGE — the site's third route, and the second built on the /about
-  ground rather than --color-black. It shares that page's atmosphere (the deep brown
-  fill lit by a fixed warm bleed and closed by a vignette) but not its file: the CSS
-  is duplicated into ServicesPage.module.css rather than extracted into a shared
-  module, so nothing here can ever change how /about renders. See the note at
-  `.atmosphere` in the stylesheet.
+  THE /services PAGE — the site's third route.
+
+  THE GROUND IS A PHOTOGRAPH under the site's standard section glass — the same
+  `.pane` (--section-glass-fill-light / --section-glass-blur-light) Founder and
+  WhyAgb compose from shared/SectionGlass.module.css, not a new treatment invented
+  for this page. See `.backdrop` / `.glass` in the stylesheet for why they are
+  `position: fixed` here rather than pinned to one section the way Founder's are —
+  this page is a full-length scroll, and the photo is meant to sit still behind it
+  the way About's ground used to, not scroll away with the cards.
 
   The cards borrow the Contact button's glass DNA — the same --glass-fill-light /
   --glass-border-bright / --glass-blur-tight tokens, and a conic-gradient rim in the
@@ -114,7 +118,21 @@ function ServicesPage() {
         `--noise-opacity` override on `.page` in the stylesheet.
       */}
       <main className={`${styles.page} noise-overlay`}>
-        <div className={styles.atmosphere} aria-hidden="true" />
+        {/*
+          THE GROUND, and it must stay FIRST — it and the pane below it are both at
+          z-index 0, so document order is the only thing putting the photo behind the
+          glass. `alt=""` marks it decorative, matching Founder's and WhyAgb's grounds.
+        */}
+        <img
+          className={styles.backdrop}
+          src={backdrop}
+          alt=""
+          loading="eager"
+          decoding="async"
+        />
+
+        {/* The shared section pane — see the note at the top of this file. */}
+        <div className={styles.glass} aria-hidden="true" />
 
         <div className={styles.inner}>
           <header className={styles.masthead}>

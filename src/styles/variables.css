@@ -246,20 +246,11 @@
   /* --- The /contact page's card ------------------------------------------ */
 
   /*
-    The contact card's own fill — deliberately NOT --about-ground and not
-    --color-black. The brief asks for a surface distinct from the page it sits
-    on, so this leans cool where the page ground leans warm: hue ~220deg (blue)
-    at the same near-black luminance --about-ground sits at, the same method
-    that token was built with, just turned the other way round the wheel.
-  */
-  --contact-card-fill: #090b12;
-
-  /*
-    The card's outer glow — a very low-alpha white bloom behind the hairline
-    border below, not a second border. Paired with --glass-border-white (the
-    header pill's rim) for the border itself, so the card reads as the same
-    "built up from white" glass family as the site header rather than as a
-    new material.
+    The card's own fill is --glass-fill-white — the header pill's "built up
+    from white" material rather than a new one — so this token is only the
+    outer glow behind that hairline: a very low-alpha white bloom, not a
+    second border. It is what turns the --glass-border-white rim into a lit
+    edge rather than a flat outline.
   */
   --contact-card-glow: rgba(255, 255, 255, 0.06);
 
