@@ -56,10 +56,10 @@
   --why-pad: clamp(1.75rem, 5vh, 4.5rem);
   /*
     A step up the spacing scale: the ceiling was 3.25rem and is now --space-2xl, with the
-    vh term raised to match. The heading is a full sentence at --text-3xl and the grid
-    below it opens with a gold numeral; at the old gap the numeral row read as the
-    heading's fourth line. The floor stays --space-md so the section still fits one screen
-    at 1280x720 — verified, not assumed.
+    vh term raised to match. The heading is a full sentence and the grid below it opens
+    with a gold numeral; at the old gap the numeral row read as the heading's fourth line.
+    The floor stays --space-md so the section still fits one screen at 1280x720 —
+    verified, not assumed.
   */
   --why-opening-gap: clamp(var(--space-md), 4.75vh, var(--space-2xl));
   --why-row-gap: clamp(1.5rem, 3.6vh, 2.75rem);
@@ -232,17 +232,19 @@
 }
 
 /*
-  --text-3xl rather than the --text-4xl About opens with, and the difference is the copy
-  rather than the hierarchy: About's title is two words and this is a full sentence of
-  about ninety characters. At the top of the scale it would set as a wall.
+  --text-2xl rather than the --text-3xl this opened at, and lighter than the h2 default
+  (--font-weight-heavy) at --font-weight-medium — a full sentence of about ninety
+  characters read as too bold and too large at the top of the scale. It stays the
+  section's dominant element: clearly larger than --text-xl .name and clearly lighter in
+  weight, which is what keeps a bigger cut from reading as a demotion.
 
   The measure is 34ch, where it was 22. That is the one change the one-screen cap forced on
-  the heading: at 22ch this sets as four lines on a 1280px window, and four lines of a
-  48px display face is 200px of the 720px budget before the grid has started. 34ch holds it
-  to two or three lines at every desktop width and still reads as a statement rather than a
-  paragraph. `text-wrap: balance` is not set here — at three lines the browser's own
-  greedy break is even enough, and balance on a heading this long is a measurable layout
-  cost for a difference nobody sees.
+  the heading: at 22ch this sets as four lines on a 1280px window, which is more of the
+  720px budget than the grid can spare. 34ch holds it to two or three lines at every
+  desktop width and still reads as a statement rather than a paragraph. `text-wrap:
+  balance` is not set here — at three lines the browser's own greedy break is even enough,
+  and balance on a heading this long is a measurable layout cost for a difference nobody
+  sees.
 
   line-height under the global --leading-tight for the same reason About's title runs at
   0.95: a multi-line display heading wants to read as a block, not as a ladder.
@@ -250,8 +252,9 @@
 .title {
   max-inline-size: 34ch;
 
-  font-size: var(--text-3xl);
-  line-height: 1.05;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.1;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
 }
@@ -455,11 +458,11 @@
   involved — it does not exist at this width — so nothing here interacts with the
   divider, the pin, or the seam itself.
 
-  WHY THE HEADING TAKES THE LARGEST CUT. At --text-3xl the sentence set as five lines of
-  ~18 characters, which is 168px — a fifth of the viewport — for ninety characters of
-  copy. --text-2xl brings it to four lines at ~24 characters, which is both shorter and a
-  better measure: a display heading at 18 characters a line reads as a column of fragments
-  rather than as a sentence.
+  WHY THE HEADING TAKES THE LARGEST CUT. The base size is already down to --text-2xl (see
+  .title), and at that width a sentence this long still wants a shorter line than the
+  desktop measure gives it. --text-xl keeps the same reasoning the desktop cut used: a
+  display heading a few characters narrower per line reads as a column of fragments rather
+  than a sentence.
 */
 @media (max-width: 47.9375rem) {
   .why {
@@ -484,10 +487,10 @@
     */
     max-inline-size: 26ch;
 
-    font-size: var(--text-2xl);
-    /* A touch more than the desktop 1.05: at four lines of 24px the block needs the air
+    font-size: var(--text-xl);
+    /* A touch more than the desktop 1.1: at four-plus lines the block needs the air
        inside it more than it needs the extra tightness. */
-    line-height: 1.1;
+    line-height: 1.15;
   }
 
   /*

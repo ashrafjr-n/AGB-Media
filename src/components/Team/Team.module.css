@@ -441,47 +441,11 @@
   /*
     Every circle is interactive-looking and should say so under the pointer. The circles
     are not links today — the section's one destination is the Contact button below them —
-    so this is the cursor describing an affordance the hover state already implies rather
-    than promising a click target. It goes if the portraits ever become links to bios, at
-    which point the anchor brings its own.
+    so this is the cursor describing an affordance rather than promising a click target. It
+    goes if the portraits ever become links to bios, at which point the anchor brings its
+    own. There is no other hover effect — no transform, no colour change — by request.
   */
   cursor: pointer;
-
-  /*
-    A LIGHT HOVER, and the transition is scoped to the two properties that move rather than
-    written as `all`. It is CSS rather than Framer Motion on purpose: this is a two-state
-    toggle, not choreography, and the `prefers-reduced-motion` block in global.css already
-    covers CSS transitions — which is why nothing in this file checks the preference.
-
-    A small scale and a warmer rim. Both are deliberately at the edge of noticeable: these
-    are portraits, and a circle that leaps at the cursor turns a page of people into a
-    control panel. Nothing about the layout moves, since a transform does not affect flow.
-
-    THE SCALE IS 4%, and the history is worth keeping because both ends of it were wrong.
-    It ran at 2% — about four pixels across a 216px diameter, under the threshold at which
-    a size change registers at all — and then at 6%, which registered as a zoom and read
-    cheap on a row of faces. Four percent is roughly 9px on the lead and 3px on a seat:
-    present, and still nothing like a control that pops.
-
-    --duration-fast (180ms), and here that IS the right rung. It ran at 600ms, then 300ms.
-    A hover on something this small has to feel attached to the pointer, and the smaller the
-    travel the less time it needs to cover it — at 300ms a 4% move is a slow drift toward a
-    destination the eye reached first. 180ms lands it while the pointer is still arriving.
-
-    --ease-in-out (cubic-bezier(0.65, 0, 0.35, 1)) rather than --ease-out, and the
-    difference is what the two curves are for. --ease-out starts at full speed and
-    decelerates, which is right for something arriving — a drawer, a reveal, a colour
-    landing on a nav link. This is a continuous, reversible state that has to feel the same
-    leaving as arriving, and a symmetrical curve is the one that does both.
-  */
-  transition:
-    transform var(--duration-fast) var(--ease-in-out),
-    border-color var(--duration-fast) var(--ease-in-out);
-}
-
-.portrait:hover {
-  transform: scale(1.04);
-  border-color: var(--color-gold-veil);
 }
 
 .portrait-lead {
