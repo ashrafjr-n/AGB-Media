@@ -318,36 +318,34 @@
     toggle, not choreography, and the `prefers-reduced-motion` block in global.css already
     covers CSS transitions — which is why nothing in this file checks the preference.
 
-    A 2% scale and a warmer rim. Both are deliberately at the edge of noticeable: these are
-    portraits, and a circle that leaps at the cursor turns a page of people into a control
-    panel. Nothing about the layout moves, since a transform does not affect flow.
+    A small scale and a warmer rim. Both are deliberately at the edge of noticeable: these
+    are portraits, and a circle that leaps at the cursor turns a page of people into a
+    control panel. Nothing about the layout moves, since a transform does not affect flow.
 
-    --duration-base (300ms), NOT --duration-slow. It ran at 600ms, which is the right feel
-    for something settling into place and the wrong one for a pointer state — a hover has to
-    keep up with the cursor, and at 600ms the circle was still growing well after the reader
-    had moved on. It also ran at 180ms before that, which was the opposite mistake. 300ms is
-    the middle rung of the ramp and is where this belongs: fast enough to feel attached to
-    the pointer, slow enough to read as a movement rather than a jump.
+    THE SCALE IS 4%, and the history is worth keeping because both ends of it were wrong.
+    It ran at 2% — about four pixels across a 216px diameter, under the threshold at which
+    a size change registers at all — and then at 6%, which registered as a zoom and read
+    cheap on a row of faces. Four percent is roughly 9px on the lead and 3px on a seat:
+    present, and still nothing like a control that pops.
+
+    --duration-fast (180ms), and here that IS the right rung. It ran at 600ms, then 300ms.
+    A hover on something this small has to feel attached to the pointer, and the smaller the
+    travel the less time it needs to cover it — at 300ms a 4% move is a slow drift toward a
+    destination the eye reached first. 180ms lands it while the pointer is still arriving.
 
     --ease-in-out (cubic-bezier(0.65, 0, 0.35, 1)) rather than --ease-out, and the
     difference is what the two curves are for. --ease-out starts at full speed and
     decelerates, which is right for something arriving — a drawer, a reveal, a colour
     landing on a nav link. This is a continuous, reversible state that has to feel the same
     leaving as arriving, and a symmetrical curve is the one that does both.
-
-    THE SCALE IS 6%, where it was 2%. Two percent of a 216px circle is about four pixels
-    across the whole diameter, which is under the threshold at which a size change registers
-    as one — the circle looked like it had done nothing. Six percent is roughly 13px on the
-    lead and 4px on a seat: unmistakably there, and still far short of a zoom. Nothing about
-    the layout moves, since a transform does not affect flow.
   */
   transition:
-    transform var(--duration-base) var(--ease-in-out),
-    border-color var(--duration-base) var(--ease-in-out);
+    transform var(--duration-fast) var(--ease-in-out),
+    border-color var(--duration-fast) var(--ease-in-out);
 }
 
 .portrait:hover {
-  transform: scale(1.06);
+  transform: scale(1.04);
   border-color: var(--color-gold-veil);
 }
 
