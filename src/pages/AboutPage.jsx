@@ -1,122 +1,312 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
+import {
+  HiOutlineCalendar,
+  HiOutlineEye,
+  HiOutlineFlag,
+  HiOutlineGlobeAlt,
+  HiOutlineUserGroup,
+} from 'react-icons/hi'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Header from '../components/Header/Header'
-import { intro, chapters } from '../data/aboutPage'
+import { pullQuote, sections, networkGroups } from '../data/aboutPage'
 import styles from './AboutPage.module.css'
 
 /*
-  THE /about PAGE — the company profile, and the site's second route.
+  THE /about PAGE — full restructure and redesign, 2026-08-02. This replaces the page's
+  previous form outright (a masthead of three short intro paragraphs, then three long
+  chapters — Vision, Mission, Our Capital — on one fixed rail-and-copy axis). Nothing
+  from that version survives except what this file's own comments call out as reused on
+  purpose: the fixed site header, the shared reveal ladder, the site's micro-label
+  eyebrow device, and Clash Display throughout. A distinct page is not a different
+  design system, but this IS a different page — see the brief this was built against
+  for the full brief; the short version is that the previous version's own account of
+  itself ("one repeated shape... no card, no border, no filled panel") is exactly what
+  was asked to change.
 
-  NAMING, BECAUSE THERE ARE NOW TWO ABOUTS. `components/About/About.jsx` is the home
-  page's Story section and always has been (CLAUDE.md calls that one "About" and "the
-  Story section" interchangeably). This is the page its CTA has been pointing at since
-  before the page existed. They share no code and no styles; the only thing that links
-  them is that link.
+  WHAT THIS VERSION IS. A masthead pairing a large pull-quote against the AGB logo,
+  followed by five sections — Who We Are, Vision, Mission, Our Record, Strategic
+  Network — that share one identity device (a numeral, an icon, an eyebrow and a
+  heading, in that order) but deliberately do NOT share one body layout. Each section's
+  copy is arranged differently: Who We Are runs a single asymmetric column; Vision opens
+  on a large lead statement and splits its remaining two paragraphs into a pair; Mission
+  sets its two short paragraphs side by side as a diptych; Our Record pairs a stat
+  callout against its copy and closes on a pulled statement; Strategic Network closes on
+  a grouped chip cloud instead of more prose. The point of the variation is stated in the
+  brief this was built against: a designed editorial sequence, not five stacked
+  paragraphs with a number next to each one.
 
-  WHAT MAKES IT ITS OWN PLACE. Four things, and each is argued where it is written:
+  EVERY WORD OF BODY COPY BELOW IS DATA, TRANSCRIBED VERBATIM — see the long comment at
+  the top of data/aboutPage.js for how carefully that was checked against the previous
+  version's own (different) wording on the same three themes. Nothing in this file
+  rewords, trims or reorders a sentence of it. The only content this file adds beyond
+  that data is UI chrome — numerals, icons, eyebrows, the network chip groupings — which
+  the data file's own comments mark as invented rather than sourced.
 
-  - A DIFFERENT GROUND. Deep warm brown (--about-ground) rather than the site's
-    --color-black, lit by a fixed warm bleed and closed by a vignette. This is the one
-    route allowed to break the single-tone rule — see the token block in variables.css
-    for why a separate route can and a section could not.
-  - ONE ASYMMETRIC AXIS DOWN THE WHOLE PAGE. The masthead and all three chapters run on
-    the same two-column grid: a narrow rail on the inline start, the copy on a wider
-    track beside it. That single repeated shape is what holds a page of fourteen
-    paragraphs together without a card, a border or a box anywhere on it.
-  - ROMAN NUMERALS, not the 01/02/03 the home page's WhyAgb grid uses. Same device
-    family, different register: three chapters rather than six enumerated reasons.
-  - A STICKY RAIL on wide windows, so a chapter's numeral and heading stay with the copy
-    they belong to while it scrolls past.
-
-  WHAT IT DELIBERATELY REUSES: the fixed site header, the shared reveal ladder, the
-  site's micro-label eyebrow, and Clash Display throughout. A distinct page is not a
-  different design system.
-
-  NO VIDEO, NO GLASS, NO BACKDROP-FILTER. Nothing here claims a playback slot or blurs a
-  backdrop — the page is type on a painted ground, so it costs a fraction of the home
-  page and needs nothing from useExclusiveVideo.
+  STILL NO VIDEO, NO GLASS, NO BACKDROP-FILTER. That constraint from the previous version
+  holds and is worth restating rather than silently dropping: this route's whole depth is
+  one fixed, painted layer of stacked radial gradients (`.atmosphere`, unchanged in kind
+  from before, only darker — see variables.css) plus flat bordered surfaces for the stat
+  cards and the chip cloud. Nothing here claims a compositing layer or a playback slot,
+  so the page costs a fraction of the home page and needs nothing from
+  useExclusiveVideo.
 */
 
 /*
-  A chapter — the numeral and its heading on the rail, the copy beside it.
-
-  IT IS A COMPONENT RATHER THAN A LOOP BODY, and that is required rather than tidy: each
-  chapter runs its OWN reveal ladder, so each needs its own useSectionReveal call, and a
-  hook cannot be called from inside a `.map()`. Lifting the chapter into a component is
-  the standard answer and it is what `react/rules-of-hooks` is checking for.
-
-  One scope per chapter, keyed off the heading's id. Sharing one scope across all three
-  would let the first chapter's completed rungs latch the other two before they had ever
-  been on screen, which on this page — where the chapters are a screen apart — would
-  render the second and third flat. That is the collision documented at useSectionReveal.
+  A SINGLE SECTION'S IDENTITY ROW — the numeral, the icon, the eyebrow and the heading —
+  shared by all five sections below. It is a plain function rather than a component with
+  its own reveal call: the ladder rung it animates on belongs to whichever section calls
+  it, since two independent useSectionReveal scopes on one heading would be the same
+  collision the hook's own docs warn against.
 */
-function Chapter({ id, marker, title, body, closing }) {
-  const revealAt = useSectionReveal(id)
-
+function SectionHead({ numeral, Icon, eyebrow, title, id, revealAt }) {
   return (
-    <section className={styles.chapter} aria-labelledby={id}>
-      {/*
-        The rail reveals as one element rather than as numeral-then-heading. They are a
-        single mark — a chapter number and the word it numbers — and staggering them
-        against each other would read as two events where the reader sees one.
-      */}
-      <motion.div className={styles.rail} {...revealAt(0)}>
-        <span className={styles.marker} aria-hidden="true">
-          {marker}
-        </span>
+    <motion.div className={styles.head} {...revealAt}>
+      <span className={styles.numeral} aria-hidden="true">
+        {numeral}
+      </span>
+      <span className={styles['icon-ring']} aria-hidden="true">
+        <Icon className={styles.icon} />
+      </span>
+      <div className={styles['heading-group']}>
+        <p className={styles.eyebrow}>{eyebrow}</p>
         <h2 className={styles.title} id={id}>
           {title}
         </h2>
-      </motion.div>
+      </div>
+    </motion.div>
+  )
+}
 
-      {/*
-        The copy reveals as ONE block, not paragraph by paragraph. Each rung of the ladder
-        carries its own viewport trigger, so a per-paragraph stagger on a chapter this tall
-        would fire each one late AND then delay it again — the third paragraph would sit
-        blank for a quarter-second after it had already scrolled well into view. One rung
-        for the whole column arrives with it.
-      */}
-      <motion.div className={styles.body} {...revealAt(1)}>
-        {body.map((paragraph, index) => (
+/*
+  01 — WHO WE ARE. The baseline section: identity row, then a single column of copy.
+  Deliberately the simplest of the five, so the page opens on a plain statement of fact
+  before the layout starts varying — the same reason the old masthead opened on a lead
+  paragraph rather than straight into a chapter.
+
+  THE ASYMMETRY IS IN WHAT THE COLUMN DOES NOT DO, rather than in a second track beside
+  it: `.who-body` caps its own measure and does NOT centre itself in the container, so it
+  hugs the inline start and leaves open air down the right side of the page — the same
+  asymmetric-negative-space idea the site's other one-column blocks use, without
+  inventing a second grid track that would have nothing to hold.
+*/
+function WhoWeAre({ section }) {
+  const revealAt = useSectionReveal(section.id)
+
+  return (
+    <section
+      className={`${styles.section} ${styles.who}`}
+      aria-labelledby={section.id}
+    >
+      <SectionHead
+        numeral={section.numeral}
+        Icon={HiOutlineUserGroup}
+        eyebrow={section.eyebrow}
+        title={section.title}
+        id={section.id}
+        revealAt={revealAt(0)}
+      />
+
+      <motion.div className={styles['who-body']} {...revealAt(1)}>
+        {section.body.map((paragraph, index) => (
           <p className={styles.paragraph} key={index}>
             {paragraph}
           </p>
         ))}
+      </motion.div>
+    </section>
+  )
+}
 
-        {/*
-          The sign-off, on the one chapter that has one. A short gold rule, then two lines
-          set a tier above the body copy — the copy turns there, and the layout turns with
-          it. Rendered from its own field rather than from the tail of `body`, so the
-          treatment cannot drift onto a paragraph that was never meant to carry it.
-        */}
-        {closing && (
-          <div className={styles.closing}>
-            {closing.map((line, index) => (
-              <p className={styles['closing-line']} key={index}>
-                {line}
-              </p>
-            ))}
+/*
+  02 — VISION. The one section that opens on a lead statement rather than straight into
+  running copy — the brief's own first sentence ("to stand at the forefront...") is the
+  section's thesis, so it is set apart exactly the way the old masthead's own opening
+  paragraph used to be: larger, brighter, its own shorter measure. The remaining two
+  paragraphs then split into a two-column pair beneath it, which is a genuinely different
+  grid from Who We Are's single column above and Mission's below — not a recolouring of
+  the same shape.
+*/
+function Vision({ section }) {
+  const revealAt = useSectionReveal(section.id)
+  const [lead, ...rest] = section.body
+
+  return (
+    <section
+      className={`${styles.section} ${styles.vision}`}
+      aria-labelledby={section.id}
+    >
+      <SectionHead
+        numeral={section.numeral}
+        Icon={HiOutlineEye}
+        eyebrow={section.eyebrow}
+        title={section.title}
+        id={section.id}
+        revealAt={revealAt(0)}
+      />
+
+      <motion.p className={styles.lead} {...revealAt(1)}>
+        {lead}
+      </motion.p>
+
+      <motion.div className={styles['vision-pair']} {...revealAt(2)}>
+        {rest.map((paragraph, index) => (
+          <p className={styles.paragraph} key={index}>
+            {paragraph}
+          </p>
+        ))}
+      </motion.div>
+    </section>
+  )
+}
+
+/*
+  03 — MISSION. The shortest section, and laid out to read as one — two short paragraphs
+  set side by side as a diptych rather than stacked, so the section reads as a single
+  compact statement in two parts instead of a scaled-down copy of Who We Are's column.
+  Both paragraphs reveal as one block: they are two halves of one thought, and staggering
+  them against each other would split what the brief wrote as a pair.
+*/
+function Mission({ section }) {
+  const revealAt = useSectionReveal(section.id)
+
+  return (
+    <section
+      className={`${styles.section} ${styles.mission}`}
+      aria-labelledby={section.id}
+    >
+      <SectionHead
+        numeral={section.numeral}
+        Icon={HiOutlineFlag}
+        eyebrow={section.eyebrow}
+        title={section.title}
+        id={section.id}
+        revealAt={revealAt(0)}
+      />
+
+      <motion.div className={styles.diptych} {...revealAt(1)}>
+        {section.body.map((paragraph, index) => (
+          <p className={styles.paragraph} key={index}>
+            {paragraph}
+          </p>
+        ))}
+      </motion.div>
+    </section>
+  )
+}
+
+/*
+  04 — OUR RECORD. The one asymmetric two-column section on the page: a narrow stat
+  column carrying the two dates the copy itself names (1976, 1999 — see the note in
+  data/aboutPage.js on why those captions are exact substrings of the paragraph beside
+  them, not new wording) against a wider column of the three paragraphs. It closes on
+  the section's own pulled statement — a short gold rule then larger type, the same
+  device the previous version of this page used for its one sign-off, reused here
+  because it is still the right device for a short closing statement and there is no
+  reason to invent a second one.
+*/
+function OurRecord({ section }) {
+  const revealAt = useSectionReveal(section.id)
+
+  return (
+    <section
+      className={`${styles.section} ${styles.record}`}
+      aria-labelledby={section.id}
+    >
+      <SectionHead
+        numeral={section.numeral}
+        Icon={HiOutlineCalendar}
+        eyebrow={section.eyebrow}
+        title={section.title}
+        id={section.id}
+        revealAt={revealAt(0)}
+      />
+
+      <div className={styles['record-grid']}>
+        <motion.dl className={styles.stats} {...revealAt(1)}>
+          {section.stats.map(({ year, label }) => (
+            <div className={styles.stat} key={year}>
+              <dt className={styles['stat-year']}>{year}</dt>
+              <dd className={styles['stat-label']}>{label}</dd>
+            </div>
+          ))}
+        </motion.dl>
+
+        <motion.div className={styles['record-body']} {...revealAt(2)}>
+          {section.body.map((paragraph, index) => (
+            <p className={styles.paragraph} key={index}>
+              {paragraph}
+            </p>
+          ))}
+        </motion.div>
+      </div>
+
+      <motion.p className={styles.closing} {...revealAt(3)}>
+        {section.closing}
+      </motion.p>
+    </section>
+  )
+}
+
+/*
+  05 — STRATEGIC NETWORK. Copy in one column, matching Who We Are's register so the page
+  closes on the same plain-statement footing it opened on — and then a chip cloud below
+  it, grouped Regional / International exactly as `data/aboutPage.js` groups them,
+  because the brief specifically asked for the place-names in this section's prose to
+  get a scannable pulled-out treatment rather than staying buried in paragraph four. The
+  chips are drawn from `networkGroups`, not typed again here.
+*/
+function StrategicNetwork({ section }) {
+  const revealAt = useSectionReveal(section.id)
+
+  return (
+    <section
+      className={`${styles.section} ${styles.network}`}
+      aria-labelledby={section.id}
+    >
+      <SectionHead
+        numeral={section.numeral}
+        Icon={HiOutlineGlobeAlt}
+        eyebrow={section.eyebrow}
+        title={section.title}
+        id={section.id}
+        revealAt={revealAt(0)}
+      />
+
+      <motion.div className={styles['network-body']} {...revealAt(1)}>
+        {section.body.map((paragraph, index) => (
+          <p className={styles.paragraph} key={index}>
+            {paragraph}
+          </p>
+        ))}
+      </motion.div>
+
+      <motion.div className={styles['chip-cloud']} {...revealAt(2)}>
+        {networkGroups.map((group) => (
+          <div className={styles['chip-group']} key={group.id}>
+            <p className={styles['chip-group-title']}>{group.title}</p>
+            <ul className={styles['chip-list']}>
+              {group.tags.map((tag) => (
+                <li className={styles.chip} key={tag}>
+                  {tag}
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
+        ))}
       </motion.div>
     </section>
   )
 }
 
 function AboutPage() {
-  const revealAt = useSectionReveal('about-page')
+  const revealAt = useSectionReveal('about-masthead')
 
   /*
-    ROUTE ENTRY STARTS AT THE TOP, and this is a real bug rather than a nicety. The link
-    that reaches this page is the Story section's CTA, roughly a viewport and a half down
-    the home page; React Router changes the URL without touching scroll, so without this
-    the reader arrives at /about already scrolled past the masthead and into the middle of
-    the Vision chapter.
-
-    On mount only. It deliberately does not run on every render, and there is no route
-    parameter here for it to key off — this page is the whole route.
+    ROUTE ENTRY STARTS AT THE TOP — unchanged from the previous version and for the same
+    reason: this route is reached from the Story section's CTA a viewport and a half down
+    the home page, and React Router does not touch scroll on navigation. On mount only.
   */
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -125,84 +315,70 @@ function AboutPage() {
   return (
     <>
       {/*
-        Always visible, where the home page hands this the Story section's midpoint. There
-        is no in-flow hero header on this route to collide with, and the prop defaults to
-        false — a page that simply rendered <Header /> would have no navigation at all.
+        Always visible on this route — there is no in-flow hero header here to collide
+        with, unlike the home page's HeroHeader/Header handoff.
       */}
       <Header visible />
 
       {/*
-        `noise-overlay` — the global utility from global.css, applied as a literal
-        string per CLAUDE.md (it is not a module class, so `styles['noise-overlay']`
-        would resolve to undefined). It gives this page its own grain layer on top of
-        the site-wide one `body::after` already paints everywhere; see the
-        `--noise-opacity` override on `.page` in the stylesheet for why a second layer
-        was the answer rather than raising the shared token.
+        `noise-overlay` — the global utility from global.css, applied as a literal string
+        per CLAUDE.md (it is not a module class). Unchanged from the previous version.
       */}
       <main className={`${styles.page} noise-overlay`}>
         {/*
-          THE LIGHT AND THE VIGNETTE, in one fixed element rather than two or three.
-
-          Stacked radial-gradients on a single layer: the vignette is written first and so
-          paints on top of the two warm masses beneath it, which is what lets the light
-          bleed through the middle of the page and still be closed in at the corners.
-
-          `position: fixed` on purpose. The light is the room, not the content — it holds
-          still while fourteen paragraphs scroll through it, which is both the effect that
-          reads as depth and the cheap option: a fixed, unanimated, unfiltered layer is
-          composited once and never re-rasterised.
-
-          aria-hidden and pointer-events: none — it is atmosphere, and it sits over the
-          page's own background colour with all the copy above it.
+          THE LIGHT AND THE VIGNETTE, one fixed layer, unchanged in kind from the previous
+          version — see the note there for why `position: fixed` with no blur and no
+          blend mode is both the effect and the cheap option. What changed is the ground
+          colour it is drawn against (variables.css, --about-ground, pushed noticeably
+          darker for this redesign) — the gradient stops themselves did not need to move.
         */}
         <div className={styles.atmosphere} aria-hidden="true" />
 
         <div className={styles.inner}>
           {/*
-            The masthead. A <header> rather than a <div>: it is this page's own banner,
-            and it is inside <main>, so it is a generic header rather than a second site
-            banner landmark.
+            THE MASTHEAD — a pull-quote against the logo, replacing the previous
+            version's three-paragraph opening entirely. `<header>` rather than `<div>`:
+            this page's own banner, inside <main>, so a generic header landmark rather
+            than a second site banner.
+
+            THE PAGE'S H1 IS VISUALLY HIDDEN, the same device Hero.jsx uses for the same
+            reason: the masthead's real content is the quote and the logo, and a literal
+            printed word "About" would compete with both for no reason a sighted reader
+            needs. A screen reader still gets a correctly named document.
           */}
           <header className={styles.masthead}>
-            <div className={styles['masthead-rail']}>
+            <h1 className="sr-only">About</h1>
+
+            <motion.div className={styles['quote-col']} {...revealAt(0)}>
+              <span className={styles['quote-mark']} aria-hidden="true">
+                “
+              </span>
+              <blockquote className={styles['quote-text']}>
+                {pullQuote}
+              </blockquote>
+            </motion.div>
+
+            <motion.div className={styles['logo-col']} {...revealAt(1)}>
               {/*
-                The site's micro-label, at the same 0.65rem / 0.28em with a leading gold
-                dot that About, WhyAgb and the Founder open with. Identical on purpose —
-                it is how a block starts on this site, and a page that invented its own
-                would stop reading as the same site.
+                CLAUDE.md §1: because the logo is portrait, anything sizing it must drive
+                block-size and leave inline-size auto — see .logo in the stylesheet. Never
+                recoloured or redrawn, per §5 rule 5.
               */}
-              <motion.p className={styles.eyebrow} {...revealAt(0)}>
-                AGB Media
-              </motion.p>
-
-              <motion.h1 className={styles['page-title']} {...revealAt(1)}>
-                About
-              </motion.h1>
-            </div>
-
-            <div className={styles['masthead-body']}>
-              {/*
-                The opening paragraph, set as a lead — larger, at full --color-text, on its
-                own shorter measure. It is the copy exactly as written; only its size and
-                colour separate it from the two below.
-              */}
-              <motion.p className={styles.lead} {...revealAt(2)}>
-                {intro[0]}
-              </motion.p>
-
-              <motion.div className={styles.body} {...revealAt(3)}>
-                {intro.slice(1).map((paragraph, index) => (
-                  <p className={styles.paragraph} key={index}>
-                    {paragraph}
-                  </p>
-                ))}
-              </motion.div>
-            </div>
+              <img
+                className={styles.logo}
+                src="/assets/images/agb-logo.png"
+                alt="AGB Media"
+              />
+            </motion.div>
           </header>
 
-          {chapters.map((chapter) => (
-            <Chapter key={chapter.id} {...chapter} />
-          ))}
+          <div className={styles.sections}>
+            <WhoWeAre section={sections[0]} />
+            <Vision section={sections[1]} />
+            <Mission section={sections[2]} />
+            <OurRecord section={sections[3]} />
+            <StrategicNetwork section={sections[4]} />
+          </div>
         </div>
       </main>
     </>

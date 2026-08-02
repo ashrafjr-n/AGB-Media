@@ -1,74 +1,57 @@
 /*
-  The /about page.
+  The /about page — full restructure and redesign, 2026-08-02. See the long comment at
+  the top of AboutPage.jsx for what changed and why; this file is the layout half of
+  that change.
 
-  ONE ASYMMETRIC AXIS, FOUR TIMES. The masthead and the three chapters all sit on the same
-  two-column grid — a narrow rail on the inline start carrying the mark and the heading, a
-  wider track beside it carrying the copy. That repetition is the page's whole structure:
-  there is no card, no border, no filled panel and no box anywhere on it, and the only rule
-  drawn is the hairline that opens each chapter. On a page of fourteen paragraphs, one
-  repeated shape is what stops the reader losing their place, and it is cheaper to read than
-  a set of containers.
+  STILL NOTHING HERE IS GLASS. No backdrop-filter, no blurred pane, no video — that
+  constraint from the previous version of this page is unchanged and is worth restating
+  rather than silently carrying forward: the home page's three viewport-wide
+  backdrop-filters are the most expensive thing in the project (CLAUDE.md §7), and this
+  route still deliberately takes none of that on. Depth is one fixed, painted layer of
+  stacked radial gradients (`.atmosphere`) plus flat bordered surfaces for the stat cards
+  and the chip cloud — nothing that costs a compositing layer.
 
-  NOTHING HERE IS GLASS. No backdrop-filter, no blurred pane, no video. The home page's
-  three viewport-wide backdrop-filters are the most expensive thing in the project
-  (CLAUDE.md §7); this page deliberately takes none of that on. Its depth is painted — one
-  fixed layer of stacked radial gradients over a flat fill — so the whole route composites
-  once and never re-rasterises while scrolling.
+  THE GROUND IS DARKER THAN BEFORE. `--about-ground` and `--about-vignette` both moved in
+  variables.css for this redesign, on explicit request — see the comments there. Nothing
+  in this file needed to change to follow that; both tokens are consumed exactly as they
+  were.
 
-  THE GROUND IS THE ONE THING ON THIS SITE THAT IS NOT --color-black, and the argument for
-  that living on a route rather than in a section is at --about-ground in variables.css.
-  Short version: a second ground tone is only a problem where two of them meet, and this
-  page shares no edge with anything.
+  ONE CONTAINER, A MASTHEAD, THEN FIVE SECTIONS. `.inner` still caps at --container-max
+  and centres, the way the previous version's did. What is different is everything below
+  it: the previous version ran one repeated two-column axis for a masthead and three
+  chapters; this one runs a masthead (pull-quote against the logo) and five sections that
+  share an identity row but each lay out their own copy differently — see the per-section
+  rules below and AboutPage.jsx for why.
 
-  MOBILE IS THE PRIORITY CASE, not the fallback. The copy is long, so below 64rem every
-  grid here collapses to one column, the rail becomes a row above its copy, and the measure
-  is the viewport rather than a ch cap. Everything that owns block space is a clamp with a
-  vh middle term, so the page breathes on a desktop and tightens on a phone without a
-  breakpoint doing it.
+  MOBILE IS STILL THE PRIORITY CASE, not the fallback. Every value that owns real block
+  space is a clamp with a vh middle term, and every section collapses to a single column
+  below its own breakpoint rather than shrinking a wider layout down to illegibility.
 */
 
 .page {
   /*
-    Every value on this page that owns real block space, in one place — the first dials to
-    reach for if the page ever needs to breathe more or fit into less. They are clamps with
-    vh middle terms for the reason the home page's sections are: a page tuned to look right
-    at 900px tall is cramped at 700 and loose at 1200.
+    Every value on this page that owns real block space, in one place — unchanged in
+    spirit from the previous version, renamed where the structure changed (three
+    chapters became five sections).
   */
   --about-gap-major: clamp(var(--space-2xl), 12vh, var(--space-3xl));
-  --about-gap-chapter: clamp(var(--space-xl), 9vh, 6rem);
+  --about-section-gap: clamp(var(--space-2xl), 11vh, 6rem);
   --about-column-gap: clamp(var(--space-xl), 6vw, 7rem);
 
   position: relative;
   min-block-size: 100vh;
 
-  /*
-    The deep brown, and it is on the page rather than on <body>: body stays
-    --color-black for the whole site, so this route paints its own ground and leaves the
-    global one alone. There is no route transition on this site for the two to flash
-    between.
-  */
   background-color: var(--about-ground);
 
-  /*
-    Clears the fixed header, which is visible for the whole of this page rather than
-    arriving partway down it. --header-height is the token page layout offsets against
-    (the pill's own painted height is --header-height-docked and must never feed layout),
-    plus the page's own top air on top of it.
-  */
   padding-block-start: calc(var(--header-height) + var(--about-gap-major));
   padding-block-end: var(--about-gap-major);
   padding-inline: var(--container-padding);
 
   /*
-    THE GRAIN BOOST FOR THIS ROUTE. `body::after` (global.css) already grains every
-    page site-wide at the shared --noise-opacity (0.03) — deliberately subtle, tuned
-    for the home page's video and glass. This route wants grain that reads as film
-    stock rather than "barely there", and raising the shared token would have
-    retuned the home page along with it. `.noise-overlay` (applied to this element
-    in AboutPage.jsx) reads --noise-opacity too, so redeclaring it here overrides it
-    for this subtree only, stacking a second, stronger layer on top of the first.
-    Same value as Services' and Contact's pages — the three should read as one
-    texture at one strength.
+    THE GRAIN BOOST FOR THIS ROUTE, unchanged from the previous version — see the note
+    there. `body::after` (global.css) grains every page at the shared --noise-opacity
+    (0.03); this route wants film-stock grain, so `.noise-overlay` (applied in
+    AboutPage.jsx) redeclares the token for this subtree only.
   */
   --noise-opacity: 0.07;
 }
@@ -76,30 +59,12 @@
 /* --- The light in the room ------------------------------------------------ */
 
 /*
-  THE WHOLE ATMOSPHERE IN ONE ELEMENT: a vignette and two warm masses, as three stacked
-  radial gradients on a single fixed layer.
-
-  ORDER IS THE DESIGN. background-image paints the FIRST entry on top, so the vignette is
-  written first and closes in over the light rather than under it — the warm bleed reads
-  through the open middle of the page and is snuffed out at the corners, which is what
-  gives a flat fill the sense of a lit room. Reversing the list would put the light on top
-  of the vignette and flatten both.
-
-  `position: fixed`, and it is the effect as much as the optimisation. The light belongs to
-  the page, not to the content: it holds still while the copy scrolls through it, the way a
-  room's lighting does not move when someone walks across it. It is also the cheap
-  option — an unanimated, unfiltered, non-blended fixed layer is rasterised once and then
-  only composited, where an absolutely positioned one spanning a page this tall would be a
-  gradient several viewports high held in memory.
-
-  NO BLUR AND NO BLEND MODE, deliberately. A radial gradient is already a smooth ramp, so
-  a filter would buy nothing but cost a per-frame raster; and a blend mode here would make
-  the layer's effect depend on what is beneath it, which on a scrolling page means it
-  changes as the copy passes under it. `body::after`'s grain (soft-light, site-wide) is
-  what keeps these ramps from banding — see CLAUDE.md §2.
-
-  z-index 0 with .inner at --z-base: the copy is above the light, the light is above the
-  page's own fill.
+  UNCHANGED IN KIND FROM THE PREVIOUS VERSION — one fixed layer, a vignette over two warm
+  masses, no blur, no blend mode, nothing animated. See the previous version's own long
+  comment (now in git history) for the full argument; the short form is that the gradient
+  stops did not need retuning when the ground darkened underneath them; they are alpha
+  values layered on top of whatever `--about-ground` resolves to, so they carry forward
+  as-is.
 */
 .atmosphere {
   position: fixed;
@@ -109,33 +74,16 @@
   pointer-events: none;
 
   background-image:
-    /*
-      The vignette. A wide, shallow ellipse centred a little above the middle of the
-      viewport — the open part is where the eye actually reads — held fully transparent
-      through the first 48% so it never touches the copy, then closing to the ground's own
-      deepened tone at the edges.
-    */
     radial-gradient(
       ellipse 125% 95% at 50% 42%,
       transparent 48%,
       var(--about-vignette) 100%
     ),
-    /*
-      The key light: high on the inline end, the same corner the Founder's studio still is
-      lit from, so the two pages agree about where the light in this building comes from.
-      A wide ellipse rather than a circle — a circular bloom on a full viewport reads as a
-      spotlight, and this is meant to read as spill.
-    */
     radial-gradient(
       ellipse 55% 45% at 82% 4%,
       var(--about-sheen),
       transparent 68%
     ),
-    /*
-      The fill light, far weaker and diagonally opposite, so the page is lit from two
-      unequal directions rather than glowing symmetrically. This one is what stops the
-      lower half of a long page going dead.
-    */
     radial-gradient(
       ellipse 70% 45% at 10% 92%,
       var(--about-sheen-soft),
@@ -147,7 +95,6 @@
 
 .inner {
   position: relative;
-  /* Above the atmosphere, which sits at z-index 0. */
   z-index: var(--z-base);
 
   inline-size: 100%;
@@ -155,154 +102,152 @@
   margin-inline: auto;
 }
 
-/* --- Masthead ------------------------------------------------------------- */
+/* --- Masthead: pull-quote against the logo --------------------------------- */
 
 /*
-  Stacked below 64rem, and the two-column axis is established in the breakpoint at the foot
-  of this file — the same declaration the chapters take, so the page's rail lines up from
-  the h1 all the way to the last paragraph.
+  Stacked below 64rem — quote first in document order, logo beneath it, which is also
+  the correct reading order without the two-column grid's help. The row pairing (see the
+  64rem block at the foot of this file) is a wide-viewport upgrade, not a requirement:
+  everything here reads correctly with no grid at all.
 */
 .masthead {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  row-gap: var(--space-xl);
-
-  margin-block-end: var(--about-gap-major);
-}
-
-/*
-  The rail does NOT stick here, where the chapters' rails do. The masthead's rail is two
-  short elements against three paragraphs, so there is barely a screen of travel for it to
-  hold through — and a page whose very first element pins itself to the top of the viewport
-  reads as a bug before the reader has worked out that it is a device.
-*/
-.masthead-rail {
-  min-inline-size: 0;
-}
-
-.masthead-body {
-  min-inline-size: 0;
-}
-
-/*
-  The site's micro-label, at About's and WhyAgb's exact values: 0.65rem, medium, 0.28em,
-  uppercase, --color-text-subtle, with the gold dot LEADING rather than trailing because
-  the tracking adds a space after the final letter that CSS cannot trim. Four blocks on
-  this site now open with this mark and they must read as one device — if it is retuned
-  anywhere, it is retuned everywhere.
-*/
-.eyebrow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2xs);
-
-  /* Tight to the title it labels — the two are one unit. */
-  margin-block-end: var(--space-2xs);
-
-  color: var(--color-text-subtle);
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-}
-
-/* flex-shrink so a 5px item with no content cannot collapse in a tight column. */
-.eyebrow::before {
-  content: '';
-  flex-shrink: 0;
-
-  inline-size: 0.3125rem;
-  block-size: 0.3125rem;
-  border-radius: 50%;
-  background-color: var(--color-gold);
-}
-
-/*
-  ONE WORD, at the top of the scale. The brief allowed the opening block to carry a minimal
-  heading or none at all, and a page needs an <h1> regardless — without one the document's
-  first heading would be "Vision", which is a chapter rather than the page.
-
-  So it is the shortest true title the page has, set large enough to be the anchor of the
-  screen and left to sit alone on the rail. Weight comes from global.css, where h1 is
-  --font-weight-heavy (700) — the heaviest instance Fontshare serves for Clash Display, so
-  a higher number here would be rounded down rather than interpolated.
-
-  line-height under --leading-tight for the same reason About's title runs at 0.95: nothing
-  wraps at one word, but the tighter value is what keeps the cap height sitting level with
-  the lead paragraph's first line on a wide window.
-*/
-.page-title {
-  font-size: var(--text-4xl);
-  line-height: 0.95;
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-text);
-}
-
-/*
-  THE LEAD, and it is the opening paragraph exactly as written — only its treatment differs
-  from the two beneath it.
-
-  --text-xl at --font-weight-light in full --color-text, against the body's --text-base at
-  --color-text-muted. That is a genuine tier rather than a slightly bigger paragraph: it
-  gives the page somewhere to start, so the reader meets a statement rather than the top of
-  a column of prose.
-
-  A SHORTER MEASURE THAN THE BODY (46ch against 64), and it has to be. Measure is a
-  function of type size, not of column width: the same 64ch that reads comfortably at
-  --text-base is a genuinely tiring line at --text-xl, because the eye has further to
-  travel back for each new line.
-*/
-.lead {
-  max-inline-size: 46ch;
-  margin-block-end: var(--space-lg);
-
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-light);
-  line-height: var(--leading-relaxed);
-  color: var(--color-text);
-}
-
-/* --- Chapters ------------------------------------------------------------- */
-
-/*
-  Each chapter opens with a hairline and takes the page's two-column axis (set in the
-  breakpoint below). `position: relative` is for that hairline, which is a pseudo-element
-  rather than a `border-block-start` — see the note on .chapter::before.
-
-  The gap between chapters is padding on the chapter itself rather than a margin between
-  them, so the rule sits at the top of its own block's space rather than at an arbitrary
-  point between two.
-*/
-.chapter {
   position: relative;
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: var(--space-lg);
+  row-gap: var(--space-2xl);
+  align-items: center;
 
-  padding-block-start: var(--about-gap-chapter);
+  margin-block-end: var(--about-gap-major);
+}
+
+.quote-col {
+  position: relative;
+  min-inline-size: 0;
 }
 
 /*
-  THE ONE RULE DRAWN ON THE PAGE, and it fades out along its length rather than running the
-  full width flat.
+  THE DECORATIVE QUOTATION MARK — a real character, not a hand-built glyph (CLAUDE.md §5
+  forbids the latter and there is no reason to reach for an icon library for a typographic
+  mark Clash Display already renders). Sized well past running type and set at a low gold
+  alpha so it reads as an oversized punctuation mark sitting behind the statement rather
+  than as a second headline competing with it.
 
-  A pseudo-element rather than a border, for the reason About's `.body::before` documents:
-  there is no way to fade a border-color, and `border-image` with a gradient interacts badly
-  with a border on a single side. A 1px absolutely positioned strip painted with a
-  linear-gradient is the standard substitute.
-
-  It starts at --about-hairline (gold at 0.22) and is gone by 78%, so the line is emphatic
-  where the chapter's numeral begins and has dissolved before it reaches the end of the
-  copy. Ending short of 100% is deliberate: a gradient run all the way to transparent at the
-  far edge leaves a long, faint smear that reads as a rendering artefact rather than as a
-  rule.
-
-  `to right` rather than a logical direction because CSS gradients have no logical keyword,
-  and this is a genuinely visual decision — the line fades away from the mark it starts at.
-  CLAUDE.md §1 allows the physical form exactly here.
+  Positioned with a SMALL negative offset, not a large one — CLAUDE.md's own artifact
+  guidance against introducing horizontal scroll applies here too: a mark large enough to
+  read as a mark but inset far enough to never push the column's own scrollable width.
+  `pointer-events: none` and `aria-hidden` (set in the JSX) keep it decorative in every
+  sense; a screen reader reads the blockquote's text alone.
 */
-.chapter::before {
+.quote-mark {
+  position: absolute;
+  inset-block-start: clamp(-2.5rem, -5vw, -1.5rem);
+  inset-inline-start: -0.25rem;
+  z-index: 0;
+
+  font-size: clamp(6rem, 11vw, 9.5rem);
+  line-height: 1;
+  color: color-mix(in srgb, var(--color-gold) 32%, transparent);
+  user-select: none;
+  pointer-events: none;
+}
+
+/*
+  THE QUOTE ITSELF — large, light-weight, generously leaded, sitting above the mark by
+  z-index and pushed clear of it by margin so the glyph reads as sitting behind the type
+  rather than colliding with its ascenders.
+
+  `--color-text`, NOT `--color-text-bright`. The bright token is reserved for exactly one
+  thing on this site — the hover state of a nav link — and CLAUDE.md is explicit that a
+  third consumer is a sign the palette has drifted rather than licence to use it; a large
+  display statement is a real temptation to reach for pure white, and this is the reason
+  not to.
+
+  THE GOLD RULE, matching the device Founder's `.bio::before` uses and the brief asked
+  for by name ("the Founder section's gold left-rule treatment") — a pseudo-element
+  rather than a `border-inline-start`, because a border cannot fade and this one runs the
+  full block height of the quote and dissolves toward its foot rather than stopping on a
+  hard edge.
+*/
+.quote-text {
+  position: relative;
+  z-index: 1;
+
+  margin-block-start: clamp(1.5rem, 6vw, 3rem);
+  padding-inline-start: var(--space-lg);
+  max-inline-size: 34ch;
+
+  font-size: clamp(1.75rem, 1.35rem + 2.6vw, 2.75rem);
+  font-weight: var(--font-weight-light);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.quote-text::before {
+  content: '';
+  position: absolute;
+  inset-block: 0.2em 0;
+  inset-inline-start: 0;
+
+  inline-size: 1px;
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-gold),
+    transparent 85%
+  );
+}
+
+.logo-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+  THE LOGO — a dominant visual anchor, per the brief, rather than the small badge every
+  other call site on the site draws it as. Because the mark is portrait (360×672),
+  CLAUDE.md §1 is explicit that anything sizing it must drive `block-size` and leave
+  `inline-size: auto` — width has to derive from the capped height, not the reverse.
+  Never recoloured or redrawn, per §5 rule 5; this is the same file every other header
+  and hero reference, at a size none of them use.
+
+  IT SITS WHERE THE ATMOSPHERE'S OWN KEY LIGHT ALREADY IS. `.atmosphere`'s second
+  gradient is a warm bleed "high on the inline end" (82% 4%) — precisely the corner this
+  logo occupies at the masthead's wide layout (see the 64rem block). No separate glow
+  was added behind it for that reason: CLAUDE.md's own restraint rule ("restraint
+  elsewhere is what makes the material read") argues against a second decorative effect
+  where the page's existing lighting already does the job, and a glow sized to this mark
+  is exactly how the Founder's portrait halo ended up bleeding past its own section
+  before it was removed — see that file's history.
+*/
+.logo {
+  display: block;
+  block-size: clamp(10rem, 24vw, 20rem);
+  inline-size: auto;
+}
+
+/* --- Sections --------------------------------------------------------------- */
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--about-section-gap);
+}
+
+/*
+  THE ONE RULE SHARED BY ALL FIVE SECTIONS: a hairline opening it, matching the previous
+  version's `.chapter::before` exactly — a linear-gradient pseudo-element rather than a
+  border (a border-colour cannot fade), starting at `--about-hairline` and gone by 78% so
+  the line does not run the full width as a flat rule.
+*/
+.section {
+  position: relative;
+
+  padding-block-start: clamp(1.75rem, 5vh, 3rem);
+}
+
+.section::before {
   content: '';
   position: absolute;
   inset-block-start: 0;
@@ -316,43 +261,102 @@
   );
 }
 
-.rail {
+/* --- The shared identity row: numeral, icon, eyebrow, heading --------------- */
+
+/*
+  EVERY SECTION OPENS WITH THIS, AND ONLY THIS — the brief's "clearly identity (eyebrow
+  label + heading treatment)" requirement, satisfied once rather than reinvented five
+  times. What varies section to section is everything BELOW this row; see each
+  section's own body rules further down this file.
+*/
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+
+  margin-block-end: var(--space-xl);
+}
+
+/*
+  THE NUMERAL — Arabic rather than the previous version's Roman numerals, matching
+  WhyAgb's row device: five sections read as a numbered sequence rather than as chapters
+  in the old three-act sense. `tabular-nums` keeps 01 through 05 at one width, which
+  matters once the eye is tracking five of these down one scroll.
+
+  55% of the accent rather than the old chapter numerals' 62% — this one sits beside an
+  icon and an eyebrow rather than alone on a rail, so it can afford to sit a shade
+  quieter and still read first.
+*/
+.numeral {
+  flex-shrink: 0;
+
+  color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  THE ICON RING — the same "outlined mark, no fill" device WhyAgb's row and Founder's
+  fact cards both use: a gold stroke on a transparent circle, never a solid disc, so it
+  reads as a label rather than as a button.
+*/
+.icon-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  inline-size: clamp(2.75rem, 4vw, 3.25rem);
+  block-size: clamp(2.75rem, 4vw, 3.25rem);
+  border-radius: 50%;
+  border: 1px solid var(--color-gold);
+}
+
+.icon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  color: var(--color-gold);
+}
+
+.heading-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
   min-inline-size: 0;
 }
 
 /*
-  ROMAN NUMERALS, and the register is the whole reason they are not the 01/02/03 WhyAgb's
-  grid uses. Six enumerated reasons are a list and want a list's marks; three long blocks of
-  prose are chapters, and a chapter numeral is the older, quieter convention. Using the same
-  mark for both would say the two are the same kind of thing.
-
-  62% of the accent. WhyAgb's numerals sit at 70% because they label a title at --text-xl;
-  these are far larger and sit beside a --text-3xl heading, so the same alpha would put the
-  gold above the white and invert the hierarchy. It still has to be plainly legible — it
-  enumerates, so it is a label rather than a decorative wash.
-
-  --font-weight-medium, not heavy: at this size a heavy numeral competes with the heading it
-  introduces. `tabular-nums` is pointless for I/II/III and is deliberately absent.
-
-  The letter-spacing is positive where the headings take --tracking-tight, which is the one
-  thing that keeps III from setting as a solid block.
+  THE SITE'S MICRO-LABEL, at the values About, WhyAgb and the Founder all share — see the
+  note on this device in the previous version of this file. Identical on purpose: it is
+  how a block on this site announces itself, and a page that invented its own would stop
+  reading as the same site.
 */
-.marker {
-  display: block;
-  margin-block-end: var(--space-sm);
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
 
-  color: color-mix(in srgb, var(--color-gold) 62%, transparent);
-  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
   font-weight: var(--font-weight-medium);
-  line-height: 1;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
 }
 
-/*
-  --text-3xl, a clear tier under the page's --text-4xl h1 and clearly above the --text-xl
-  lead. Three headings of one or two words each, so no measure cap is needed and none is
-  set — the rail is the constraint.
-*/
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
 .title {
   font-size: var(--text-3xl);
   line-height: 1.05;
@@ -360,43 +364,8 @@
   color: var(--color-text);
 }
 
-/* --- Running copy --------------------------------------------------------- */
+/* --- Running copy, shared by every section's body -------------------------- */
 
-/*
-  Shared by the masthead's two lower paragraphs and by every chapter's body.
-
-  64ch, and the cap is doing real work rather than being a habit: at --container-max the
-  wider track of this page's grid is around 680px, which at --text-base would run past 90
-  characters — well beyond the point where the eye starts losing the line it is returning
-  to. On a phone the viewport is narrower than 64ch and the cap simply never applies, which
-  is why there is no breakpoint here.
-
-  A flex column with a gap rather than a margin on each paragraph: the gap belongs to the
-  stack, so the first and last paragraphs cannot contribute space at the block edges where
-  the layout is already setting it.
-*/
-.body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-
-  min-inline-size: 0;
-  max-inline-size: 64ch;
-}
-
-/*
-  The site's quiet body register, matching About's paragraph and the Founder's bio: light
-  weight, muted colour, relaxed leading. --leading-relaxed (1.85) rather than
-  --leading-normal is the one value that matters most on this page — it is a great deal of
-  continuous prose, and the extra leading is most of what makes a long block approachable
-  rather than dense.
-
-  --color-text-muted (the warm off-white at 0.65) composites over --about-ground to about
-  #a6a5a0, which is roughly 7.5:1 — comfortably past AA's 4.5:1 for body text. The ground is
-  a flat fill with no footage under it, so unlike the home page's glass sections there is no
-  worst-frame case to measure against; the vignette only darkens the outer edges, which the
-  --container-max column never reaches.
-*/
 .paragraph {
   font-size: var(--text-base);
   font-weight: var(--font-weight-light);
@@ -404,33 +373,146 @@
   color: var(--color-text-muted);
 }
 
-/* --- The sign-off --------------------------------------------------------- */
+/* --- 01 Who We Are: a single asymmetric column ------------------------------ */
 
 /*
-  The last two lines of Our Capital, and the only place on the page where the copy changes
-  register — so the layout does too.
+  NO SECOND TRACK — the asymmetry is in what this column does NOT do. It caps its own
+  measure and does not centre itself in `.inner`, so it hugs the inline start and leaves
+  open air down the right side of the page rather than sitting in a symmetric centred
+  block. That is deliberately the plainest of the five sections: the page opens on a
+  statement of fact before the layout starts varying.
+*/
+.who-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 
-  The short gold rule above it is a 3rem pseudo-element rather than a `border-block-start`,
-  and the reason is width. A border spans its element, so getting a 3rem mark out of one
-  would mean capping the whole block at 3rem and then fighting that cap back off the lines
-  inside it. A positioned strip is independent of the block it marks, which is the same
-  reason .chapter::before is one — though this one is flat rather than a gradient: at 3rem
-  there is no length for a fade to happen over, and a gradient would just read as a smudge.
-  It is the second and last rule on the page.
+  max-inline-size: 60ch;
+}
 
-  The gap above the rule is larger than the gap below it (`margin` against `padding`), which
-  is what makes it read as opening the sign-off rather than as closing the paragraph above.
+/* --- 02 Vision: a lead statement, then a two-up pair ------------------------ */
+
+/*
+  THE LEAD — the section's own opening sentence set apart, the same tier-above-body idea
+  the previous version's masthead used for its first paragraph: larger, brighter, its own
+  shorter measure. `max-inline-size` is shorter than the body's own, because measure is a
+  function of type size and the same width that reads well at --text-base is tiring at a
+  size this much larger.
+*/
+.lead {
+  max-inline-size: 42ch;
+  margin-block-end: var(--space-lg);
+
+  font-size: clamp(1.375rem, 1.15rem + 1.1vw, 1.75rem);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text);
+}
+
+.vision-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
+/* --- 03 Mission: two short paragraphs as a diptych -------------------------- */
+
+/*
+  SIDE BY SIDE, NOT STACKED — the one genuinely different chassis on the page from a
+  rail-and-copy or a stacked column: two short paragraphs read as one compact statement
+  in two parts. The dividing hairline only appears once there is genuinely a side to
+  divide (48rem block below) — on a single stacked column it would just be a stray line
+  between two paragraphs.
+*/
+.diptych {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+/* --- 04 Our Record: a stat column beside the copy --------------------------- */
+
+.record-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-xl);
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/*
+  EACH STAT CARRIES ITS OWN GOLD SPINE — the same fading-gradient pseudo-element the
+  quote and Founder's bio both use, in miniature, so a reader who has seen either device
+  once recognises this as the same family rather than a new one.
+*/
+.stat {
+  position: relative;
+  padding-inline-start: var(--space-sm);
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+
+  inline-size: 1px;
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-gold),
+    transparent 85%
+  );
+}
+
+.stat-year {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: var(--font-weight-heavy);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  margin-block-start: var(--space-2xs);
+
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.record-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/*
+  THE PULLED CLOSING STATEMENT — the same device the previous version of this page used
+  for its one sign-off (a short flat gold rule, then a tier of type above the body copy),
+  reused rather than reinvented because it is still the right shape for a short closing
+  line and the section only has one.
 */
 .closing {
   position: relative;
 
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-
-  margin-block-start: var(--space-lg);
+  margin-block-start: var(--space-xl);
   padding-block-start: var(--space-lg);
-  max-inline-size: 42ch;
+  max-inline-size: 46ch;
+
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.35;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  text-wrap: balance;
 }
 
 .closing::before {
@@ -444,74 +526,143 @@
   background-color: var(--about-hairline);
 }
 
-/*
-  --text-xl at --font-weight-medium in full --color-text — a tier above the body copy and a
-  tier below the chapter heading, which is exactly where a sign-off belongs. The 42ch cap is
-  on the block above rather than here, so both lines share one measure.
-*/
-.closing-line {
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.35;
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-text);
-  /*
-    `text-wrap: pretty` comes from global.css and is the wrong call on these two: it is
-    tuned to avoid orphans in running copy, and on a three-line statement it can pull the
-    break points into a visibly uneven stack. `balance` evens the lines, which is what a
-    short display block wants — and the cost it carries on long paragraphs does not apply
-    to two lines of forty characters.
-  */
-  text-wrap: balance;
+/* --- 05 Strategic Network: copy, then a grouped chip cloud ------------------ */
+
+.network-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  max-inline-size: 66ch;
 }
 
-/* --- Breakpoints ---------------------------------------------------------- */
+.chip-cloud {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+
+  margin-block-start: var(--space-xl);
+}
+
+.chip-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.chip-group-title {
+  color: var(--color-gold);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+
+  list-style: none;
+}
 
 /*
-  64rem rather than the 48rem the home page's sections break at, and the extra 16rem is the
-  rail's fault rather than the copy's. The rail has to hold a --text-3xl heading beside a
-  clamped numeral without either wrapping, and the body track has to keep a readable measure
-  at the same time. Below this width the two cannot both have what they need, so the page
-  stacks — which is the right answer for long prose anyway.
+  THE CHIPS — a flat bordered pill, not glass: this page takes no backdrop-filter at all
+  (see the note at the top of this file), so the "raised surface" read comes from a
+  border and a tint rather than from blur. `--color-gold-veil` is already the site's
+  token for exactly this weight of warm tint (the button ring's own veil stop); reusing
+  it here is not a new value.
 */
-@media (min-width: 64rem) {
-  /*
-    THE PAGE'S AXIS, and it is one declaration applied to two different kinds of block on
-    purpose. The masthead's h1 and every chapter's numeral sit on the same inline start, and
-    the lead paragraph and every chapter's body sit on the same one beside it. That single
-    alignment running the height of the page is what holds it together in the absence of any
-    box, border or panel.
+.chip {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--about-hairline);
+  border-radius: var(--radius-full);
+  background-color: var(--color-gold-veil);
 
-    Deliberately uneven: the rail takes the smaller share because it holds two short lines,
-    and the copy takes the larger because it holds all fourteen paragraphs. An even split
-    would give the headings room they cannot use and take it from the only track that needs
-    it.
-  */
-  .masthead,
-  .chapter {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-light);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* --- Breakpoints ------------------------------------------------------------ */
+
+/*
+  PHONE ONLY — tightens the top-of-page and section clearances the same way the
+  previous version's Founder-style phone blocks do; nothing at tablet or desktop is
+  touched here.
+*/
+@media (max-width: 47.9375rem) {
+  .quote-mark {
+    font-size: clamp(4.5rem, 24vw, 6.5rem);
+  }
+
+  .quote-text {
+    max-inline-size: none;
+    font-size: clamp(1.5rem, 1.3rem + 3vw, 2rem);
+  }
+
+  .logo {
+    block-size: clamp(8rem, 32vw, 11rem);
+  }
+}
+
+@media (min-width: 48rem) {
+  .vision-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: var(--about-column-gap);
   }
 
   /*
-    THE RAIL STICKS, so a chapter's numeral and heading stay beside the copy they name
-    instead of scrolling away from it — on this page the Vision chapter alone is most of a
-    screen, and a heading that has left the viewport is a heading the reader has to
-    remember.
-
-    `align-self: start` is required, not tidy: a grid item stretches to its row's height by
-    default, and a box that is already as tall as its track has nowhere to travel and will
-    never appear to stick.
-
-    The offset clears the fixed header — --header-height plus a little air, so the heading
-    parks below the pill rather than under it.
-
-    It is the ONE thing on this page that a narrow window does not get, and correctly so:
-    stacked, the rail sits directly above its own copy and has nothing to hold onto.
+    THE DIPTYCH'S DIVIDER — a hairline between the two paragraphs, added only once there
+    is genuinely a side to divide. `border-inline-end` rather than a pseudo-element here:
+    unlike the fading rules elsewhere on this page, a flat hairline down a fixed-height
+    gap between two grid tracks has no length for a gradient to resolve over, so a plain
+    border is the correct tool rather than the exception.
   */
-  .rail {
-    position: sticky;
-    align-self: start;
-    inset-block-start: calc(var(--header-height) + var(--space-lg));
+  .diptych {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--about-column-gap);
+  }
+
+  .diptych > p:first-child {
+    padding-inline-end: var(--about-column-gap);
+    border-inline-end: 1px solid var(--about-hairline);
+  }
+
+  .chip-cloud {
+    flex-direction: row;
+  }
+
+  .chip-group {
+    flex: 1;
+  }
+}
+
+@media (min-width: 64rem) {
+  /*
+    THE MASTHEAD BECOMES A ROW — quote against the logo, the brief's own "left side /
+    right side" layout. 1.3fr against 1fr: the quote is the larger visual mass even
+    though the logo is the taller single element, because the quote is what a reader
+    reads first and the column needs the room a display-sized paragraph asks for.
+  */
+  .masthead {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    column-gap: var(--about-column-gap);
+  }
+
+  .logo-col {
+    justify-content: flex-end;
+  }
+
+  /*
+    THE STAT COLUMN BESIDE THE COPY — Our Record's one asymmetric two-column section,
+    narrow stats against wider prose, matching the ratio the previous version's rail-
+    and-copy axis used (0.8fr : 1.2fr) for the same reason: the narrower track holds two
+    short marks, the wider one holds three paragraphs.
+  */
+  .record-grid {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    column-gap: var(--about-column-gap);
   }
 }
