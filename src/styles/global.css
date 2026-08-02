@@ -6,11 +6,11 @@
 
 /*
   @import rules must precede every other rule in the file — keep both at the top.
-  Clash Display (Fontshare) is the site's sole typeface, weights 200-700.
-  index.html preconnects to the Fontshare CDN so this request starts earlier.
+  Manrope (Google Fonts) is the site's sole typeface, weights 200-700.
+  index.html preconnects to the Google Fonts CDN so this request starts earlier.
 */
 @import './variables.css';
-@import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
 
 /* --- Reset --------------------------------------------------------------- */
 

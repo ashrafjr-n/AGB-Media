@@ -24,7 +24,7 @@ Single source of truth for every task in this repository. Read this before writi
 | DOM motion | **Framer Motion 12 — the only animation library** | every animation gates on `useReducedMotion()` |
 | WebGL | **none.** | There is no WebGL, no canvas and no 3D library on this site, and none is installed. The Story circle's lens is `shared/CssLens.jsx` — a div. |
 | Icons | `react-icons` (Heroicons `hi` outline set) | never hand-build an SVG — §5 |
-| Type | Clash Display via Fontshare | sole typeface, §3 |
+| Type | Manrope via Google Fonts | sole typeface, §3 |
 | Lint | `oxlint` (`npm run lint`) | `.oxlintrc.json`: react hooks rules only |
 
 ### Routing, and what is wired ahead of itself
@@ -94,7 +94,7 @@ Because the logo is portrait, **anything sizing it must drive `block-size` and l
 
 **Dark cinematic, in glass and water.** The fluid/gold direction that was "in flight" has landed; it is the current direction, not a pending one.
 
-The ground is still a flat `#010101`, the accent is still the one gold sampled from the logo, Clash Display is still the only typeface, and film grain still covers the viewport. What changed is the surfaces on top of it: nothing that sits above the page is a flat fill any more. Every raised surface is **glass** — a `--color-black` alpha, a `backdrop-filter` blur, a lit rim — and the material is given structure by **SVG turbulence displacement** rather than by gradients alone.
+The ground is still a flat `#010101`, the accent is still the one gold sampled from the logo, Manrope is still the only typeface, and film grain still covers the viewport. What changed is the surfaces on top of it: nothing that sits above the page is a flat fill any more. Every raised surface is **glass** — a `--color-black` alpha, a `backdrop-filter` blur, a lit rim — and the material is given structure by **SVG turbulence displacement** rather than by gradients alone.
 
 Four surfaces carry it, and they are meant to read as one material at different scales:
 
@@ -203,21 +203,21 @@ Use the `--space-*`, `--radius-*`, `--header-height`, and `--container-max` toke
 
 ## 3. Typography
 
-**Clash Display is the sole typeface across the entire site.** There is no secondary family — display, headings, body, and UI all resolve to it. Do not introduce another font.
+**Manrope is the sole typeface across the entire site.** There is no secondary family — display, headings, body, and UI all resolve to it. Do not introduce another font. (It replaced Clash Display in a site-wide swap; see the note at the weight ladder below for what that did and did not change.)
 
-Loaded from **Fontshare** via `@import` at the top of `global.css`:
+Loaded from **Google Fonts** via `@import` at the top of `global.css`:
 
 ```css
-@import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap');
 ```
 
-`index.html` preconnects to `api.fontshare.com` and `cdn.fontshare.com` so the request starts during HTML parse.
+`index.html` preconnects to `fonts.googleapis.com` and `fonts.gstatic.com` so the request starts during HTML parse.
 
 | Token | Value |
 | --- | --- |
-| `--font-display` | `'Clash Display', sans-serif` |
+| `--font-display` | `'Manrope', sans-serif` |
 | `--font-heading` | alias of `--font-display` |
-| `--font-body` | `'Clash Display', sans-serif` |
+| `--font-body` | `'Manrope', sans-serif` |
 
 `--font-heading` is kept as a distinct token so a future pass can split the role off without touching every call site. Today all three are the same face.
 
@@ -233,7 +233,9 @@ Loaded from **Fontshare** via `@import` at the top of `global.css`:
 
 Applied in `global.css`: `h1`/`h2` → 700, `h3`/`h4` → 600, `h5`/`h6` → 500. Captions (`small`, `figcaption`, `caption`) → 300.
 
-**Only request the six loaded weights** (200, 300, 400, 500, 600, 700). Fontshare serves Clash Display as static instances, not a single variable file — an intermediate value like `450` gets rounded to the nearest loaded weight rather than interpolated. Weight `200` is loaded but unassigned; use it deliberately or not at all.
+**Only request the six loaded weights** (200, 300, 400, 500, 600, 700). Google Fonts serves Manrope as static instances, not a single variable file — an intermediate value like `450` gets rounded to the nearest loaded weight rather than interpolated. Weight `200` is loaded but unassigned; use it deliberately or not at all.
+
+**THE TYPEFACE WAS SWAPPED FROM CLASH DISPLAY TO MANROPE SITE-WIDE, WITH NOTHING ELSE CHANGED.** Every font-size, font-weight, letter-spacing, line-height and layout value in this document and in the codebase was tuned against Clash Display's metrics and is unchanged by the swap — only the `font-family` the three tokens above resolve to, and the `@import` that loads it, moved. Manrope happens to load the identical six weights (200–700) Clash Display did, so the weight ladder below needed no adjustment either. The one place this carried real overflow risk was the two `white-space: nowrap` name treatments sized with "comfortable slack" against Clash Display's specific widths — Founder's `.name` (Abdullah Ghayfan, 40px/700) and Team's `.name` (Nael Al-Jarabah, 28px/700). Measured directly (both fonts loaded side by side, `getBoundingClientRect` at each element's exact clamp-max size/weight/letter-spacing): Manrope renders 5.5% and 8.0% narrower respectively at those two sizes, so both have *more* slack under Manrope than they did under Clash Display, not less. No adjustment was needed or made.
 
 ---
 

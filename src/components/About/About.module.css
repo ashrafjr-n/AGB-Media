@@ -355,11 +355,11 @@
 
   No font-weight here, and this is the one part of the brief the typeface will not
   take. global.css already sets h2 to --font-weight-heavy (700), which is the heaviest
-  weight loaded: global.css requests 200–700 from Fontshare, and Clash Display arrives
+  weight loaded: global.css requests 200–700 from Google Fonts, and Manrope arrives
   as *static instances* rather than one variable file, so an 800 or 900 here would be
   rounded down to 700 by the browser rather than interpolated — identical rendering,
   plus a value that lies about what is available. Getting genuinely heavier means
-  adding 800 to the Fontshare @import in global.css first.
+  adding 800 to the Google Fonts @import in global.css first.
 */
 .title {
   /*

@@ -409,18 +409,19 @@
   /* --- Typography ------------------------------------------------------- */
 
   /*
-    Clash Display is the sole typeface across the entire site — display, headings,
-    body, and UI all resolve to it. Loaded from Fontshare via @import in
+    Manrope is the sole typeface across the entire site — display, headings,
+    body, and UI all resolve to it. Loaded from Google Fonts via @import in
     global.css. The three tokens are kept distinct so a future pass can split a
-    role off without touching every call site; today they all point to Clash.
+    role off without touching every call site; today they all point to Manrope.
   */
-  --font-display: 'Clash Display', sans-serif;
+  --font-display: 'Manrope', sans-serif;
   --font-heading: var(--font-display);
-  --font-body: 'Clash Display', sans-serif;
+  --font-body: 'Manrope', sans-serif;
 
   /*
-    Fontshare serves Clash Display as static instances at 200/300/400/500/600/700.
-    Only request these six — an intermediate value like 450 will be rounded by
+    Google Fonts serves Manrope as static instances at 200/300/400/500/600/700 —
+    the same six weights the site requested of Clash Display before it. Only
+    request these six — an intermediate value like 450 will be rounded by
     the browser rather than interpolated.
   */
   --font-weight-light: 300;
@@ -443,7 +444,10 @@
   --leading-normal: 1.6;
   --leading-relaxed: 1.85;
 
-  /* Clash Display is geometric and tightens well at large display sizes. */
+  /*
+    Unchanged by the Manrope swap — this value was tuned for large display sizes
+    and carries over as-is; only the typeface itself changed (§3).
+  */
   --tracking-tight: -0.02em;
   --tracking-wide: 0.06em;
   --tracking-widest: 0.16em;

@@ -12,7 +12,7 @@ import styles from './AboutPage.module.css'
   chapters — Vision, Mission, Our Capital — on one fixed rail-and-copy axis). Nothing
   from that version survives except what this file's own comments call out as reused on
   purpose: the fixed site header, the shared reveal ladder, the site's micro-label
-  eyebrow device, and Clash Display throughout. A distinct page is not a different
+  eyebrow device, and Manrope throughout. A distinct page is not a different
   design system, but this IS a different page — see the brief this was built against
   for the full brief; the short version is that the previous version's own account of
   itself ("one repeated shape... no card, no border, no filled panel") is exactly what

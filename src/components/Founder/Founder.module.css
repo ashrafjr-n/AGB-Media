@@ -309,7 +309,7 @@
   is what will make the overflow obvious instead of silently letting it wrap again.
 
   Weight is --font-weight-heavy (700), NOT the 800 first asked for, and the difference is
-  nil on screen. global.css requests 200–700 from Fontshare and Clash Display arrives as
+  nil on screen. global.css requests 200–700 from Google Fonts and Manrope arrives as
   static instances rather than one variable file, so a browser asked for 800 rounds it
   down to 700 — identical rendering from a value that lies about what is loaded (§3).
 */
