@@ -78,7 +78,30 @@
   */
   --why-gold-strong: color-mix(in srgb, var(--color-gold) 88%, transparent);
 
-  position: relative;
+  /*
+    UNCONDITIONALLY `sticky`, WHERE THIS USED TO BE `relative` PLUS FOUR MEDIA QUERIES that
+    swapped it — and it is the same box either way, which is what makes the swap unnecessary.
+
+    A sticky box with no inset to stick to behaves EXACTLY like a relatively positioned one:
+    same geometry at every scroll offset, same height, same stacking context (this rule's own
+    z-index makes one regardless), same document height. Measured against the previous
+    `position: relative` rather than assumed. So the question the envelopes actually answer is
+    not "is this box positioned" but "does it have an edge to stick to", and that is a single
+    inherited value — see `inset-block-start` below.
+
+    `position: sticky` is a positioned value, so everything this rule already relied on from
+    `relative` is untouched: the ground and the pane at z-index 0 stay scoped to this section,
+    and `.inner` at --z-base still paints above both.
+  */
+  position: sticky;
+  /*
+    THE PIN, AND THE ONLY THING THAT VARIES WITH VIEWPORT SIZE. `--closing-pin-inset` is set
+    by `.closing-stage` in pages/HomePage.module.css — the one place the four envelopes are
+    written — and is unset everywhere outside them, so this falls back to `auto` and the
+    section simply scrolls. The envelopes and the reason each exists are documented there;
+    the mechanic itself is documented at "The pin" further down this file.
+  */
+  inset-block-start: var(--closing-pin-inset, auto);
   z-index: var(--z-base);
 
   display: flex;
@@ -483,10 +506,12 @@
   recomputed per frame — the compositor moves a box it is already holding, which is exactly
   what HeroBackdrop does at the top of the page and why that one is the pattern to copy.
 
-  `position: sticky` REPLACES `position: relative`, which this section already had for its
-  own reasons — the ground and the pane at z-index 0 are scoped by this box being a stacking
-  context, and `z-index: var(--z-base)` above is what makes it one either way. Sticky is a
-  positioned value, so nothing about that changes.
+  THIS SECTION IS ALWAYS `position: sticky` NOW — see the base rule at the top of this file.
+  It used to be `relative`, swapped to `sticky` by four separate media queries; it is
+  unconditionally sticky and the media queries only decide whether it has an inset to stick
+  to, because a sticky box with `inset: auto` is exactly a relatively positioned one. The
+  ground and the pane at z-index 0 are scoped by this box being a stacking context, and
+  `z-index: var(--z-base)` is what makes it one under either value.
 
   TEAM PAINTS OVER THIS BECAUSE OF DOCUMENT ORDER, not because of a z-index. Both sections
   sit at `--z-base` in the root stacking context — `.closing-stage` is deliberately
@@ -494,64 +519,21 @@
   would be the wrong fix: it would say the layering is a decision when it is a consequence,
   and it would put Team above a Founder that is at the same level for unrelated reasons.
 
-  WHY THE GATE, AND WHY THE WIDTH TERM IS 80REM. A box pinned to the block start shows its
-  own first screen and nothing below it — sticky cannot lift its own top edge above the
-  offset, so anything past the first viewport is not merely scrolled past, it is
-  unreachable for the life of the page. The pin is therefore only enabled where this
-  section genuinely fits one screen, and "fits one screen" today means "is in its 3 x 2
-  row form" — the two-up and one-up fallbacks below 80rem stack more rows still and are
-  taller than one viewport on ordinary windows, never measured to be pin-safe. The row's
-  three-column breakpoint and the pin's width gate share a number on purpose — see the
-  note at `.row` for why 80rem rather than the usual 64rem, and for why the 80rem tier no
-  longer changes the column count on its own (that changed with the six-across-to-3x2
-  swap below; the gate did not move with it — see the measurement two paragraphs down for
-  why not).
+  WHY THERE IS A GATE AT ALL. A box pinned to the block start shows its own first screen and
+  nothing below it — sticky cannot lift its own top edge above the offset, so anything past
+  the first viewport is not merely scrolled past, it is unreachable for the life of the page.
+  The pin is therefore only enabled where this section genuinely fits one screen, which
+  depends on which row form it is in and therefore on the viewport — hence envelopes rather
+  than a single condition.
 
-  THE NUMBER HAS MOVED TWICE, and the history is worth keeping straight. The grid version
-  pinned at 64rem. Redesigning the section into a six-across row plus a CTA banner
-  (2026-08-02) pushed this to 90rem — a conservative round number chosen while the banner
-  was adding a fixed block of extra height to every viewport that could engage the pin.
-  Removing the banner the same day (see the note at the top of WhyAgb.jsx) freed that
-  budget back up, and re-running the arithmetic below against the row's OWN true
-  readability floor — 80rem, not 90 — showed the section clearing 720px with comfortable
-  room even there. 80rem is therefore not a partial revert sitting between the grid's
-  64rem and the banner's 90rem; it is the number the row's own column-width argument
-  was pointing at all along, freed of a constraint (the banner) that no longer exists.
-
-  - `min-width: 80rem` (1280px). Below it the row is in its two-up or one-up wrapped
-    form, taller than one viewport on ordinary windows, and was never measured pin-safe.
-  - `min-height: 45rem` (720px), unchanged from the grid version throughout every
-    revision of this section, including the six-across-to-3x2 swap that most recently
-    threatened it: going from one row to two roughly doubles the row block's own
-    contribution to this budget, which is exactly the kind of change this figure exists
-    to catch. **MEASURED, not estimated by arithmetic this time** — a standalone static
-    HTML reproduction of `.why`'s opening block and `.row` at these exact values (real
-    Manrope, real copy, no app build involved, since this codebase still cannot run its
-    own dev server to check this in place) was rendered in a real browser window sized to
-    the gate's own tightest corner, 1280x720. Result: the section's natural content
-    height (padding-block + the opening block + the 3 x 2 row, unconstrained by
-    `min-block-size`) came to 632px — about 88px of slack under the 720px floor. Tighter
-    than the six-across form's slack (documented at the time as roughly 200px, by
-    arithmetic rather than measurement) but still comfortable rather than marginal. If
-    the row's copy grows, `.item`'s padding grows, or another row is ever added, re-run
-    this measurement before trusting the pin at this corner again — 88px is not a wide
-    margin to erode by editing without checking.
-
-  THIS IS ONE OF TWO PIN ENVELOPES NOW, not the only one — a second, independent
-  `max-width` gate for phone widths lives further down this file, added on request so
-  Team's slide-over also reads on mobile rather than falling back to plain scroll
-  there. It does not touch this one: the two are separate `@media` blocks with no
-  shared width range, so nothing about the desktop gate's own number changes. See that
-  block for its own argument.
-
-  THE SAME TWO CONDITIONS — BOTH ENVELOPES OF THEM — ARE REPEATED IN Team.module.css,
-  where they enable `--team-tuck` — the extra block-start height that carries Team's
-  rounded corner off the top of the screen once it has finished arriving. They are one
-  decision written twice (per envelope) because it applies to two elements in two
-  components and a custom property cannot cross that boundary. Keep each pair
-  identical: a pin without its matching tuck leaves Team's corner parked on the
-  viewport's top edge for the rest of the document, and a tuck without its matching pin
-  is dead space.
+  THE ENVELOPES THEMSELVES ARE NOT IN THIS FILE ANY MORE. All four live on `.closing-stage`
+  in pages/HomePage.module.css, which sets `--closing-pin-inset` (this section's inset) and
+  `--closing-pinned` (the flag Team's tuck reads) together. They were previously written out
+  twice — here for the pin and again in Team.module.css for the tuck — with a hand-maintained
+  "keep both copies identical" invariant between two files. One ancestor sets both now, so
+  that invariant is structural and there is nothing left to keep in step. The measurement
+  behind each number, and what is still not solved by four discrete envelopes, are documented
+  at that rule.
 
   THE ONE COST, stated rather than hidden: this section's `backdrop-filter` and Team's are
   both live for the full screen of scrolling in which Team is rising, where before they only
@@ -560,12 +542,6 @@
   threshold, which is precisely the machinery HeroBackdrop's rewrite deleted. It is not worth
   buying back for this.
 */
-@media (min-width: 80rem) and (min-height: 45rem) {
-  .why {
-    position: sticky;
-    inset-block-start: 0;
-  }
-}
 
 /* --- Breakpoints ---------------------------------------------------------- */
 
@@ -604,11 +580,11 @@
   .why {
     /*
       TIGHTENED AGAIN, PAST THE PREVIOUS PHONE VALUES — on request, so the section's
-      content can fit one phone screen and the pin below (a new addition) can safely
-      apply here the same way it already does on desktop. These are no longer just "a
-      smaller version of the desktop dial" — they, the row and the item rules below are
-      one compact mobile treatment, measured as a set. See the pin's own media query
-      at the foot of this file for the measurement this was tuned against.
+      content can fit one phone screen and the phone pin envelope can safely apply here
+      the same way it already does on desktop. These are no longer just "a smaller
+      version of the desktop dial" — they, the row and the item rules below are one
+      compact mobile treatment, measured as a set. The measurement this was tuned
+      against is at the pin envelopes on `.closing-stage` in pages/HomePage.module.css.
     */
     --why-pad: clamp(0.85rem, 2vh, 1.25rem);
     --why-opening-gap: 0.6rem;
@@ -756,129 +732,6 @@
   }
 }
 
-/*
-  THE PIN, EXTENDED TO PHONE WIDTHS — on request, so Team's slide-over reads the same
-  on mobile as it does on desktop rather than falling back to plain scroll. This is a
-  SECOND envelope, not a widened version of the desktop one: the desktop gate
-  (`min-width: 80rem and min-height: 45rem`, above) stays exactly as it was, and this
-  is an independent `max-width: 47.9375rem and min-height: …` alongside it — the tablet
-  band between the two (48rem to 79.9375rem) still gets no pin at all, exactly as
-  before, because the row's two-up and three-up wrapped tiers were never measured
-  pin-safe and nothing here changes that.
-
-  WHY A HEIGHT GATE IS STILL NEEDED, even after the compact phone layout above. "Fits
-  one screen" is the same requirement the desktop gate enforces and for the same
-  reason (see the note at the desktop gate: sticky cannot reveal more of an
-  over-height element as you scroll, so anything past one viewport-height would be
-  permanently hidden while pinned and then covered by Team before ever being seen).
-  The compact item layout closes most of the gap between this section's content and a
-  phone screen, but not all of it on every device — it does not fit a screen as short
-  as the classic 375x667 form factor.
-
-  **MEASURED, the same way the desktop gate was.** A standalone static HTML
-  reproduction of `.why`'s opening block and the compact phone row (real Manrope, real
-  copy, rendered inside a same-origin iframe sized to an exact device viewport rather
-  than the outer browser window, since this environment's own window has a minimum
-  size larger than a phone) was checked against several common phone dimensions:
-
-  | viewport | content height | fits? |
-  | --- | --- | --- |
-  | 320x568 (iPhone SE 1st gen) | ~713px | no |
-  | 375x667 (iPhone SE 2nd/3rd gen) | ~698px | no |
-  | 360x740 (a common small-Android size) | ~701px | yes — ~39px slack |
-  | 375x812 (iPhone 12/13 mini) | ~704px | yes — ~108px slack |
-  | 390x844 (iPhone 12/13/14) | ~690px | yes — ~154px slack |
-
-  Content height is essentially flat across widths (~690–715px) — this column is
-  narrow enough everywhere in the phone range that wrapping barely changes — so the
-  gate is a HEIGHT threshold only, no width term beyond the block's own `max-width`.
-  **`min-height: 46rem` (736px)** sits above the worst measured case (712.9px at
-  320x568) with real margin and below every device that fits, so the two smallest
-  reference sizes above are deliberately excluded rather than left to clip. If the
-  row's copy grows or the compact item rules above change, re-run this measurement
-  before trusting the gate at this threshold again — the table above is what it was
-  chosen against, not a permanent fact about the row.
-
-  THE SAME CONDITION IS REPEATED IN Team.module.css, for `--team-tuck`, for the
-  identical reason the desktop pair is repeated there: one decision, two components,
-  and a custom property cannot cross that boundary. Keep the two media queries
-  identical in both files.
-*/
-@media (max-width: 47.9375rem) and (min-height: 46rem) {
-  .why {
-    position: sticky;
-    inset-block-start: 0;
-  }
-}
-
-/*
-  THE PIN, EXTENDED TO TABLET WIDTHS — two more envelopes, filling what was a dead zone
-  between the phone envelope above (`max-width: 47.9375rem`) and the desktop one at the top
-  of this file (`min-width: 80rem`). Below this addition, 48rem to 79.9375rem got no pin at
-  all regardless of height: the row's two-up and three-up tiers were never measured, so the
-  gate simply stopped at the last width that had been. Now that the dev server can be
-  checked directly, both tiers turn out to fit one screen with real margin across the whole
-  iPad portrait-and-landscape range — the gap was a missing measurement, not a real fit
-  problem.
-
-  TWO ENVELOPES, NOT ONE, because "fits one screen" means something different on each side of
-  the row's own 64rem column-count breakpoint (see `.row` below) and a single min-height could
-  not serve both: the two-up tier is taller than the three-up tier at the same width, so the
-  height that clears one is not the height that clears the other.
-
-  MEASURED, the same way the phone and desktop envelopes were — this section's natural content
-  height (padding-block + the opening block + the row, read directly off `.inner` rather than
-  off `min-block-size`, which would hide an overflow behind its own floor) against a spread of
-  real device viewports:
-
-  | viewport | row form | natural height | fits? |
-  | --- | --- | --- | --- |
-  | 768x1024 (iPad, portrait) | two-up | 954px | yes — 70px slack |
-  | 810x1080 (iPad 10.2", portrait) | two-up | 968px | yes — 112px slack |
-  | 820x1180 (iPad Air, portrait) | two-up | 985px | yes — 195px slack |
-  | 834x1194 (iPad Pro 11", portrait) | two-up | 987px | yes — 207px slack |
-  | 1024x768 (iPad, landscape) | three-up | 644px | yes — 124px slack |
-  | 1080x810 (iPad 10.2", landscape) | three-up | 657px | yes — 153px slack |
-  | 1180x820 (iPad Air, landscape) | three-up | 661px | yes — 159px slack |
-  | 1194x834 (iPad Pro 11", landscape) | three-up | 666px | yes — 168px slack |
-  | 1280x800 (10" Android, landscape) | three-up | 658px | yes — 142px slack |
-
-  THE TWO-UP GATE'S `min-height: 64rem` (1024px) sits exactly at the shortest real tablet
-  portrait height measured (768x1024, 70px slack) — deliberately tight against that one rather
-  than padded further, because the natural height at this width band barely moves with extra
-  height (954px to 987px across the whole 768–834 range) while a lower gate would start
-  admitting landscape phones: at 1023x900, a width still inside this band, natural height is
-  906px against a 900px viewport — a 6px failure, and the tell that this band's real hazard is
-  wide-but-short viewports rather than narrow-but-tall ones. 64rem excludes every such case
-  (no landscape phone at this width range clears 600px of height, let alone 1024) while
-  admitting every iPad-family portrait size.
-
-  THE THREE-UP GATE'S `min-height: 42rem` (672px) has far more headroom to work with — the
-  three-up row's natural height barely changes across 1024–1279px width (613–630px) and the
-  measured break-even is close to 609px, so 672px is a real, checked margin above failure
-  (54px at 1024x672) rather than a guess, and it is nowhere near landscape phone heights
-  (the tallest phone in this width range does not clear 430px). It is intentionally lower than
-  the two-up gate's 64rem and lower than the desktop gate's 45rem just above 80rem — a shorter
-  row simply needs less.
-
-  BOTH ARE REPEATED IN Team.module.css, for `--team-tuck`, for the identical reason the phone
-  and desktop pairs already are there: one decision, two components, and a custom property
-  cannot cross that boundary. Keep all four pairs identical across both files.
-*/
-@media (min-width: 48rem) and (max-width: 63.9375rem) and (min-height: 64rem) {
-  .why {
-    position: sticky;
-    inset-block-start: 0;
-  }
-}
-
-@media (min-width: 64rem) and (max-width: 79.9375rem) and (min-height: 42rem) {
-  .why {
-    position: sticky;
-    inset-block-start: 0;
-  }
-}
-
 @media (min-width: 48rem) {
   .row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -893,19 +746,19 @@
 }
 
 /*
-  TWO ROWS OF THREE, not six across — the widest tier now matches the tier just below it
-  (see the `min-width: 64rem` block above) rather than adding a further column count of
-  its own. `.row` is already `display: grid` with `row-gap: var(--why-item-row-gap)` set
-  once at the base rule (see `.row` above) and inherited by every breakpoint since none of
-  them touch it, so three columns of six items wraps into two even rows with that same
-  gap between them for free — nothing else here has to change to get "appropriate spacing
-  between the two rows".
+  TWO ROWS OF THREE IS THE WIDEST FORM, and 64rem above is where it starts — there is no
+  separate 80rem tier any more. One existed until this pass and declared exactly the same
+  `repeat(3, minmax(0, 1fr))` the 64rem block already had: a no-op kept deliberately, on the
+  argument that the pin's own media query lived a few lines below in this file and keyed off
+  `min-width: 80rem` by name, so holding the selector here kept that reference pointing at a
+  breakpoint that visibly existed. The pin moved out to `.closing-stage` in
+  pages/HomePage.module.css, which took the last reader of that reference with it, and the
+  rule went from load-bearing-by-convention to genuinely redundant. Removed rather than left
+  as documentation of a breakpoint nothing branches on.
 
-  WHY 80REM STILL GETS ITS OWN BLOCK rather than folding into the 64rem tier: the pin's
-  own media query (below) and the note at `.row` both key off `min-width: 80rem` by name,
-  and keeping the selector here — even set to the same three columns — is what keeps that
-  reference literal rather than pointing at a breakpoint that no longer exists in this
-  file. If the two tiers are ever unified, update both notes together.
+  `.row` is `display: grid` with `row-gap: var(--why-item-row-gap)` set once at the base rule
+  and inherited by every breakpoint since none of them touch it, so three columns of six items
+  wraps into two even rows with that same gap for free.
 
   THERE IS NO DIVIDER BETWEEN ITEMS. A hairline with a warm glow concentrated at its top
   ran down the gap between every pair of items until 2026-08-02; it is deleted outright
@@ -915,11 +768,6 @@
   row and between the two rows alike — so the 2-row grid needed no divider reintroduced
   to "make sense": a bordered card is already its own divider on every side.
 */
-@media (min-width: 80rem) {
-  .row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 
 /*
   THE THREE-UP BREAKPOINT IS WIDTH-ONLY, AND THAT IS WRONG FOR A TALL TABLET — found while

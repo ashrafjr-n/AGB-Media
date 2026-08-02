@@ -109,7 +109,13 @@
   - NO `background`. The corner notches Team's rounded top edge leaves have to show what is
     behind them, which during the pin is WhyAgb.
 
-  Which leaves one property, for the same reason `.stage` has one.
+  CUSTOM PROPERTIES ARE THE ONE EXCEPTION to all of the above, and the media queries below
+  are exactly that: they set inherited values and nothing else, so none of them gives this
+  box a position, a stacking context, a backdrop root or a containing block. That is what
+  makes this element — the only ancestor both sections share — the right place to answer a
+  question that applies to both of them.
+
+  Which leaves one layout property, for the same reason `.stage` has one.
 */
 .closing-stage {
   /*
@@ -119,4 +125,125 @@
     from mattering.
   */
   display: flow-root;
+}
+
+/*
+  THE PIN ENVELOPES — the one place on the site that decides whether the closing pair is
+  pinned, and the only place either half of that decision is written.
+
+  WHAT THIS REPLACED, because the shape of it is the point. The same four envelopes used to
+  be written out TWICE — once in WhyAgb.module.css to turn on `position: sticky`, and again
+  in Team.module.css to turn on `--team-tuck` — eight `@media` blocks across two files
+  expressing four decisions. Both files carried a comment saying the pairs had to be kept
+  identical by hand, and named the failure if they ever drifted: a pin without its tuck parks
+  Team's rounded corner permanently on the viewport's top edge, and a tuck without its pin is
+  dead space at the top of an ordinary section. That invariant is now structural rather than
+  remembered. There is one copy of each envelope, so there is nothing left to keep in step.
+
+  HOW ONE PLACE CAN DRIVE BOTH, given a custom property cannot be set across a component
+  boundary — which is the reason the duplication existed and is worth stating, because it was
+  true and the way around it is not obvious. It cannot be set ACROSS one, but it is inherited
+  DOWN one, and `.closing-stage` is the only element that is an ancestor of both sections. So
+  the envelopes set two inherited values here and each section reads the one it needs:
+
+  - `--closing-pin-inset` is WhyAgb's `inset-block-start`. Outside every envelope it is unset
+    and that section falls back to `auto`, which is the whole trick: `position: sticky` with
+    no inset to stick to is EXACTLY a relatively positioned box — same geometry, same height,
+    same stacking context, same document height (verified by measurement against the previous
+    `position: relative`, not assumed). So WhyAgb can be unconditionally `sticky` and the
+    envelopes only decide whether it has an edge to stick to. Nothing toggles `position` any
+    more.
+  - `--closing-pinned` is a plain 0/1 flag Team multiplies its own tuck by. It is a second
+    property rather than a reuse of the first because the tuck needs arithmetic and the inset
+    needs the keyword `auto`, and no calc() produces a keyword.
+
+  WHY EACH ENVELOPE EXISTS. Sticky shows a box's first screen and no more, so anything past
+  one viewport height would be unreachable for the life of the page — each envelope is the
+  range in which WhyAgb genuinely fits one screen in whichever row form it takes there, and
+  the height term differs per band because the row form does. The mechanic itself is
+  explained at WhyAgb's own "The pin" note; the numbers and what they were measured against
+  are below, moved here with the envelopes so a gate and its evidence stay together.
+
+  PHONE (`max-width: 47.9375rem` + `min-height: 46rem`). The compact one-up item layout runs
+  ~690–715px almost flat across the phone width range — the column is narrow enough
+  everywhere that wrapping barely changes it — so this gate is a height threshold only:
+
+  | viewport | content height | fits? |
+  | --- | --- | --- |
+  | 320x568 (iPhone SE 1st gen) | ~713px | no |
+  | 375x667 (iPhone SE 2nd/3rd gen) | ~698px | no |
+  | 360x740 (a common small-Android size) | ~701px | yes — ~39px slack |
+  | 375x812 (iPhone 12/13 mini) | ~704px | yes — ~108px slack |
+  | 390x844 (iPhone 12/13/14) | ~690px | yes — ~154px slack |
+
+  46rem (736px) sits above the worst case (712.9px at 320x568) with real margin and below
+  every device that fits, so the two smallest sizes are deliberately excluded rather than
+  left to clip.
+
+  TABLET, TWO BANDS, because "fits one screen" means something different either side of the
+  row's own 64rem column-count breakpoint — the two-up tier is taller than the three-up tier
+  at the same width, so one min-height could not serve both:
+
+  | viewport | row form | natural height | fits? |
+  | --- | --- | --- | --- |
+  | 768x1024 (iPad, portrait) | two-up | 954px | yes — 70px slack |
+  | 810x1080 (iPad 10.2", portrait) | two-up | 968px | yes — 112px slack |
+  | 820x1180 (iPad Air, portrait) | two-up | 985px | yes — 195px slack |
+  | 834x1194 (iPad Pro 11", portrait) | two-up | 987px | yes — 207px slack |
+  | 1024x768 (iPad, landscape) | three-up | 644px | yes — 124px slack |
+  | 1080x810 (iPad 10.2", landscape) | three-up | 657px | yes — 153px slack |
+  | 1180x820 (iPad Air, landscape) | three-up | 661px | yes — 159px slack |
+  | 1194x834 (iPad Pro 11", landscape) | three-up | 666px | yes — 168px slack |
+  | 1280x800 (10" Android, landscape) | three-up | 658px | yes — 142px slack |
+
+  The two-up gate's `min-height: 64rem` (1024px) sits exactly at the shortest real tablet
+  portrait height — deliberately tight, because this band's real hazard is wide-but-short
+  viewports rather than narrow-but-tall ones: at 1023x900, still inside the band, natural
+  height is 906px against a 900px viewport, a 6px failure. 64rem excludes every such case
+  while admitting every iPad-family portrait size. The three-up gate's `min-height: 42rem`
+  (672px) has more room — that row runs 613–630px across 1024–1279px with a break-even near
+  609px — and is nowhere near landscape phone heights.
+
+  DESKTOP (`min-width: 80rem` + `min-height: 45rem`). 80rem is the row's own three-column
+  readability floor; 45rem (720px) is unchanged through every revision of the section,
+  including the six-across-to-3x2 swap that roughly doubled the row block's contribution.
+  Measured at the gate's tightest corner, 1280x720: natural content height 632px, ~88px of
+  slack. That is not a wide margin — if the row's copy grows, `.item`'s padding grows, or a
+  third row is added, re-measure there before trusting this corner again.
+
+  WHAT THIS DOES NOT FIX, stated plainly so the next pass does not go looking. These are
+  still four discrete envelopes, and "does the content fit one screen" is a question about
+  rendered height that CSS cannot ask. The gates are deliberately conservative, so the
+  failure mode at an untuned size is a section that scrolls normally when it could have
+  pinned — never one that pins when it cannot fit. Closing the remaining band would mean
+  measuring WhyAgb's height at runtime and toggling a flag, which is a ResizeObserver and a
+  threshold — the machinery HeroBackdrop's rewrite deleted, and not worth buying back for a
+  case only a resizing browser window reaches.
+*/
+@media (max-width: 47.9375rem) and (min-height: 46rem) {
+  .closing-stage {
+    --closing-pinned: 1;
+    --closing-pin-inset: 0px;
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 63.9375rem) and (min-height: 64rem) {
+  .closing-stage {
+    --closing-pinned: 1;
+    --closing-pin-inset: 0px;
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 79.9375rem) and (min-height: 42rem) {
+  .closing-stage {
+    --closing-pinned: 1;
+    --closing-pin-inset: 0px;
+  }
+}
+
+@media (min-width: 80rem) and (min-height: 45rem) {
+  .closing-stage {
+    --closing-pinned: 1;
+    --closing-pin-inset: 0px;
+  }
 }

@@ -107,13 +107,27 @@
     than landing exactly on the viewport's edge, where a half-pixel of rounding would leave
     it just visible.
 
-    0 BY DEFAULT, and set only inside the gate at the foot of this file — the same
-    `80rem x 45rem` envelope that enables WhyAgb's pin. Outside it there is no pin, Team is
-    an ordinary section in flow that is already taller than the screen, and its top edge is
-    far above the viewport by the end of the page without any help. Adding height there
-    would only push this section's tuned spacing down for nothing.
+    0 UNLESS THE PAIR IS PINNED, and this section no longer decides that for itself. It used
+    to: four media queries at the foot of this file set the tuck, and they were hand-kept
+    copies of the four that enabled WhyAgb's pin in WhyAgb.module.css — one decision written
+    out twice across two files, with a comment in each telling the next reader to keep them
+    identical. `--closing-pinned` is that decision, set once on `.closing-stage` (the only
+    element that is an ancestor of both sections) in pages/HomePage.module.css and inherited
+    down to here. All four media queries in this file are gone; a tuck can no longer disagree
+    with the pin it exists to serve, because there is only one of it.
+
+    IT IS A 0/1 FLAG MULTIPLIED BY THE HEIGHT, rather than the height being handed down
+    directly, and that is forced rather than stylistic: a custom property's `var()`s are
+    resolved on the element that DECLARES it, so a `--team-tuck` written on `.closing-stage`
+    would try to read `--team-radius` there and find nothing. Multiplying a unitless inherited
+    flag by an expression built from this section's own tokens keeps the arithmetic here,
+    where the radius lives, and sends only the yes/no across the boundary.
+
+    Outside every envelope the flag is unset, this resolves to `calc(0 * …)` — an exact 0 —
+    and the section is an ordinary one in flow that is already taller than the screen, so its
+    top edge clears the viewport by the end of the page without any help.
   */
-  --team-tuck: 0px;
+  --team-tuck: calc(var(--closing-pinned, 0) * (var(--team-radius) + 0.25rem));
 
   position: relative;
   z-index: var(--z-base);
@@ -717,13 +731,14 @@
     cover scale, and this ground is footage that continues into nothing, centred, with no
     seam to keep.
 
-    --team-tuck IS NOT ALWAYS 0px AT THIS WIDTH ANY MORE — it is set inside either pin
-    envelope at the foot of this file, and one of those two is now a phone-width one.
-    On a phone tall enough to clear it (`min-height: 46rem`), the calc these replace
-    still carries the tuck's few extra pixels the same way the desktop case does; on a
-    shorter phone the tuck is genuinely 0px and the calc resolves to a flat 100vh, same
-    as before. Either way `block-size: 100%` is what makes both layers follow the
-    section's own actual height rather than a value that silently stops matching it.
+    --team-tuck IS NOT ALWAYS 0px AT THIS WIDTH — one of the pin envelopes is a phone-width
+    one (see `--team-tuck` at the top of this file, and the envelopes themselves on
+    `.closing-stage` in pages/HomePage.module.css). On a phone tall enough to clear it
+    (`min-height: 46rem`) the calc these replace still carries the tuck's few extra pixels
+    the same way the desktop case does; on a shorter phone the flag is unset, the tuck
+    resolves to an exact 0 and the calc is a flat 100vh, same as before. Either way
+    `block-size: 100%` is what makes both layers follow the section's own actual height
+    rather than a value that silently stops matching it.
 
     THE COST, stated rather than hidden: the pane's backdrop-filter now covers a box about
     a sixth taller than the viewport, and the video is scaled to cover it. Only the
@@ -765,76 +780,5 @@
   */
   .row {
     flex-wrap: nowrap;
-  }
-}
-
-/*
-  THE TUCK, ENABLED ONLY WHERE THE PIN IS — and there are now TWO such envelopes, not
-  one: the original desktop pair below, and a second, independent phone-width pair
-  added on request so Team's slide-over reads the same on mobile as it does on
-  desktop rather than falling back to plain scroll there.
-
-  THESE ARE BOTH A COPY OF THE PAIRS IN WhyAgb.module.css AND MUST STAY IDENTICAL, each
-  to its own counterpart. They are one decision per envelope — "is this pairing pinned
-  at this width?" — expressed in two files because it applies to two elements in two
-  components, and a custom property cannot be set across that boundary. If either
-  envelope moves, it moves in both files; the argument for both pairs of numbers is
-  written out at the WhyAgb end, which is where the pin itself lives.
-
-  THE DESKTOP WIDTH TERM HAS MOVED TWICE. 64rem to 90rem on 2026-08-02, when WhyAgb's
-  grid became a six-across row with a CTA banner closing it; then 90rem to 80rem the
-  same day, once that banner was removed and WhyAgb's own row-readability argument —
-  not the banner — turned out to be what actually set the floor. See the note at
-  WhyAgb's own desktop pin media query for the full arithmetic; "fits one screen" there
-  means "is in its 3 x 2 row form", which starts at 80rem.
-
-  THE PHONE ENVELOPE IS A HEIGHT GATE ONLY, no separate width history: it shares the
-  same `max-width: 47.9375rem` every other phone rule in this codebase uses, and the
-  `min-height: 46rem` figure comes from measuring WhyAgb's own compact phone layout
-  against several real device heights — see the table at WhyAgb's own phone pin media
-  query. "Fits one screen" there means fitting that compact layout, not the six-across
-  or 3 x 2 row forms, which never apply at phone widths at all.
-
-  What breaks if either pair drifts: a tuck without its matching pin is dead space at
-  the top of an ordinary section (24px at the value here), and a pin without its
-  matching tuck parks the rounded corner permanently on the viewport's top edge at the
-  end of the document — the bug this exists to fix, in either envelope.
-
-  Everything downstream is a calc against this one value: the section's height, its
-  block-start padding, and both full-bleed layers' heights. Nothing else is
-  conditional, and nothing about `.team`'s own phone-width sizing above (the smaller
-  circles, the header clearance) needs to change for either envelope — this section
-  is not the one that has to fit a screen; WhyAgb is, and only WhyAgb's own layout was
-  compressed to make that true at phone widths.
-*/
-@media (min-width: 80rem) and (min-height: 45rem) {
-  .team {
-    --team-tuck: calc(var(--team-radius) + 0.25rem);
-  }
-}
-
-@media (max-width: 47.9375rem) and (min-height: 46rem) {
-  .team {
-    --team-tuck: calc(var(--team-radius) + 0.25rem);
-  }
-}
-
-/*
-  THE TWO TABLET ENVELOPES, copied from WhyAgb.module.css and matching it exactly — see the
-  measurement table there for the argument. One is the two-up row's shape (iPad-family
-  portrait, roughly 768–1023px wide), the other the three-up row's (roughly 1024–1279px wide,
-  which also covers most tablets in landscape). Keep both pairs identical to their WhyAgb
-  counterparts; a tuck without its matching pin parks Team's rounded corner on the viewport's
-  top edge for the rest of the document, and a pin without its matching tuck is dead space.
-*/
-@media (min-width: 48rem) and (max-width: 63.9375rem) and (min-height: 64rem) {
-  .team {
-    --team-tuck: calc(var(--team-radius) + 0.25rem);
-  }
-}
-
-@media (min-width: 64rem) and (max-width: 79.9375rem) and (min-height: 42rem) {
-  .team {
-    --team-tuck: calc(var(--team-radius) + 0.25rem);
   }
 }
