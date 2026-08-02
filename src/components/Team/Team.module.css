@@ -717,9 +717,13 @@
     cover scale, and this ground is footage that continues into nothing, centred, with no
     seam to keep.
 
-    --team-tuck is 0px at this width (it is set only inside the pin's envelope at the foot
-    of this file), so the calc these replace resolves to a flat 100vh here and there is
-    nothing left to carry.
+    --team-tuck IS NOT ALWAYS 0px AT THIS WIDTH ANY MORE — it is set inside either pin
+    envelope at the foot of this file, and one of those two is now a phone-width one.
+    On a phone tall enough to clear it (`min-height: 46rem`), the calc these replace
+    still carries the tuck's few extra pixels the same way the desktop case does; on a
+    shorter phone the tuck is genuinely 0px and the calc resolves to a flat 100vh, same
+    as before. Either way `block-size: 100%` is what makes both layers follow the
+    section's own actual height rather than a value that silently stops matching it.
 
     THE COST, stated rather than hidden: the pane's backdrop-filter now covers a box about
     a sixth taller than the viewport, and the video is scaled to cover it. Only the
@@ -765,29 +769,51 @@
 }
 
 /*
-  THE TUCK, ENABLED ONLY WHERE THE PIN IS.
+  THE TUCK, ENABLED ONLY WHERE THE PIN IS — and there are now TWO such envelopes, not
+  one: the original desktop pair below, and a second, independent phone-width pair
+  added on request so Team's slide-over reads the same on mobile as it does on
+  desktop rather than falling back to plain scroll there.
 
-  THESE TWO CONDITIONS ARE A COPY OF THE ONES IN WhyAgb.module.css AND MUST STAY IDENTICAL.
-  They are one decision — "is this pairing pinned?" — expressed in two files because it
-  applies to two elements in two components, and a custom property cannot be set across
-  that boundary. If the envelope moves, it moves in both places; the argument for the two
-  numbers is written out at the WhyAgb end, which is where the pin itself lives.
+  THESE ARE BOTH A COPY OF THE PAIRS IN WhyAgb.module.css AND MUST STAY IDENTICAL, each
+  to its own counterpart. They are one decision per envelope — "is this pairing pinned
+  at this width?" — expressed in two files because it applies to two elements in two
+  components, and a custom property cannot be set across that boundary. If either
+  envelope moves, it moves in both files; the argument for both pairs of numbers is
+  written out at the WhyAgb end, which is where the pin itself lives.
 
-  THE WIDTH TERM HAS MOVED TWICE. 64rem to 90rem on 2026-08-02, when WhyAgb's grid became
-  a six-across row with a CTA banner closing it; then 90rem to 80rem the same day, once
-  that banner was removed and WhyAgb's own row-readability argument — not the banner —
-  turned out to be what actually set the floor. See the note at WhyAgb's own pin media
-  query for the full arithmetic; "fits one screen" still means "is in its six-across row
-  form", and that form now starts at 80rem rather than 90.
+  THE DESKTOP WIDTH TERM HAS MOVED TWICE. 64rem to 90rem on 2026-08-02, when WhyAgb's
+  grid became a six-across row with a CTA banner closing it; then 90rem to 80rem the
+  same day, once that banner was removed and WhyAgb's own row-readability argument —
+  not the banner — turned out to be what actually set the floor. See the note at
+  WhyAgb's own desktop pin media query for the full arithmetic; "fits one screen" there
+  means "is in its 3 x 2 row form", which starts at 80rem.
 
-  What breaks if they drift: the tuck without the pin is 24px of dead space at the top of an
-  ordinary section, and the pin without the tuck parks the rounded corner permanently on the
-  viewport's top edge at the end of the document — the bug this exists to fix.
+  THE PHONE ENVELOPE IS A HEIGHT GATE ONLY, no separate width history: it shares the
+  same `max-width: 47.9375rem` every other phone rule in this codebase uses, and the
+  `min-height: 46rem` figure comes from measuring WhyAgb's own compact phone layout
+  against several real device heights — see the table at WhyAgb's own phone pin media
+  query. "Fits one screen" there means fitting that compact layout, not the six-across
+  or 3 x 2 row forms, which never apply at phone widths at all.
+
+  What breaks if either pair drifts: a tuck without its matching pin is dead space at
+  the top of an ordinary section (24px at the value here), and a pin without its
+  matching tuck parks the rounded corner permanently on the viewport's top edge at the
+  end of the document — the bug this exists to fix, in either envelope.
 
   Everything downstream is a calc against this one value: the section's height, its
-  block-start padding, and both full-bleed layers' heights. Nothing else is conditional.
+  block-start padding, and both full-bleed layers' heights. Nothing else is
+  conditional, and nothing about `.team`'s own phone-width sizing above (the smaller
+  circles, the header clearance) needs to change for either envelope — this section
+  is not the one that has to fit a screen; WhyAgb is, and only WhyAgb's own layout was
+  compressed to make that true at phone widths.
 */
 @media (min-width: 80rem) and (min-height: 45rem) {
+  .team {
+    --team-tuck: calc(var(--team-radius) + 0.25rem);
+  }
+}
+
+@media (max-width: 47.9375rem) and (min-height: 46rem) {
   .team {
     --team-tuck: calc(var(--team-radius) + 0.25rem);
   }

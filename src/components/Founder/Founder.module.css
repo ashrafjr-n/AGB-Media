@@ -745,6 +745,62 @@
   }
 
   /*
+    MOBILE-ONLY REORDER: name, THEN portrait, THEN bio, THEN facts — the portrait moves
+    up from last to directly after the name, on request. Desktop's 3fr/2fr two-column
+    split (see the 48rem block below) is untouched: nothing here runs above 47.9375rem.
+
+    THE TECHNIQUE. `.profile` wraps all four text pieces as one flex column so desktop
+    can treat it as a single grid track opposite `.portrait-frame` (see the note at
+    .profile above) — which is exactly what makes a plain reorder impossible: portrait
+    is `.intro`'s OTHER grid child, a sibling of the whole `.profile` box, not of any one
+    thing inside it, so no `order` value on either top-level item can weave it in between
+    two of profile's own children.
+
+    `display: contents` is the fix, and it is scoped to this media query alone. It does
+    not hide `.profile` or its content — it removes only `.profile`'s OWN box (and with
+    it, only here, its flex context and its `gap`), promoting its four children to be
+    direct items of `.intro`'s grid instead, as if the markup had been flattened. They
+    join `.portrait-frame` as five siblings in what is already a single-column grid at
+    this width, so each explicit `order` below is exactly the mobile reading order
+    wanted; nothing needs restructuring in Founder.jsx to get it. Above 47.9375rem this
+    rule does not apply, `.profile` is a normal flex box again, and `.intro`'s grid goes
+    back to its original two items — desktop is bit-for-bit what it was.
+
+    `.intro`'s own gap steps down to match `.profile`'s former one (the tight rhythm
+    eyebrow/name/bio/facts always had) now that it is the ONE gap governing all five
+    promoted items rather than two. `.portrait-frame` keeps its own `margin-block-start`
+    unchanged, which is what still reads as a deliberate beat before the portrait rather
+    than just another item in the same tight rhythm as the text around it.
+  */
+  .profile {
+    display: contents;
+  }
+
+  .intro {
+    gap: clamp(0.4rem, 1.2vh, 0.9rem);
+  }
+
+  .intro .eyebrow {
+    order: 1;
+  }
+
+  .intro .name {
+    order: 2;
+  }
+
+  .portrait-frame {
+    order: 3;
+  }
+
+  .intro .bio {
+    order: 4;
+  }
+
+  .intro .facts {
+    order: 5;
+  }
+
+  /*
     THE RAIL TURNS VERTICAL, rail on the left of each entry rather than a row of five
     columns under a horizontal line — a phone has nowhere near the width for five columns
     and the milestone text to both stay legible.

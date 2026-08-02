@@ -537,12 +537,21 @@
     this measurement before trusting the pin at this corner again — 88px is not a wide
     margin to erode by editing without checking.
 
-  THE SAME TWO CONDITIONS ARE REPEATED IN Team.module.css, where they enable `--team-tuck` —
-  the extra block-start height that carries Team's rounded corner off the top of the screen
-  once it has finished arriving. They are one decision written twice because it applies to
-  two elements in two components and a custom property cannot cross that boundary. Keep them
-  identical: the pin without the tuck leaves Team's corner parked on the viewport's top edge
-  for the rest of the document, and the tuck without the pin is dead space.
+  THIS IS ONE OF TWO PIN ENVELOPES NOW, not the only one — a second, independent
+  `max-width` gate for phone widths lives further down this file, added on request so
+  Team's slide-over also reads on mobile rather than falling back to plain scroll
+  there. It does not touch this one: the two are separate `@media` blocks with no
+  shared width range, so nothing about the desktop gate's own number changes. See that
+  block for its own argument.
+
+  THE SAME TWO CONDITIONS — BOTH ENVELOPES OF THEM — ARE REPEATED IN Team.module.css,
+  where they enable `--team-tuck` — the extra block-start height that carries Team's
+  rounded corner off the top of the screen once it has finished arriving. They are one
+  decision written twice (per envelope) because it applies to two elements in two
+  components and a custom property cannot cross that boundary. Keep each pair
+  identical: a pin without its matching tuck leaves Team's corner parked on the
+  viewport's top edge for the rest of the document, and a tuck without its matching pin
+  is dead space.
 
   THE ONE COST, stated rather than hidden: this section's `backdrop-filter` and Team's are
   both live for the full screen of scrolling in which Team is rising, where before they only
@@ -564,70 +573,241 @@
   PHONE ONLY — the exact complement of the `min-width: 48rem` block below, so no width
   gets both and none gets neither. Nothing at tablet or desktop is touched here.
 
-  THE SECTION FITS ITS OWN GROUND AGAIN. This is the one place on the page where
-  overflowing 100vh is not merely untidy but visibly wrong, and the reason is in this
-  file's own notes: `.backdrop` and `.glass` are a flat 100vh pinned to the section's
-  start, deliberately, because the image is half of a picture whose other half is the
-  Founder's and the seam only survives while both are drawn at one screen. So the ground
-  cannot follow the content the way About's does — the content has to come back to the
-  ground. At 390x844 the section measured 1166px against the old grid, and the row runs
-  taller still, so anything past the photograph's own screen falls onto `.why`'s own
-  opaque --color-black same as before.
+  THIS BLOCK NOW DOES TWO JOBS, NOT ONE, and the second is new: it still tunes type and
+  space for a phone-width column, and it now ALSO compresses the whole section enough
+  to fit one phone screen, because a second, phone-width pin (below, its own media
+  query) depends on that fit the same way the desktop pin already depends on the row
+  fitting one screen at 80rem. That is why the values here read tighter than a plain
+  "smaller version of the desktop dial" would need — they were cut specifically to buy
+  back the height the pin's own budget spends. See that media query for the actual
+  measurement.
 
-  EVERY VALUE BELOW IS TYPE OR THE SPACE BETWEEN TYPE, and they were tuned as one set
-  against 390x844 and 375x812. The row is a single stacked column at this width — it does
-  not exist as a six-across row here — so nothing here interacts with the pin or the
-  seam itself.
+  THE ITEM ALSO CHANGES SHAPE HERE, not just size — see the note at `.item` below for
+  why a phone gets a compact horizontal row (icon left, copy beside it) rather than the
+  taller vertically-centred card the tablet and desktop tiers keep.
 
-  WHY THE HEADING TAKES THE LARGEST CUT. The base size is already down to --text-2xl (see
-  .title), and at that width a sentence this long still wants a shorter line than the
-  desktop measure gives it. --text-xl keeps the same reasoning the desktop cut used: a
-  display heading a few characters narrower per line reads as a column of fragments rather
-  than a sentence.
+  THE GROUND CAN STILL FALL SHORT OF THE SECTION HERE, though by far less than before
+  this pass — see the `.backdrop, .glass { block-size: 100% }` override at the foot of
+  this block for the fix and the full argument for why it is safe. `.backdrop` and
+  `.glass` are still a flat 100vh everywhere ABOVE this breakpoint, deliberately,
+  because the image is half of a picture whose other half is the Founder's and the seam
+  between them only survives while both are drawn at one screen. Below the pin's own
+  height gate — a phone short enough that even this compact form does not fit one
+  screen — the section still runs past 100vh and the fixed-height ground would still
+  fall short of it without that override.
+
+  WHY THE HEADING TAKES A SMALLER CUT AGAIN. It was already down from the desktop
+  --text-2xl to --text-xl; it is a flat 1rem now, smaller still, for the same reason
+  every other value in this block came down — see the note above.
 */
 @media (max-width: 47.9375rem) {
   .why {
     /*
-      The height dials, all down. The vh middle terms come down with the rem
-      ceilings rather than instead of them — the ratios between them are what make the
-      section read as heading / row / next, and cutting one alone would collapse a
-      level of that hierarchy rather than tighten the whole.
+      TIGHTENED AGAIN, PAST THE PREVIOUS PHONE VALUES — on request, so the section's
+      content can fit one phone screen and the pin below (a new addition) can safely
+      apply here the same way it already does on desktop. These are no longer just "a
+      smaller version of the desktop dial" — they, the row and the item rules below are
+      one compact mobile treatment, measured as a set. See the pin's own media query
+      at the foot of this file for the measurement this was tuned against.
     */
-    --why-pad: clamp(1.25rem, 3.6vh, 2.5rem);
-    --why-opening-gap: var(--space-sm);
-    --why-item-row-gap: clamp(1.5rem, 3.2vh, 2.25rem);
+    --why-pad: clamp(0.85rem, 2vh, 1.25rem);
+    --why-opening-gap: 0.6rem;
+    --why-item-row-gap: 0.4rem;
   }
 
   .title {
     /*
-      26ch rather than the desktop 34ch. The cap is not doing the wrapping here — the
-      column is only ~342px wide, so the measure is already narrower than either value —
-      but leaving 34ch would mean the cap silently stops applying at this width, and a
-      declared measure that never binds is worse than one sized to the layout it is in.
+      28ch rather than the desktop 34ch, and smaller again than this section's own
+      previous phone cut — the column is narrower than either measure already, so
+      neither is doing the wrapping; both exist so the cap does not silently stop
+      applying at this width (a declared measure that never binds is worse than one
+      sized to the layout it is in).
     */
-    max-inline-size: 26ch;
+    max-inline-size: 28ch;
 
-    font-size: var(--text-xl);
-    /* A touch more than the desktop 1.1: at four-plus lines the block needs the air
+    font-size: 1rem;
+    /* A touch more than the desktop 1.1: at three-plus lines the block needs the air
        inside it more than it needs the extra tightness. */
     line-height: 1.15;
   }
 
   /*
-    No override for .index here any more — the base clamp's own floor (0.9rem, set when
-    the numeral was sized down, see the note there) is already below what this rule used
-    to force it to, since a phone's narrow viewport pins the clamp's vw term to that
-    floor without help.
+    THE ITEM BECOMES A COMPACT HORIZONTAL ROW HERE, icon on the left and copy beside it
+    — the same reflow Founder's own career timeline already does for its nodes at this
+    width (see `.timeline-item` in Founder.module.css), applied to a different card
+    shape. On request, so six of these plus the heading can fit one phone screen rather
+    than the far taller vertically-centred card the desktop and tablet tiers use.
+
+    A GRID, NOT A FLEX ROW, and that is what lets this run with zero JSX changes.
+    WhyAgb.jsx renders `.index`, `.icon-ring`, `.name`, `.rule` and `.description` as
+    five flat siblings inside `.item` — there is no wrapper around the four text pieces
+    to flex against the icon as a single unit. `.item` becomes a two-column grid
+    instead (`auto` for the icon, `1fr` for everything else); `.icon-ring` alone spans
+    every row of the second column via `grid-row: 1 / -1`, and the four text pieces
+    simply fall into that column in DOM order, no `order` and no markup change needed.
+
+    LEFT-ALIGNED, not centred — the tablet/desktop card centres everything under the
+    icon because the icon sits above the text there; beside the text, centring would
+    ragged both edges of the wrapped description for no gain. `.rule` is dropped
+    outright rather than reflowed: it is a purely decorative caption mark
+    (`aria-hidden`) with no meaning beyond marking where the title ends, and next to a
+    left-aligned title-then-description pair that boundary is already the line break —
+    the mark became redundant rather than merely small.
   */
+  .row {
+    row-gap: 0.4rem;
+  }
+
+  .item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.65rem;
+    align-items: start;
+
+    padding: 0.4rem 0.65rem;
+  }
+
+  .index {
+    grid-column: 2;
+    display: inline;
+    margin-block-end: 0;
+    margin-inline-end: 0.35rem;
+    font-size: 0.7rem;
+  }
 
   .icon-ring {
-    inline-size: 2.5rem;
-    block-size: 2.5rem;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: center;
+    margin-block-end: 0;
+
+    inline-size: 1.9rem;
+    block-size: 1.9rem;
   }
 
   .icon {
-    inline-size: 1rem;
-    block-size: 1rem;
+    inline-size: 0.85rem;
+    block-size: 0.85rem;
+  }
+
+  .name {
+    grid-column: 2;
+    display: inline;
+    align-self: auto;
+    margin-block-end: 0;
+
+    font-size: 0.8rem;
+    line-height: 1.2;
+    text-align: start;
+  }
+
+  .rule {
+    display: none;
+  }
+
+  .description {
+    grid-column: 2;
+    align-self: auto;
+    margin-block-start: 0.15rem;
+
+    font-size: 0.65rem;
+    line-height: 1.4;
+    text-align: start;
+  }
+
+  /*
+    THE GROUND FOLLOWS THE SECTION HERE, WHERE ABOVE 48REM IT IS ONE SCREEN — the exact
+    fix Founder.module.css already carries for the identical problem on its own ground;
+    read the argument there in full before touching this, since it is not repeated here.
+
+    THE SYMPTOM, on request, and smaller now than it used to be. Both layers are
+    `block-size: 100vh` pinned to the section's block start (see `.backdrop` / `.glass`
+    above). Before the compact item layout and the tightened spacing above existed, the
+    section's content ran to roughly 1166px against an 844px phone viewport — well past
+    one screen, so the ground stopped 250-plus px short of the section's own end and
+    everything past that line fell onto `.why`'s own flat `--color-black` rather than
+    the photograph. The compact form closes most of that gap on its own (see the pin's
+    own media query below for the measured figure, around 700px against most phone
+    heights), but not all of it on every device — a phone short enough to fall under
+    the pin's own height gate is, by construction, one this compact form still does not
+    fit either. `block-size: 100%` makes both layers follow `.why`'s own actual
+    rendered height instead of a fixed viewport height, closing whatever gap remains,
+    the same way Founder's mobile override does.
+
+    WHY IT IS SAFE HERE, for the same reason it is safe on the Founder's side of the
+    seam. The two images are one picture cut in two and only line up while both are
+    drawn at the same cover scale (see `.backdrop` above) — but on a portrait phone that
+    scale is already forced apart by geometry alone: cover scales by whichever axis needs
+    more, which on a box taller than roughly 5:4 is the block axis, so each half scales
+    by its OWN box height divided by its OWN source height (680 for founder.webp, a
+    different value for why.webp), and those two ratios already disagree the moment
+    either box's height is anything other than identical to the other's. Founder's own
+    mobile override already changes its box height away from WhyAgb's fixed 100vh, so
+    the seam is already broken on every phone before this rule is added — this trades
+    nothing that still worked for the removal of a gap that was plainly visible instead.
+
+    `object-position: center top` is untouched and still does its half of the job: the
+    image's first row stays on the section's block-start edge whatever the box's height,
+    same as before — only how far down the box now reaches has changed.
+  */
+  .backdrop,
+  .glass {
+    block-size: 100%;
+  }
+}
+
+/*
+  THE PIN, EXTENDED TO PHONE WIDTHS — on request, so Team's slide-over reads the same
+  on mobile as it does on desktop rather than falling back to plain scroll. This is a
+  SECOND envelope, not a widened version of the desktop one: the desktop gate
+  (`min-width: 80rem and min-height: 45rem`, above) stays exactly as it was, and this
+  is an independent `max-width: 47.9375rem and min-height: …` alongside it — the tablet
+  band between the two (48rem to 79.9375rem) still gets no pin at all, exactly as
+  before, because the row's two-up and three-up wrapped tiers were never measured
+  pin-safe and nothing here changes that.
+
+  WHY A HEIGHT GATE IS STILL NEEDED, even after the compact phone layout above. "Fits
+  one screen" is the same requirement the desktop gate enforces and for the same
+  reason (see the note at the desktop gate: sticky cannot reveal more of an
+  over-height element as you scroll, so anything past one viewport-height would be
+  permanently hidden while pinned and then covered by Team before ever being seen).
+  The compact item layout closes most of the gap between this section's content and a
+  phone screen, but not all of it on every device — it does not fit a screen as short
+  as the classic 375x667 form factor.
+
+  **MEASURED, the same way the desktop gate was.** A standalone static HTML
+  reproduction of `.why`'s opening block and the compact phone row (real Manrope, real
+  copy, rendered inside a same-origin iframe sized to an exact device viewport rather
+  than the outer browser window, since this environment's own window has a minimum
+  size larger than a phone) was checked against several common phone dimensions:
+
+  | viewport | content height | fits? |
+  | --- | --- | --- |
+  | 320x568 (iPhone SE 1st gen) | ~713px | no |
+  | 375x667 (iPhone SE 2nd/3rd gen) | ~698px | no |
+  | 360x740 (a common small-Android size) | ~701px | yes — ~39px slack |
+  | 375x812 (iPhone 12/13 mini) | ~704px | yes — ~108px slack |
+  | 390x844 (iPhone 12/13/14) | ~690px | yes — ~154px slack |
+
+  Content height is essentially flat across widths (~690–715px) — this column is
+  narrow enough everywhere in the phone range that wrapping barely changes — so the
+  gate is a HEIGHT threshold only, no width term beyond the block's own `max-width`.
+  **`min-height: 46rem` (736px)** sits above the worst measured case (712.9px at
+  320x568) with real margin and below every device that fits, so the two smallest
+  reference sizes above are deliberately excluded rather than left to clip. If the
+  row's copy grows or the compact item rules above change, re-run this measurement
+  before trusting the gate at this threshold again — the table above is what it was
+  chosen against, not a permanent fact about the row.
+
+  THE SAME CONDITION IS REPEATED IN Team.module.css, for `--team-tuck`, for the
+  identical reason the desktop pair is repeated there: one decision, two components,
+  and a custom property cannot cross that boundary. Keep the two media queries
+  identical in both files.
+*/
+@media (max-width: 47.9375rem) and (min-height: 46rem) {
+  .why {
+    position: sticky;
+    inset-block-start: 0;
   }
 }
 
