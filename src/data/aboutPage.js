@@ -71,7 +71,7 @@ export const sections = [
     title: 'Who We Are',
     body: [
       'An arts and media production house based in Doha, driven by a long record of experience in theatre, drama, television and visual production. We begin with the idea and carry it through to the screen or the stage, working through teams assembled specifically for each project to secure the highest standards of quality and flexibility.',
-      'Our real capital is the artistic career of our founder, the veteran Qatari artist Abdullah Ghayfan; the expertise of our Chief Executive Officer, writer and director Nael Al-Jarabaa; and the professional network the two of them have built across Qatar, the Gulf and the wider Arab world.',
+      'Our real capital is the artistic career of our founder, the veteran Qatari artist Abdullah Ghayfan; the expertise of our Chief Executive Officer, writer and director Nael Al-Jarabah; and the professional network the two of them have built across Qatar, the Gulf and the wider Arab world.',
       'We offer the full spectrum of visual services: from cinema, television drama and theatre, to animation, visual effects and motion graphics, through production, execution and post-production, as well as professional training programmes. The divisions presented in this profile represent part of our capabilities rather than a complete account of the company; we work across everything related to visual content, according to what each project requires.',
     ],
   },
@@ -100,7 +100,7 @@ export const sections = [
     title: 'Our Record',
     body: [
       'Our true record lies not in what we own today, but in what we have achieved along the demanding road of art, across decades of practice and dedication.',
-      'The journey began with the artist Abdullah Ghayfan in 1976, when he entered the world of art through its widest gate. It continues today through the expertise of our team, under an executive management led by writer and director Nael Al-Jarabaa, who entered arts production in 1999.',
+      'The journey began with the artist Abdullah Ghayfan in 1976, when he entered the world of art through its widest gate. It continues today through the expertise of our team, under an executive management led by writer and director Nael Al-Jarabah, who entered arts production in 1999.',
       'It has been a journey across countries and cities — one that has written a number of different success stories and left a clear mark everywhere we have set foot. We have founded channels that were a landmark in their time, trained technical teams that went on to become a mainstay of content production, and established animation projects that succeeded and kept on succeeding.',
     ],
     /*

@@ -174,16 +174,16 @@
   */
   --color-gold-veil: rgba(201, 112, 20, 0.1);
 
-  /* --- The /about page's ground, now shared by /team/nael-al-jarabaa ---- */
+  /* --- The /about page's ground, now shared by /team/nael-al-jarabah ---- */
 
   /*
     THE ONE GROUND TONE ON THE SITE THAT IS NOT --color-black, and it is deliberate
     rather than a drift. Two routes paint it now — /about and the CEO's profile page
-    at /team/nael-al-jarabaa — and both for the same reason stated below.
+    at /team/nael-al-jarabah — and both for the same reason stated below.
 
     Everything under `/` is a single near-black tone end to end — that is the rule the
     translucent-surface note above exists to protect, and it is unchanged. /about and
-    /team/nael-al-jarabaa are both separate routes with no shared edge, no shared
+    /team/nael-al-jarabah are both separate routes with no shared edge, no shared
     scroll and no surface composited against a home page section, so there is no seam
     for a second ground tone to show up in either one. Each reads as a different room
     in the same building — and, since both use this exact token rather than their own

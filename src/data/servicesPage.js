@@ -132,7 +132,7 @@ export const specialisedUnits = [
   data/founderPage.js's `bio` uses, so ServicesPage.jsx can render each as its own <p>
   in the site's usual paragraph rhythm.
 
-  THE ATTRIBUTION SPELLS THE NAME "Al-Jarabaa" — data/naelPage.js's own spelling, which
+  THE ATTRIBUTION SPELLS THE NAME "Al-Jarabah" — data/naelPage.js's own spelling, which
   that file documents as the source of record over Team.jsx's differently-spelled
   "Al-Jarabah". This byline follows the source of record for the same reason.
 */
@@ -141,7 +141,7 @@ export const animationEyebrow = 'Featured'
 
 export const animationTitle = 'Animation'
 
-export const animationByline = 'Written by CEO Nael Al-Jarabaa'
+export const animationByline = 'Written by CEO Nael Al-Jarabah'
 
 export const animationBody = [
   'Our experience in the field of animation dates back to 1999 with the Salah al-Din al-Ayyubi animated project produced by Reman Continuous Development Company. This was followed by the film Al-La\'na (The Curse), produced by Nared Animation in 2002, during which we trained 21 animators — many of whom have since become leading figures in Arab animation production.',

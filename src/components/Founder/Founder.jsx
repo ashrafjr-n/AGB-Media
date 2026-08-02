@@ -354,7 +354,7 @@ function Founder() {
         shared/Button.module.css that carries that; nothing about it is styled here.
 
         WIRED TO /founder — a dedicated profile page for Abdullah Ghayfan, the same close
-        structural clone of NaelPage.jsx that /team/nael-al-jarabaa is (see
+        structural clone of NaelPage.jsx that /team/nael-al-jarabah is (see
         pages/AbdullahPage.jsx). This used to be `to="#"`, a placeholder with a comment
         saying to wire it up once that page existed; it does now.
 

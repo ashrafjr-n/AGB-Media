@@ -17,7 +17,7 @@ import {
 import styles from './AbdullahPage.module.css'
 
 /*
-  /founder — THE SITE'S SIXTH ROUTE, and the second (after /team/nael-al-jarabaa) that is
+  /founder — THE SITE'S SIXTH ROUTE, and the second (after /team/nael-al-jarabah) that is
   not linked from navLinks.js. It is a close structural clone of NaelPage.jsx — same
   masthead treatment, same --about-ground background, same section layout, same portrait
   framing — built for the Founder's own profile the same way that page was built for the

@@ -16,7 +16,7 @@ import {
 import styles from './NaelPage.module.css'
 
 /*
-  /team/nael-al-jarabaa — THE SITE'S FIFTH ROUTE, and the first that is not linked
+  /team/nael-al-jarabah — THE SITE'S FIFTH ROUTE, and the first that is not linked
   from navLinks.js. It is reached one way only: clicking the CEO's circle in the home
   page's Team section (Team.jsx wraps his portrait and name in a <Link> to this path).
   That is deliberate rather than an oversight — this is a profile page for one person,
@@ -89,7 +89,7 @@ function NaelPage() {
                 <img
                   className={styles.portrait}
                   src={portrait}
-                  alt="Nael Al-Jarabaa"
+                  alt="Nael Al-Jarabah"
                   loading="eager"
                   decoding="async"
                 />

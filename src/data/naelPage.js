@@ -1,5 +1,5 @@
 /*
-  The /team/nael-al-jarabaa page's copy, as data — matching the convention
+  The /team/nael-al-jarabah page's copy, as data — matching the convention
   data/aboutPage.js established: copy lives here rather than inline in the component
   because this is a dense multi-section profile (a name plate, a biography, and five
   further categories of credits), and burying that much text inside the layout would
@@ -8,7 +8,7 @@
   EVERY FIELD BELOW IS VERBATIM from the brief that commissioned this page —
   transcribed directly, not reworded, not reordered, and not cross-checked against
   Team.jsx's own (differently spelled) "Nael Al-Jarabah" — this file uses the
-  spelling the brief gives throughout, "Al-Jarabaa", because that is what was
+  spelling the brief gives throughout, "Al-Jarabah", because that is what was
   supplied as the source of record for this page. The two spellings are a pre-existing
   inconsistency in the codebase (Team.jsx predates this page) and are not reconciled
   here; that is a separate edit if the site ever wants one spelling everywhere.
@@ -26,7 +26,7 @@
 */
 
 /*
-  THE NAME PLATE, AS ONE VERBATIM STRING. "Nael Al-Jarabaa — Writer, Director &
+  THE NAME PLATE, AS ONE VERBATIM STRING. "Nael Al-Jarabah — Writer, Director &
   Executive Producer — CEO of AGB Media" is exactly the brief's own "Name & Title"
   line, split on ' — ' at render time in NaelPage.jsx rather than retyped as separate
   fields — a single source string is what guarantees the page can never drift from
@@ -34,7 +34,7 @@
   edit at a time.
 */
 export const nameTitle =
-  'Nael Al-Jarabaa — Writer, Director & Executive Producer — CEO of AGB Media'
+  'Nael Al-Jarabah — Writer, Director & Executive Producer — CEO of AGB Media'
 
 export const bio =
   'His experience in artistic production has extended since 1999. He combines dramatic and theatrical writing, television directing, and channel management — a blend that gives the company a production vision that begins with the text and ends at final delivery. His work spans Jordan, Iraq, Ukraine, Romania, the Sultanate of Oman, Qatar, the UAE, and Jordan.'

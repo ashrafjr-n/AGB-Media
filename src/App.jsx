@@ -8,7 +8,7 @@ import AbdullahPage from './pages/AbdullahPage'
 
 /*
   SIX ROUTES NOW. The first four are every link in navLinks.js, each with one route;
-  `/team/nael-al-jarabaa` and `/founder` are the fifth and sixth and are deliberately NOT
+  `/team/nael-al-jarabah` and `/founder` are the fifth and sixth and are deliberately NOT
   in that list — both are profile pages for one person, each reached only by clicking a
   specific element on the home page (Nael's circle in Team.jsx, the "Meet the Founder"
   button in Founder.jsx), not destinations either header's nav offers. See the note at the
@@ -27,7 +27,7 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/team/nael-al-jarabaa" element={<NaelPage />} />
+        <Route path="/team/nael-al-jarabah" element={<NaelPage />} />
         <Route path="/founder" element={<AbdullahPage />} />
       </Routes>
     </BrowserRouter>

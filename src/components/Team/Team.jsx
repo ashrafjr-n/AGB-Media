@@ -237,7 +237,7 @@ function Team() {
           placeholders with no bio to send anyone to yet.
         */}
         <motion.div className={styles.lead} {...revealAt(2)}>
-          <Link to="/team/nael-al-jarabaa" className={styles['lead-link']}>
+          <Link to="/team/nael-al-jarabah" className={styles['lead-link']}>
             <div className={`${styles.portrait} ${styles['portrait-lead']}`}>
               {/*
                 `alt=""` and the name in real text beside it, rather than the name as
