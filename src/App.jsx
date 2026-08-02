@@ -4,18 +4,20 @@ import AboutPage from './pages/AboutPage'
 import ServicesPage from './pages/ServicesPage'
 import ContactPage from './pages/ContactPage'
 import NaelPage from './pages/NaelPage'
+import AbdullahPage from './pages/AbdullahPage'
 
 /*
-  FIVE ROUTES NOW. The first four are every link in navLinks.js, each with one route;
-  `/team/nael-al-jarabaa` is the fifth and is deliberately NOT in that list — it is a
-  profile page for one person, reached only by clicking his circle in the home page's
-  Team section (Team.jsx), not a destination either header's nav offers. See the note
-  at the top of NaelPage.jsx.
+  SIX ROUTES NOW. The first four are every link in navLinks.js, each with one route;
+  `/team/nael-al-jarabaa` and `/founder` are the fifth and sixth and are deliberately NOT
+  in that list — both are profile pages for one person, each reached only by clicking a
+  specific element on the home page (Nael's circle in Team.jsx, the "Meet the Founder"
+  button in Founder.jsx), not destinations either header's nav offers. See the note at the
+  top of NaelPage.jsx and, for the second, AbdullahPage.jsx.
 
   No code splitting, deliberately. The app is one chunk, and none of the secondary
-  pages carries assets of its own beyond what is already bundled elsewhere (Nael's
-  page reuses his existing Team-section portrait) — a lazy boundary here would cost a
-  round trip to defer a few kilobytes.
+  pages carries assets of its own beyond what is already bundled elsewhere (Nael's page
+  reuses his existing Team-section portrait; Abdullah's reuses the Founder section's) —
+  a lazy boundary here would cost a round trip to defer a few kilobytes.
 */
 function App() {
   return (
@@ -26,6 +28,7 @@ function App() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/team/nael-al-jarabaa" element={<NaelPage />} />
+        <Route path="/founder" element={<AbdullahPage />} />
       </Routes>
     </BrowserRouter>
   )

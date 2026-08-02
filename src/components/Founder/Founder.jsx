@@ -353,9 +353,10 @@ function Founder() {
         same glass everything else is built from. `.button-solid` is the new variant in
         shared/Button.module.css that carries that; nothing about it is styled here.
 
-        NO ROUTE YET. `to="#"` is a placeholder — there is no founder bio page for this
-        to open, so it goes nowhere rather than to somewhere wrong. Wire it up when that
-        page exists rather than guessing at its path now.
+        WIRED TO /founder — a dedicated profile page for Abdullah Ghayfan, the same close
+        structural clone of NaelPage.jsx that /team/nael-al-jarabaa is (see
+        pages/AbdullahPage.jsx). This used to be `to="#"`, a placeholder with a comment
+        saying to wire it up once that page existed; it does now.
 
         Wrapped in its own motion.div rather than being the reveal target itself, the
         same construction Team's Contact button uses and for the same reason: Link is a
@@ -364,7 +365,7 @@ function Founder() {
       */}
       <motion.div className={styles.cta} {...revealAt(2)}>
         <Link
-          to="#"
+          to="/founder"
           className={`${buttonStyles.button} ${buttonStyles['button-solid']}`}
         >
           Meet the Founder →

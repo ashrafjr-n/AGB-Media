@@ -1,0 +1,289 @@
+/*
+  /founder — see the long comment at the top of AbdullahPage.jsx for what this route is.
+  This file is the layout half of that, and it is a close structural clone of
+  NaelPage.module.css: same ground, same masthead construction, same flat single-column
+  section rhythm, same glass credit-panel treatment. Only the custom-property names below
+  are renamed (--nael-* to --founder-*, scoped to this file by CSS Modules either way) so
+  a reader never has to wonder which page's rule they are looking at.
+
+  THE GROUND IS --about-ground, EXACTLY — the same token /about and NaelPage.module.css
+  both read. See either file's own note; it applies here without needing to be re-derived.
+
+  ONE FLOWING COLUMN, NO RAIL BESIDE IT, matching NaelPage's own corrected state: no
+  sticky "On This Page" index, no two-column body grid. `.content` is a plain single-
+  column flex stack, and every section inside it centres its own heading and body.
+
+  MOBILE IS THE PRIORITY CASE, not the fallback — every value that owns real block space
+  is a clamp with a vh middle term.
+*/
+
+.page {
+  --founder-gap-major: clamp(var(--space-2xl), 12vh, var(--space-3xl));
+  --founder-section-gap: clamp(var(--space-2xl), 10vh, 5rem);
+  --founder-column-gap: clamp(var(--space-xl), 6vw, 6rem);
+
+  position: relative;
+  min-block-size: 100vh;
+
+  background-color: var(--about-ground);
+
+  padding-block-start: calc(var(--header-height) + var(--founder-gap-major));
+  padding-block-end: var(--founder-gap-major);
+  padding-inline: var(--container-padding);
+}
+
+.inner {
+  position: relative;
+  z-index: var(--z-base);
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+}
+
+/* --- Masthead: portrait against the name plate --------------------------- */
+
+.masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-xl);
+  align-items: center;
+
+  margin-block-end: var(--founder-gap-major);
+}
+
+.portrait-col {
+  min-inline-size: 0;
+}
+
+/*
+  THE FRAME CLIPS AND NOTHING ELSE — no ring, no halo, no shadow, matching Founder's and
+  NaelPage's own "raw image, the clean edge against the ground is the whole effect" rule.
+  `overflow: hidden` does the crop; the radius lives here rather than on the image so the
+  clip and the corner are one declaration.
+*/
+.portrait-frame {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+
+  inline-size: 100%;
+  block-size: clamp(20rem, 56vh, 36rem);
+}
+
+/*
+  ONE PIXEL LARGER THAN ITS FRAME, ON EVERY SIDE, clipped back by it — the same fix
+  Founder.module.css and NaelPage.module.css both document for a full-width image inside
+  an `fr` grid track (see the 48rem block below): the track's width is routinely
+  fractional, so an image at exactly 100% can end on a half pixel the browser antialiases,
+  showing the ground through as a thin dark seam. `max-inline-size: none` overrides
+  global.css's `img { max-width: 100% }`, which would otherwise clamp the overhang
+  straight back off.
+*/
+.portrait {
+  display: block;
+  inline-size: calc(100% + 2px);
+  max-inline-size: none;
+  block-size: calc(100% + 2px);
+  margin: -1px;
+  object-fit: cover;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+
+  min-inline-size: 0;
+}
+
+/*
+  THE SITE'S MICRO-LABEL — identical to About's, WhyAgb's, the Founder's and NaelPage's:
+  0.65rem, medium, 0.28em tracking, the gold dot leading rather than trailing because the
+  tracking adds a space after the final letter CSS cannot trim. Reused as-is both for the
+  masthead's own eyebrow and for every content section's eyebrow further down.
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  margin-block-end: var(--space-2xs);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/*
+  THE NAME — the site's given-name-white / family-name-gold pairing, matching Founder's
+  h2, Team's lead figure and NaelPage's own h1. This is the whole page's h1.
+*/
+.name {
+  font-size: var(--text-4xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.name-accent {
+  color: var(--color-gold);
+}
+
+/*
+  THE SUBTITLE LINE — the same stacked-credit-block treatment NaelPage's (plural) title
+  lines use, holding this page's single subtitle. See the note at .titles li below and at
+  the top of AbdullahPage.jsx for why this page has one line where Nael's has two.
+*/
+.titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+
+  margin-block-start: var(--space-sm);
+  padding-inline-start: var(--space-md);
+
+  border-inline-start: 1px solid var(--about-hairline);
+}
+
+.titles li {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* --- The content column ----------------------------------------------------- */
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--founder-section-gap);
+}
+
+/* --- A content section ------------------------------------------------------ */
+
+/*
+  THE SAME HAIRLINE-OPENED, EYEBROW-PLUS-HEADING SHAPE /about's AND NAELPAGE'S SECTIONS
+  USE — no numeral, no icon.
+*/
+.section {
+  position: relative;
+
+  padding-block-start: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+
+  block-size: 1px;
+  background-image: linear-gradient(
+    to right,
+    var(--about-hairline),
+    transparent 78%
+  );
+}
+
+/*
+  CENTRED, matching NaelPage's own corrected state — both the eyebrow and the heading
+  beneath it. `text-align` handles the heading; the eyebrow is a flex row (the leading
+  gold dot beside the label) so `.head .eyebrow` below adds `justify-content: center` as
+  the flex equivalent. Scoped to eyebrows inside `.head` specifically — the masthead's own
+  eyebrow lives in `.identity`, not `.head`, and stays left-aligned with the name plate
+  beside it.
+*/
+.head {
+  margin-block-end: var(--space-lg);
+  text-align: center;
+}
+
+.head .eyebrow {
+  justify-content: center;
+}
+
+.section-title {
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/*
+  CENTRED — the block itself sits centred in the section via `margin-inline: auto`, and
+  `text-align: center` centres the prose and the credit-list text alike. Children keep the
+  default `stretch` cross-axis sizing, so paragraphs and the credit list still fill the
+  full 72ch measure as one consistent column — only the text inside is centred.
+*/
+.section-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  max-inline-size: 72ch;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.paragraph {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- The credit lists (Television, Theatre, Official Records, Cinema) ------- */
+
+/*
+  THE ONE PLACE ON THIS PAGE THAT IS GLASS — see the top-of-file note. Applied to
+  enumerable credits only; the continuous prose above stays plain paragraphs, so a panel
+  here reads as "here is a discrete fact" rather than as decoration repeated down the
+  whole page.
+*/
+.credits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+
+  margin-block-start: var(--space-2xs);
+}
+
+.credit {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-glass);
+
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- Breakpoints ------------------------------------------------------------ */
+
+/*
+  THE PORTRAIT COLUMN TAKES THE LARGER SHARE — 1.3fr against 0.7fr, matching NaelPage's
+  own ratio. `.portrait-frame` is already `inline-size: 100%` of this track, so widening
+  the track is what widens the image.
+*/
+@media (min-width: 48rem) {
+  .masthead {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+    column-gap: var(--founder-column-gap);
+  }
+}
