@@ -84,6 +84,33 @@ function subscribe(subscriber) {
 }
 
 /**
+ * The same shared per-frame reading, for a caller that is not a component and must
+ * not go through React state to get it.
+ *
+ * `useScrollPosition` below exists to turn this feed into render-safe state — it
+ * narrows continuous per-frame values down to whatever a component's OWN output
+ * actually depends on, via `select`, so React can bail out between real changes.
+ * That narrowing is the wrong shape for a caller that reads the raw position
+ * imperatively from inside an event handler or a `setTimeout` callback and never
+ * renders anything from it (`useHeroStoryScrollAssist.js` is the one so far): routing
+ * a continuously-changing number through `useState` there would re-render a
+ * component that produces no visual output every scroll frame, for a value nothing
+ * ever reads during render.
+ *
+ * It is still exactly ONE listener underneath, shared with every `useScrollPosition`
+ * consumer on the page — this calls the same module-scoped `subscribe` they do, not
+ * a second one. That is the whole reason this is exported from here rather than a
+ * caller adding its own `window.addEventListener('scroll', …)`: a second listener
+ * would be a second per-frame `scrollY` read (and the layout flush that can force),
+ * duplicating exactly the cost this file's shared-listener design exists to avoid.
+ *
+ * @param {(position: { scrollY: number, viewportHeight: number, viewportProgress: number }) => void} callback
+ *   Called with the fresh reading on every rAF-coalesced scroll/resize frame.
+ * @returns {() => void} Unsubscribes. Call it in the caller's own cleanup.
+ */
+export const subscribeToScrollPosition = subscribe
+
+/**
  * The threshold the page's video handoff shares: the hero is covered.
  *
  * Exported as one function rather than written out at each call site because the

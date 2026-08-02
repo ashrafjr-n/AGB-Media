@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import useScrollPosition, {
   isPastFirstViewport,
 } from '../../hooks/useScrollPosition'
+import useHeroStoryScrollAssist from '../../hooks/useHeroStoryScrollAssist'
 import styles from './HeroBackdrop.module.css'
 
 /*
@@ -59,6 +60,17 @@ function HeroBackdrop() {
     one entering and one leaving.
   */
   const isHeroCovered = useScrollPosition(isPastFirstViewport)
+
+  /*
+    THE ONLY CALL SITE ON THE SITE — see useHeroStoryScrollAssist.js for the full
+    argument. It lives here rather than in Hero.jsx or About.jsx because this is the
+    one component scoped to exactly the Hero-pinned region and nothing more: it
+    mounts and unmounts with `.stage` (HomePage.jsx), which is what keeps the assist
+    from ever running on any other page or any other section boundary. It renders
+    nothing and reads no state from this component — the two are independent besides
+    sharing that lifetime.
+  */
+  useHeroStoryScrollAssist()
 
   useEffect(() => {
     const video = videoRef.current
