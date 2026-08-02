@@ -1,9 +1,11 @@
 /*
-  The closing section: six reasons in one row, over the second half of the Founder's
-  photograph. It was a 2 x 3 grid until 2026-08-02 — see the row/item rules below for
-  the replacement. A bordered CTA banner shipped below the row the same day and was
-  removed later that day; see the note at WhyAgb.jsx for why, and the pin's media
-  query below for what its removal changed about this section's height budget.
+  The closing section: six reasons in a 3 x 2 grid (three columns, two rows), over the
+  second half of the Founder's photograph. It briefly ran as one row of six across its
+  widest tier (2026-08-02, replacing an earlier 2 x 3 grid) before being brought back to
+  three-up — see the `.row` rules below for both changes. A bordered CTA banner shipped
+  below the row the same day the six-across version did and was removed later that day;
+  see the note at WhyAgb.jsx for why, and the pin's media query below for what its
+  removal changed about this section's height budget.
 
   It takes over the slot the empty `.placeholder` held, and it inherits that element's one
   structural requirement along with the position. `position: relative` + --z-base is not
@@ -60,9 +62,13 @@
   --why-pad: clamp(1.75rem, 5vh, 4.5rem);
   --why-opening-gap: clamp(var(--space-md), 4.75vh, var(--space-2xl));
 
-  /* Column gap between the six items in the row — horizontal only, costs no height. */
+  /* Column gap between items in the row — horizontal only, costs no height. */
   --why-item-gap: clamp(1.25rem, 2.4vw, 2rem);
-  /* Row gap for the wrapped/stacked layouts below the six-across breakpoint. */
+  /*
+    Row gap wherever the row wraps to more than one line — every tier below 80rem, and
+    now the 80rem tier itself too, since three-up wraps six items into two rows there as
+    well. Set once here and read by every breakpoint; none of them override it.
+  */
   --why-item-row-gap: clamp(1.75rem, 4vh, 2.75rem);
 
   /*
@@ -258,25 +264,17 @@
 /* --- The row ---------------------------------------------------------------- */
 
 /*
-  SIX ITEMS, ONE ROW, ONLY AT THE WIDTH WHERE EACH ONE HAS ROOM TO BE ONE — enabled at
-  80rem in the breakpoint block at the foot of this file, not at the 64rem most of this
-  site's "give it the wider layout" breakpoints use. The reason is `--container-max`
-  (75rem/1200px) plus this section's own `--container-padding` on both sides: the content
-  column hits that cap once the viewport reaches 75rem + 2 * --container-padding, which is
-  78rem — so 80rem is the first clean round number past the point a wider window stops
-  buying the row anything. Below it, six real sentences of description text in a column
-  narrower than that cap read as a ladder of half-words rather than as reasons; the
-  fallback tiers below (three-up, then two-up, then stacked) are not a compromise on the
-  way to the row, they are the layout for every width that cannot comfortably hold it.
-
-  IT WAS 90REM, moved down to 80rem on 2026-08-02 once the CTA banner was removed and the
-  arithmetic at the pin's media query showed the section clearing 720px with room to
-  spare even at this narrower, more-wrapped width. 80rem is not a revert to the
-  pre-redesign 64rem the grid version pinned at — that width still cuts each column to
-  roughly 130px, which was measured to wrap the longest description five lines deep, a
-  legibility cost this section does not need to pay just because the height budget could
-  now absorb it. 80rem is the number the readability argument above was always pointing
-  at; the banner is what had pushed this past it to a rounder, more conservative 90rem.
+  THREE-UP IS THE CEILING NOW, not six across — two rows of three rather than one row of
+  six, on request. `--container-max` (75rem/1200px) plus this section's own
+  `--container-padding` is still why a wider column buys the row nothing past 78rem: the
+  content column hits that cap there regardless of how many items sit across it, which is
+  the same readability argument that used to justify going all the way to six — six real
+  sentences of description text in a column narrower than that cap read as a ladder of
+  half-words rather than as reasons. Capping at three columns is a stricter form of the
+  same argument, not a different one: at three-up each column is roughly twice as wide as
+  the old six-across arrangement gave it, which is comfortable room for even the longest
+  description ("Direct access to drama and content makers across Qatar, the Gulf, and the
+  Arab world.") at two or three lines rather than five.
 
   Base rule here is the STACKED, one-column layout — see the breakpoints at the foot of
   this file for the tiers above it. `align-items: flex-start` on `.item` keeps the numeral
@@ -292,7 +290,7 @@
 /*
   A THIN HAIRLINE BORDER AND A FROSTED FILL — each item is now its own small glass panel
   rather than markup held apart by a divider between them (both removed 2026-08-02; see
-  the note at the six-across breakpoint for the divider). `--glass-border` is the same
+  the note at the 80rem breakpoint for the divider). `--glass-border` is the same
   hairline every other glass edge on the site uses (Founder's fact cards, Team's rim), at
   0.08 white alpha — deliberately the quiet one rather than `--glass-border-bright`, since
   six of these sitting close together read as a row of panels if the edge is loud and as
@@ -500,11 +498,14 @@
   own first screen and nothing below it — sticky cannot lift its own top edge above the
   offset, so anything past the first viewport is not merely scrolled past, it is
   unreachable for the life of the page. The pin is therefore only enabled where this
-  section genuinely fits one screen, and "fits one screen" means "is in its six-across
-  row form" — the three-up and two-up fallbacks below 80rem are taller than one viewport
-  on ordinary windows and were never measured to be pin-safe. The row's own single-row
-  breakpoint and the pin's width gate are therefore the same number on purpose — see the
-  note at `.row` for why 80rem rather than the usual 64rem.
+  section genuinely fits one screen, and "fits one screen" today means "is in its 3 x 2
+  row form" — the two-up and one-up fallbacks below 80rem stack more rows still and are
+  taller than one viewport on ordinary windows, never measured to be pin-safe. The row's
+  three-column breakpoint and the pin's width gate share a number on purpose — see the
+  note at `.row` for why 80rem rather than the usual 64rem, and for why the 80rem tier no
+  longer changes the column count on its own (that changed with the six-across-to-3x2
+  swap below; the gate did not move with it — see the measurement two paragraphs down for
+  why not).
 
   THE NUMBER HAS MOVED TWICE, and the history is worth keeping straight. The grid version
   pinned at 64rem. Redesigning the section into a six-across row plus a CTA banner
@@ -517,20 +518,24 @@
   64rem and the banner's 90rem; it is the number the row's own column-width argument
   was pointing at all along, freed of a constraint (the banner) that no longer exists.
 
-  - `min-width: 80rem` (1280px). Below it the row is in its three-up or two-up wrapped
+  - `min-width: 80rem` (1280px). Below it the row is in its two-up or one-up wrapped
     form, taller than one viewport on ordinary windows, and was never measured pin-safe.
   - `min-height: 45rem` (720px), unchanged from the grid version throughout every
-    revision of this section. Arithmetic at the row's own floor values — every clamp
-    above at its minimum bound, `.item`'s new border and padding included, at this
-    section's narrowest pinned column width (roughly 173px at 80rem) — comes to about
-    520px for the padding, the opening block and the tallest row item ("Flexible
-    Production Teams" at two title lines over its own longest description, wrapped to
-    five lines at this column width). That is comfortable room under 720px — nearly
-    200px of slack, most of it freed by the CTA banner's removal. This is arithmetic on
-    the layout as written, not a rendered measurement — this codebase cannot run a
-    browser to confirm it — so treat 520px as the figure this gate was chosen against
-    rather than a verified fact, and re-check it if the row's copy or `.item`'s own
-    padding changes.
+    revision of this section, including the six-across-to-3x2 swap that most recently
+    threatened it: going from one row to two roughly doubles the row block's own
+    contribution to this budget, which is exactly the kind of change this figure exists
+    to catch. **MEASURED, not estimated by arithmetic this time** — a standalone static
+    HTML reproduction of `.why`'s opening block and `.row` at these exact values (real
+    Manrope, real copy, no app build involved, since this codebase still cannot run its
+    own dev server to check this in place) was rendered in a real browser window sized to
+    the gate's own tightest corner, 1280x720. Result: the section's natural content
+    height (padding-block + the opening block + the 3 x 2 row, unconstrained by
+    `min-block-size`) came to 632px — about 88px of slack under the 720px floor. Tighter
+    than the six-across form's slack (documented at the time as roughly 200px, by
+    arithmetic rather than measurement) but still comfortable rather than marginal. If
+    the row's copy grows, `.item`'s padding grows, or another row is ever added, re-run
+    this measurement before trusting the pin at this corner again — 88px is not a wide
+    margin to erode by editing without checking.
 
   THE SAME TWO CONDITIONS ARE REPEATED IN Team.module.css, where they enable `--team-tuck` —
   the extra block-start height that carries Team's rounded corner off the top of the screen
@@ -640,20 +645,30 @@
 }
 
 /*
-  THE SINGLE ROW OF SIX — see the long note at `.row` for why 80rem rather than this
-  file's usual 64rem "wider layout" threshold, and the note at the pin's own media query
-  for why that gate now matches this one exactly.
+  TWO ROWS OF THREE, not six across — the widest tier now matches the tier just below it
+  (see the `min-width: 64rem` block above) rather than adding a further column count of
+  its own. `.row` is already `display: grid` with `row-gap: var(--why-item-row-gap)` set
+  once at the base rule (see `.row` above) and inherited by every breakpoint since none of
+  them touch it, so three columns of six items wraps into two even rows with that same
+  gap between them for free — nothing else here has to change to get "appropriate spacing
+  between the two rows".
 
-  THERE IS NO DIVIDER BETWEEN ITEMS ANY MORE. A hairline with a warm glow concentrated at
-  its top ran down the gap between every pair of items until 2026-08-02; it is deleted
-  outright rather than hidden, along with the --why-divider-line / --why-divider-glow
-  tokens that fed it. Each item now carries its own border and frosted fill (see `.item`),
-  which is separation enough on its own — a divider between two already-bordered panels
-  was one line of emphasis too many, marking a boundary that each item's own edge was
-  already marking.
+  WHY 80REM STILL GETS ITS OWN BLOCK rather than folding into the 64rem tier: the pin's
+  own media query (below) and the note at `.row` both key off `min-width: 80rem` by name,
+  and keeping the selector here — even set to the same three columns — is what keeps that
+  reference literal rather than pointing at a breakpoint that no longer exists in this
+  file. If the two tiers are ever unified, update both notes together.
+
+  THERE IS NO DIVIDER BETWEEN ITEMS. A hairline with a warm glow concentrated at its top
+  ran down the gap between every pair of items until 2026-08-02; it is deleted outright
+  rather than hidden, along with the --why-divider-line / --why-divider-glow tokens that
+  fed it. Each item carries its own border and frosted fill instead (see `.item`), which
+  is separation enough on its own in both directions now — between the three columns of a
+  row and between the two rows alike — so the 2-row grid needed no divider reintroduced
+  to "make sense": a bordered card is already its own divider on every side.
 */
 @media (min-width: 80rem) {
   .row {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

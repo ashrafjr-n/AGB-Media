@@ -21,8 +21,8 @@ import backdrop from '../../assets/images/why.webp'
 import styles from './WhyAgb.module.css'
 
 /*
-  The case for the company: six reasons in one row, over the second half of the
-  Founder's photograph.
+  The case for the company: six reasons in a 3 x 2 grid (three columns, two rows), over
+  the second half of the Founder's photograph.
 
   SIX SMALL GLASS PANELS NOW, not the divider-only row this opened as. Each item carries
   its own thin hairline border and a frosted fill composed from the site's shared glass
@@ -168,10 +168,10 @@ function WhyAgb() {
         </div>
 
         {/*
-          ONE ROW OF SIX, not a grid — see the note at the top of this file. Still an
-          ordered list for the same reason it was a grid of six: the numerals are the
-          design, and the index is what a reader counts, so each is aria-hidden and the
-          <ol> carries the enumeration semantically.
+          A 3 x 2 GRID (three columns, two rows) at its widest tier — see the note at the
+          top of this file. An ordered list regardless of column count: the numerals are
+          the design, and the index is what a reader counts, so each is aria-hidden and
+          the <ol> carries the enumeration semantically.
 
           NUMERAL, THEN ICON, THEN TITLE, THEN A SHORT RULE, THEN DESCRIPTION — normal
           flow, top to bottom, same order the reference lays out per item. The icon sits

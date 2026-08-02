@@ -73,6 +73,14 @@
   */
   --founder-gap: clamp(1.5rem, 4vh, 3rem);
   --founder-pad: clamp(0.75rem, 2.5vh, 2rem);
+  /*
+    THE BLOCK-START HALF OF THE PAIR IS DELIBERATELY LARGER, on request — the section
+    reads as sitting too close to its own top edge on windows where the three areas
+    leave little slack for `justify-content: center` to redistribute (see the note
+    below at .founder). This is what widens specifically the gap above the eyebrow;
+    --founder-pad alone still sets the block-end gap, unchanged.
+  */
+  --founder-pad-top: clamp(2rem, 6vh, 4rem);
 
   position: relative;
   z-index: var(--z-base);
@@ -87,15 +95,18 @@
 
   min-block-size: 100vh;
   /*
-    Symmetric. This carried an asymmetric, shift-compensated block-start term for a
-    while — a counterweight meant to hold the intro block still while other areas
-    dropped away from it — tuned for a four-area section where content sat close
-    enough to 100vh that the scheme's premise (free space for justify-content to
-    redistribute) actually held. Neither is true any more now that the section is
-    three short areas with real slack in it, so a flat value replaced it; the full
-    history is in git rather than repeated here.
+    ASYMMETRIC AGAIN, ON REQUEST — block-start now reads from --founder-pad-top rather
+    than --founder-pad. This once carried an asymmetric, shift-compensated block-start
+    term for a different reason — a counterweight meant to hold the intro block still
+    while other areas dropped away from it, tuned for a four-area section where content
+    sat close enough to 100vh that the scheme's premise (free space for
+    justify-content to redistribute) actually held — and was flattened to a single
+    symmetric value once that scheme stopped applying. This asymmetry is a fresh,
+    simpler one: the top just wants more air than the bottom, full stop, no
+    compensation arithmetic attached to it.
   */
-  padding-block: var(--founder-pad);
+  padding-block-start: var(--founder-pad-top);
+  padding-block-end: var(--founder-pad);
 
   background-color: var(--color-black);
 }
