@@ -517,6 +517,25 @@
   }
 
   /*
+    A HEIGHT-BASED CAP, ADDED TO THE PHONE CIRCLE. The base rule's `min(100%, 18.75rem)` has
+    no vh term at all, unlike both tiers above 48rem — so on a phone the circle held a flat
+    300px regardless of viewport height, and at 375x667 (iPhone SE 2nd/3rd gen) that overflowed
+    the section's own 100vh floor by 17px. Measured: at 812px tall (this section's own tuning
+    target, "with room to spare") the column is 92 + 24(gap) + 268(copy) + 300(circle) = 684px,
+    52px of slack; at 667px the same sum overflows by 17px, because nothing here had ever
+    scaled the circle down for a shorter screen the way the desktop tiers already do.
+
+    42vh matches 18.75rem (300px) at exactly 714px of viewport height, so nothing changes
+    above that — 740, 812 and every taller phone this section was already tuned against are
+    untouched. Below it the circle now gives up height first, same as `min(100%, 50vh, 21rem)`
+    does at 48rem: at 667px it lands at ~280px, closing the 17px overflow with a few px to
+    spare instead of leaving the smallest still-common phone short.
+  */
+  .circle {
+    inline-size: min(100%, 42vh, 18.75rem);
+  }
+
+  /*
     --text-3xl, down from --text-4xl: 32px against 41px at this width. It is the same size
     WhyAgb's and Team's headings take, so the three section titles set alike on a phone
     where on desktop this one leads — which is the right way round, because the argument

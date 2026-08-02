@@ -818,3 +818,23 @@
     --team-tuck: calc(var(--team-radius) + 0.25rem);
   }
 }
+
+/*
+  THE TWO TABLET ENVELOPES, copied from WhyAgb.module.css and matching it exactly — see the
+  measurement table there for the argument. One is the two-up row's shape (iPad-family
+  portrait, roughly 768–1023px wide), the other the three-up row's (roughly 1024–1279px wide,
+  which also covers most tablets in landscape). Keep both pairs identical to their WhyAgb
+  counterparts; a tuck without its matching pin parks Team's rounded corner on the viewport's
+  top edge for the rest of the document, and a pin without its matching tuck is dead space.
+*/
+@media (min-width: 48rem) and (max-width: 63.9375rem) and (min-height: 64rem) {
+  .team {
+    --team-tuck: calc(var(--team-radius) + 0.25rem);
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 79.9375rem) and (min-height: 42rem) {
+  .team {
+    --team-tuck: calc(var(--team-radius) + 0.25rem);
+  }
+}

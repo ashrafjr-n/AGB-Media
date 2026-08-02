@@ -322,3 +322,46 @@
     display: none;
   }
 }
+
+/*
+  TABLET. `min-width: 48rem` and `max-width: 79.9375rem` is the exact tablet band the
+  WhyAgb/Team pin envelopes now also use — the exact complement of the phone block above on
+  one side, and of the point where the strip already sets itself on one line below.
+
+  THE STRIP WAS WRAPPING TO TWO LINES ACROSS THE WHOLE BAND, at the same --text-xs (12px)
+  and 3rem column gap the wide desktop range uses without trouble — there just was not
+  enough width left at 768–1279px for six full-bleed entries at that size. Measured directly
+  (bounding-rect span of the visible entries, not an estimate): at 768px, six entries at the
+  unmodified desktop styling need ~1001px and wrap; five need ~776px and still clip the
+  available 768px by 8px, close enough that the type has to come down a little regardless of
+  entry count.
+
+  THE SIXTH ENTRY IS DROPPED HERE TOO, for the same reason the phone block drops it below
+  600px — see the note on `secondary` in Hero.jsx. Trying to hold six on one line at this
+  width means text too small to be legible (measured: even at 8px the six-entry strip only
+  just closes the gap, with no safety margin); five at a size close to the desktop one reads
+  far better. A tablet in landscape is wide enough to keep all six — that is the existing
+  `min-width: 80rem` desktop range below, untouched by this block.
+
+  ONE LINE, NOT TWO — unlike the phone block, this is a single-line treatment: the gap and
+  type below were sized down just enough to close a measured ~8px shortfall at the narrowest
+  width in this band (768px), verified with real slack (five entries spanned 727px of 768px
+  available). --text-xs itself stays as the desktop token; only the tracking and the gaps
+  around each entry come down, since those — not the letterforms — were most of the width
+  this band did not have to spare.
+*/
+@media (min-width: 48rem) and (max-width: 79.9375rem) {
+  .ticker-item[data-secondary='true'] {
+    display: none;
+  }
+
+  .ticker {
+    gap: var(--space-2xs) var(--space-sm);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+  }
+
+  .ticker-item:not(:first-of-type)::before {
+    margin-inline-end: var(--space-2xs);
+  }
+}

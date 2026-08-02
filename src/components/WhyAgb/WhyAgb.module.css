@@ -811,6 +811,74 @@
   }
 }
 
+/*
+  THE PIN, EXTENDED TO TABLET WIDTHS — two more envelopes, filling what was a dead zone
+  between the phone envelope above (`max-width: 47.9375rem`) and the desktop one at the top
+  of this file (`min-width: 80rem`). Below this addition, 48rem to 79.9375rem got no pin at
+  all regardless of height: the row's two-up and three-up tiers were never measured, so the
+  gate simply stopped at the last width that had been. Now that the dev server can be
+  checked directly, both tiers turn out to fit one screen with real margin across the whole
+  iPad portrait-and-landscape range — the gap was a missing measurement, not a real fit
+  problem.
+
+  TWO ENVELOPES, NOT ONE, because "fits one screen" means something different on each side of
+  the row's own 64rem column-count breakpoint (see `.row` below) and a single min-height could
+  not serve both: the two-up tier is taller than the three-up tier at the same width, so the
+  height that clears one is not the height that clears the other.
+
+  MEASURED, the same way the phone and desktop envelopes were — this section's natural content
+  height (padding-block + the opening block + the row, read directly off `.inner` rather than
+  off `min-block-size`, which would hide an overflow behind its own floor) against a spread of
+  real device viewports:
+
+  | viewport | row form | natural height | fits? |
+  | --- | --- | --- | --- |
+  | 768x1024 (iPad, portrait) | two-up | 954px | yes — 70px slack |
+  | 810x1080 (iPad 10.2", portrait) | two-up | 968px | yes — 112px slack |
+  | 820x1180 (iPad Air, portrait) | two-up | 985px | yes — 195px slack |
+  | 834x1194 (iPad Pro 11", portrait) | two-up | 987px | yes — 207px slack |
+  | 1024x768 (iPad, landscape) | three-up | 644px | yes — 124px slack |
+  | 1080x810 (iPad 10.2", landscape) | three-up | 657px | yes — 153px slack |
+  | 1180x820 (iPad Air, landscape) | three-up | 661px | yes — 159px slack |
+  | 1194x834 (iPad Pro 11", landscape) | three-up | 666px | yes — 168px slack |
+  | 1280x800 (10" Android, landscape) | three-up | 658px | yes — 142px slack |
+
+  THE TWO-UP GATE'S `min-height: 64rem` (1024px) sits exactly at the shortest real tablet
+  portrait height measured (768x1024, 70px slack) — deliberately tight against that one rather
+  than padded further, because the natural height at this width band barely moves with extra
+  height (954px to 987px across the whole 768–834 range) while a lower gate would start
+  admitting landscape phones: at 1023x900, a width still inside this band, natural height is
+  906px against a 900px viewport — a 6px failure, and the tell that this band's real hazard is
+  wide-but-short viewports rather than narrow-but-tall ones. 64rem excludes every such case
+  (no landscape phone at this width range clears 600px of height, let alone 1024) while
+  admitting every iPad-family portrait size.
+
+  THE THREE-UP GATE'S `min-height: 42rem` (672px) has far more headroom to work with — the
+  three-up row's natural height barely changes across 1024–1279px width (613–630px) and the
+  measured break-even is close to 609px, so 672px is a real, checked margin above failure
+  (54px at 1024x672) rather than a guess, and it is nowhere near landscape phone heights
+  (the tallest phone in this width range does not clear 430px). It is intentionally lower than
+  the two-up gate's 64rem and lower than the desktop gate's 45rem just above 80rem — a shorter
+  row simply needs less.
+
+  BOTH ARE REPEATED IN Team.module.css, for `--team-tuck`, for the identical reason the phone
+  and desktop pairs already are there: one decision, two components, and a custom property
+  cannot cross that boundary. Keep all four pairs identical across both files.
+*/
+@media (min-width: 48rem) and (max-width: 63.9375rem) and (min-height: 64rem) {
+  .why {
+    position: sticky;
+    inset-block-start: 0;
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 79.9375rem) and (min-height: 42rem) {
+  .why {
+    position: sticky;
+    inset-block-start: 0;
+  }
+}
+
 @media (min-width: 48rem) {
   .row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -850,5 +918,48 @@
 @media (min-width: 80rem) {
   .row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/*
+  THE THREE-UP BREAKPOINT IS WIDTH-ONLY, AND THAT IS WRONG FOR A TALL TABLET — found while
+  re-checking the tablet pin envelopes above against iPad Pro 12.9" portrait (1024x1366),
+  which the two envelopes were never individually screenshotted against. `min-width: 64rem`
+  reads "1024px of width" as "wide enough for three columns" everywhere, which is the right
+  read on a landscape window and the wrong one on a portrait tablet whose width crosses that
+  line while its height is the dimension that is actually generous.
+
+  MEASURED, and it is not a small effect. At 1024x1366 the three-up row's natural content
+  height is ~762px — correct for the row itself, unrelated to this fix — pinned inside a
+  1366px viewport by `.why`'s own `min-block-size: 100vh`. That is 604px of slack, over 40%
+  of the screen, and it is not evenly invisible: scrolled partway through the pin, it reads
+  as a single card adrift in a corner over a mostly bare, blurred backdrop — a real visual
+  regression from every other viewport this pin was checked against, all of which measured
+  under 210px of slack. The row's own shape is not the bug; pinning that shape inside a box
+  far taller than it needs is.
+
+  THE FIX IS THE ROW, NOT THE PIN GATE. Forcing the two-up columns back on for this one case
+  raises the natural content height toward the ~954–987px the portrait envelope above was
+  measured against (which fits 768–834px-wide portrait tablets with 70–207px of slack) — a
+  proportioned fit rather than a gate that simply refuses to pin. `max-aspect-ratio: 1/1`
+  matches width <= height, i.e. genuinely portrait or square: 1024x1366 matches (0.75) and
+  falls back to two columns; every landscape case already checked — 1024x768, 1366x1024,
+  1280x800 (all >= 1.28) — does not match and is untouched. No `min-width` on this rule on
+  purpose: a portrait window wide enough to clear 64rem is wide enough to want two columns
+  regardless of which width tier admitted it, and the condition is self-limiting anyway —
+  portrait implies height >= width, so this only ever fires where there is height to spare.
+
+  PLACED LAST SO IT WINS THE CASCADE. Every rule above shares `.row`'s own specificity, so
+  when a viewport matches both a width tier and this aspect condition, source order alone
+  decides — this has to sit after both the `64rem` and `80rem` blocks, not beside either.
+
+  THE PIN GATES ABOVE NEED NO CHANGE. Both keyed their `min-height` to the three-up row's
+  shorter natural height; a portrait viewport that now renders two-up is by construction
+  taller than it is wide, so it clears either threshold (64rem or 42rem) with room to spare
+  before this rule ever has to prove it does.
+*/
+@media (min-width: 64rem) and (max-aspect-ratio: 1/1) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
