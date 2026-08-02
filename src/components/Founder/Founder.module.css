@@ -52,11 +52,11 @@
   --founder-text-mid: color-mix(in srgb, var(--color-text) 55%, transparent);
 
   /*
-    The timeline's shared rail size — the one number that keeps the big first node, the
-    connecting line's position and every item's own rail slot landing on one centre line.
-    See .timeline-node-row. --timeline-node-size is the smaller circle every other node
-    draws inside that same slot — big enough to hold an icon legibly, still clearly
-    smaller than the first node that fills the whole rail.
+    The timeline's shared rail size — the one number that keeps the connecting line's
+    position and every item's own rail slot landing on one centre line. See
+    .timeline-node-row. --timeline-node-size is the circle every node draws inside that
+    same slot, all five now at the one size — big enough to hold an icon legibly,
+    clearly smaller than the rail box it sits centred in.
   */
   --timeline-rail: clamp(2.25rem, 5.5vh, 2.75rem);
   --timeline-node-size: clamp(1.5rem, 4vh, 1.75rem);
@@ -352,17 +352,15 @@
   radius scale: --radius-md is 8px and --radius-lg is 16px, and neither is near enough to
   pass for the value asked for. Adding a token for one image would be worse than this.
 
-  A SMALL DROP, margin-block-start rather than a change to align-items on .intro — the
-  grid stays `align-items: start` for both tracks, and this nudges the portrait alone off
-  that shared line rather than changing what either track aligns to. Modest on purpose:
-  enough to read as a deliberate offset from the name/eyebrow row it used to line up
-  with, not enough to look like the two columns have drifted out of registration.
+  A DROP, margin-block-start rather than a change to align-items on .intro — the grid
+  stays `align-items: start` for both tracks, and this nudges the portrait alone off
+  that shared line rather than changing what either track aligns to.
 */
 .portrait-frame {
   overflow: hidden;
   inline-size: 100%;
-  margin-block-start: clamp(0.75rem, 3vh, 1.75rem);
-  block-size: clamp(8rem, 28vh, 22rem);
+  margin-block-start: clamp(1.5rem, 6vh, 3.25rem);
+  block-size: clamp(9rem, 32vh, 25rem);
   border-radius: 0.75rem;
 }
 
@@ -524,13 +522,12 @@
   block is already the width of the section. There is no negative-margin breakout in this
   file.
 
-  NO MARGIN OF ITS OWN ANY MORE. This has sat second, then closed the section after two
-  scrolling strips, and is second again now that those strips are gone — three different
-  reasons for the same position. While it closed the section it carried its own
-  margin-block-start on top of --founder-gap, separating it from .works's scrolling
-  titles; now that .intro is directly above it again, the section's own --founder-gap
-  (sized up for three short, breathing areas rather than four tight ones — see .founder)
-  is the whole separation, and a second margin here would just be double-spacing it.
+  A MARGIN OF ITS OWN AGAIN, on top of --founder-gap. The shared gap alone read as too
+  tight between the metadata cards row and the "Career Highlights" label directly below
+  it — the two sat close enough to blur together rather than reading as intro-then-
+  timeline. This layers extra air on top of the shared gap the same way .cta already
+  does below the timeline, rather than raising --founder-gap itself and pulling the
+  cta's own spacing along with it.
 */
 .career {
   flex: 0 0 auto;
@@ -538,6 +535,7 @@
   display: flex;
   flex-direction: column;
   gap: clamp(0.3rem, 1vh, 0.6rem);
+  margin-block-start: clamp(0.75rem, 2.5vh, 1.75rem);
 
   inline-size: 100%;
 }
@@ -643,12 +641,14 @@
 }
 
 /*
-  THE NODE ITSELF, icon inside it, always — corrected 2026-08-01. Every node used to
-  float its icon above a separate dot except the first, which held its icon inside a
-  bigger, filled circle; now every node is built the first node's way; only the SIZE
-  still differs. --timeline-node-size is deliberately smaller than --timeline-rail but
-  still large enough to hold a small icon legibly, which a bare 0.55rem dot (the old
-  size, back when nothing needed to fit inside it) could not.
+  THE NODE ITSELF, icon inside it, always, ALL FIVE THE SAME SIZE — corrected
+  2026-08-01, then again 2026-08-02. Every node used to float its icon above a separate
+  dot except the first, which held its icon inside a bigger, filled circle; then every
+  node was built the first node's way but the first kept a larger box and a stronger
+  glow; now the first node draws at the same --timeline-node-size as the rest, so there
+  is no per-item override left at all. --timeline-node-size is deliberately smaller than
+  --timeline-rail but still large enough to hold a small icon legibly, which a bare
+  0.55rem dot (further back still, when nothing needed to fit inside it) could not.
 
   color: var(--color-black) on a solid gold fill for the same reason on every node: a
   dark mark is what reads against this section's one solid accent fill, not a second
@@ -666,19 +666,6 @@
   color: var(--color-black);
   font-size: 0.8rem;
   box-shadow: 0 0 10px 2px var(--founder-gold-soft);
-}
-
-/*
-  THE FIRST NODE — still visually distinct, still the whole rail box rather than a
-  smaller circle centred within it, and still a stronger glow. The icon inside it is no
-  longer a structural difference from the rest, though (see .timeline-node) — data-first
-  only changes size and glow now, nothing about where the icon renders.
-*/
-.timeline-item[data-first='true'] .timeline-node {
-  inline-size: var(--timeline-rail);
-  block-size: var(--timeline-rail);
-  font-size: 1.1rem;
-  box-shadow: 0 0 18px 4px var(--founder-gold-soft);
 }
 
 /* Groups the title and description as one flex child, so the item's own flex-direction

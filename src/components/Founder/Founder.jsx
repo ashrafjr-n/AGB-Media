@@ -319,19 +319,14 @@ function Founder() {
           stylesheet), but always a single connected line rather than five independent
           markers.
 
-          EVERY NODE RENDERS ITS ICON THE SAME WAY NOW: inside the circle
-          (.timeline-node), never floating above it. The first node is still visually
-          distinct — larger, filling its whole rail slot rather than sitting centred
-          within it — but that is the only thing data-first still changes; there is no
-          per-item branching left here.
+          EVERY NODE RENDERS ITS ICON THE SAME WAY, AT THE SAME SIZE NOW: inside the
+          circle (.timeline-node), never floating above it, and the first node no longer
+          draws larger than the other four — see the note at .timeline-node. There is no
+          per-item branching left in this markup.
         */}
         <ol className={styles.timeline}>
-          {milestones.map(({ title, description, Icon }, index) => (
-            <li
-              className={styles['timeline-item']}
-              data-first={index === 0 ? 'true' : undefined}
-              key={title}
-            >
+          {milestones.map(({ title, description, Icon }) => (
+            <li className={styles['timeline-item']} key={title}>
               <div className={styles['timeline-node-row']}>
                 <span className={styles['timeline-node']}>
                   <Icon aria-hidden="true" />
@@ -372,7 +367,7 @@ function Founder() {
           to="#"
           className={`${buttonStyles.button} ${buttonStyles['button-solid']}`}
         >
-          Discover More
+          Meet the Founder →
         </Link>
       </motion.div>
     </section>
