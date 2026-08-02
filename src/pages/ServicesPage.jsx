@@ -4,87 +4,52 @@ import { motion } from 'framer-motion'
 import useSectionReveal from '../hooks/useSectionReveal'
 import Header from '../components/Header/Header'
 import backdrop from '../assets/images/services.webp'
+import {
+  pageTitle,
+  pageIntro,
+  services,
+  specialisedUnitsIntro,
+  specialisedUnits,
+  animationEyebrow,
+  animationTitle,
+  animationByline,
+  animationBody,
+} from '../data/servicesPage'
 import styles from './ServicesPage.module.css'
 
 /*
   THE /services PAGE — the site's third route.
 
-  THE GROUND IS A PHOTOGRAPH under the site's standard section glass — the same
-  `.pane` (--section-glass-fill-light / --section-glass-blur-light) Founder and
-  WhyAgb compose from shared/SectionGlass.module.css, not a new treatment invented
-  for this page. See `.backdrop` / `.glass` in the stylesheet for why they are
-  `position: fixed` here rather than pinned to one section the way Founder's are —
-  this page is a full-length scroll, and the photo is meant to sit still behind it
-  the way About's ground used to, not scroll away with the cards.
+  THE GROUND IS UNCHANGED — a photograph under the site's standard section glass, the
+  same `.pane` (--section-glass-fill-light / --section-glass-blur-light) Founder and
+  WhyAgb compose from shared/SectionGlass.module.css. See `.backdrop` / `.glass` in the
+  stylesheet for why they are `position: fixed` here rather than pinned to one section.
+  This update touches content and adds two sections below the grid; the ground, the
+  masthead's mechanics and the card recipe are all untouched.
 
-  The cards borrow the Contact button's glass DNA — the same --glass-fill-light /
+  THE CARDS borrow the Contact button's glass DNA — the same --glass-fill-light /
   --glass-border-bright / --glass-blur-tight tokens, and a conic-gradient rim in the
   same two-mask-xor construction .button-featured's edge light uses — but neither
   Button.module.css nor any call site of it is touched. The ring here triggers on
-  hover rather than running continuously, which is both the right read for twelve
-  boxes at once (an always-on version would be twelve simultaneous re-rasters) and a
+  hover rather than running continuously, which is both the right read for eleven
+  boxes at once (an always-on version would be eleven simultaneous re-rasters) and a
   fair adaptation of "reveal" at card scale.
-*/
 
-const services = [
-  {
-    title: 'Content Development',
-    description:
-      'Building ideas and turning them into executable projects.',
-  },
-  {
-    title: 'Creative Development',
-    description:
-      'Dramatic treatment, character development, and visual identity for the work.',
-  },
-  {
-    title: 'Script Writing',
-    description:
-      'Screenplay and dialogue for television, cinema, and theatre.',
-  },
-  {
-    title: 'Executive Production',
-    description:
-      'Budgeting, scheduling, contracting, and daily follow-up.',
-  },
-  {
-    title: 'Television Production',
-    description:
-      'Series, programmes, and Ramadan-season productions.',
-  },
-  {
-    title: 'Film Production',
-    description: 'Feature, short, and documentary films.',
-  },
-  {
-    title: 'Production Management',
-    description:
-      'Organising resources, locations, teams, and schedules.',
-  },
-  {
-    title: 'Line Production',
-    description:
-      'On-ground shoot execution inside and outside Qatar.',
-  },
-  {
-    title: 'Post Production',
-    description: 'Editing, colour correction, and final delivery.',
-  },
-  {
-    title: 'Music & Sound',
-    description:
-      'Music composition, mixing, sound design, and dubbing.',
-  },
-  {
-    title: 'Motion & VFX',
-    description: 'Motion graphics, visual effects, and compositing.',
-  },
-  {
-    title: 'Consultancy',
-    description:
-      'Technical feasibility studies, script and plan evaluation.',
-  },
-]
+  COPY LIVES IN data/servicesPage.js NOW, matching the convention data/aboutPage.js and
+  data/naelPage.js set: this page is dense enough (a masthead, an 11-item grid, a
+  four-unit section and a six-paragraph essay) that inlining it here would bury the
+  layout.
+
+  TWO SECTIONS BELOW THE GRID, EACH WITH ITS OWN REVEAL SCOPE — "Specialised Units"
+  (four cards, a lighter structural cousin of the numbered grid above) and "Animation"
+  (a single wide feature panel, deliberately heavier than everything above it: a
+  bordered pane, a larger heading and generous padding, the same order of visual
+  weight the Founder section and About's pull-quote carry on their own pages). Three
+  independent ladders live on this page now — `services-page` for the masthead,
+  `services-grid` for the numbered cards, `services-units` for the unit cards — plus
+  one more rung on `services-page` itself for the feature panel, since it is a single
+  block rather than a repeating list and does not need a ladder of its own.
+*/
 
 function ServicesPage() {
   const revealAt = useSectionReveal('services-page')
@@ -92,11 +57,18 @@ function ServicesPage() {
   /*
     A second scope for the grid, restarting the stagger the way WhyAgb's does — and
     keyed by column position (`index % 3`) rather than by the flat index, so the delay
-    resets every row instead of climbing to just over a second by the last card. Rows
-    enter the viewport together regardless, so a per-row stagger reads the same as a
-    flat one while keeping the tail short.
+    resets every row instead of climbing across all eleven cards. Rows enter the
+    viewport together regardless, so a per-row stagger reads the same as a flat one
+    while keeping the tail short.
   */
   const revealCard = useSectionReveal('services-grid')
+
+  /*
+    A third scope for the Specialised Units cards, for the same reason the grid gets
+    its own: four cards arriving in their own short stagger reads as one row of equals
+    rather than picking up wherever the eleven-card grid's rung count left off.
+  */
+  const revealUnit = useSectionReveal('services-units')
 
   /*
     Same reason AboutPage resets its own scroll on mount: this route has no scroll
@@ -141,8 +113,12 @@ function ServicesPage() {
             </motion.p>
 
             <motion.h1 className={styles['page-title']} {...revealAt(1)}>
-              Our Services
+              {pageTitle}
             </motion.h1>
+
+            <motion.p className={styles['page-lead']} {...revealAt(2)}>
+              {pageIntro}
+            </motion.p>
           </header>
 
           <ol className={styles.grid}>
@@ -163,6 +139,56 @@ function ServicesPage() {
               </motion.li>
             ))}
           </ol>
+
+          {/* --- Specialised Units ------------------------------------------- */}
+          <section
+            className={styles.units}
+            aria-labelledby="units-title"
+          >
+            <motion.div className={styles['units-head']} {...revealAt(3)}>
+              <p className={styles.eyebrow}>Capabilities</p>
+              <h2 id="units-title" className={styles['section-title']}>
+                Specialised Units
+              </h2>
+              <p className={styles['section-lead']}>{specialisedUnitsIntro}</p>
+            </motion.div>
+
+            <ul className={styles['units-grid']}>
+              {specialisedUnits.map((unit, index) => (
+                <motion.li
+                  className={styles.unit}
+                  key={unit.name}
+                  {...revealUnit(index)}
+                >
+                  <h3 className={styles['unit-title']}>{unit.name}</h3>
+                  <ul className={styles['unit-list']}>
+                    {unit.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </motion.li>
+              ))}
+            </ul>
+          </section>
+
+          {/* --- Animation: the featured essay -------------------------------- */}
+          <motion.section
+            className={styles.animation}
+            aria-labelledby="animation-title"
+            {...revealAt(4)}
+          >
+            <p className={styles.eyebrow}>{animationEyebrow}</p>
+            <h2 id="animation-title" className={styles['animation-title']}>
+              {animationTitle}
+            </h2>
+            <p className={styles.byline}>{animationByline}</p>
+
+            <div className={styles['animation-body']}>
+              {animationBody.map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+            </div>
+          </motion.section>
         </div>
       </main>
     </>

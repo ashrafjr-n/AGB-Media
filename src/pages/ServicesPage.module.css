@@ -1,5 +1,9 @@
 /*
-  The /services page: a centred title, then twelve service cards in a 3 x 4 grid.
+  The /services page: a centred title and intro, then eleven service cards in a
+  3-column grid, then two further sections — "Specialised Units" (four flat-list
+  cards) and "Animation" (one wide feature panel, deliberately heavier than
+  everything above it). It was twelve cards and nothing below them; the ground, the
+  masthead's mechanics and the card recipe are all unchanged by this update.
 
   THE GROUND IS A PHOTOGRAPH — services.webp — under the site's standard section
   glass, the same `.pane` Founder and WhyAgb compose from
@@ -7,6 +11,12 @@
   ground (duplicated CSS, no image); that construction is gone from this file
   entirely, replaced by the shared overlay system rather than a second invented
   treatment.
+
+  THE TWO NEW SECTIONS READ AS ONE FAMILY WITH THE GRID ABOVE THEM, NOT AS A
+  DIFFERENT PAGE. Same ground, same eyebrow device, same gold accent, same
+  container width — see .units and .animation below for what specifically sets each
+  apart (a wider, unnumbered card for Units; a bordered, padded panel with a larger
+  heading for Animation) and why.
 */
 
 .page {
@@ -130,6 +140,23 @@
   line-height: 0.95;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
+}
+
+/*
+  THE INTRO LINE — new copy sitting between the title and the grid, in the site's
+  usual quiet body register (matching NaelPage's `.paragraph` and Founder's `.bio`):
+  light weight, muted colour, relaxed leading. Centred and width-capped like the
+  rest of the masthead rather than the wider measure the grid or the essay use,
+  since it is a short single statement, not running prose.
+*/
+.page-lead {
+  margin-block-start: var(--space-md);
+  max-inline-size: 56ch;
+
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
 }
 
 /* --- The grid ----------------------------------------------------------------- */
@@ -291,4 +318,224 @@
   to {
     --services-card-angle: 360deg;
   }
+}
+
+/* --- Specialised Units -------------------------------------------------------- */
+
+/*
+  A second section below the grid, sharing its container and gap rhythm rather than
+  breaking to a new one — --services-gap-major (declared on .page) opens it, the same
+  measure that opens the masthead, so the page reads as one column of blocks rather
+  than a grid with something bolted on after it.
+*/
+.units {
+  margin-block-start: var(--services-gap-major);
+}
+
+.units-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin-block-end: clamp(var(--space-xl), 7vh, var(--space-2xl));
+
+  text-align: center;
+}
+
+/*
+  A SECONDARY HEADING SCALE — --text-2xl, the same step WhyAgb's own heading came down
+  to (CLAUDE.md §7's note on that token). This section is subordinate to the page's h1,
+  and sizing its heading a full step down from --text-4xl is what keeps that hierarchy
+  legible rather than merely implied by document order.
+*/
+.section-title {
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.section-lead {
+  margin-block-start: var(--space-sm);
+  max-inline-size: 56ch;
+
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+.units-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-lg);
+
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  .units-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/*
+  THE UNIT CARD — the numbered card's glass DNA (the same fill, blur and border
+  tokens), deliberately WITHOUT its numeral or hover-triggered rim: the brief's own
+  ask was a surface "styled consistently but readably distinct" from the grid above,
+  and dropping the two devices that make a numbered card read as one of twelve, plus
+  adding the gold rule below, is what does that without inventing a second glass
+  material. No hover state either — these are read, not counted.
+*/
+.unit {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+
+  background-color: var(--glass-fill-light);
+  -webkit-backdrop-filter: blur(var(--glass-blur-tight));
+  backdrop-filter: blur(var(--glass-blur-tight));
+}
+
+/*
+  THE GOLD RULE — the same border-inline-start-as-identity device NaelPage's `.titles`
+  and About's `.quote-text` both use, here marking a unit's name the way those mark a
+  credit line or a pulled statement. It is what reads "distinct from the numbered
+  cards" at a glance, before a visitor reads a single word of either.
+*/
+.unit-title {
+  padding-inline-start: var(--space-sm);
+  border-inline-start: 2px solid var(--color-gold);
+
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/*
+  THE BULLET LIST — each item carries its own leading gold dot, the same device
+  .eyebrow::before uses site-wide, rather than a native list marker: one recurring
+  gold mark is the site's own bullet, not a generic disc.
+*/
+.unit-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+
+  margin-block-start: var(--space-md);
+
+  list-style: none;
+}
+
+.unit-list li {
+  position: relative;
+
+  padding-inline-start: var(--space-md);
+
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+.unit-list li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0.6em;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/* --- Animation: the featured essay --------------------------------------------- */
+
+/*
+  THE ONE DELIBERATELY HEAVIER SURFACE ON THIS PAGE. The brief asked for this section
+  to carry noticeably more visual weight than a standard text block, "similar in
+  spirit to how the Founder section or the About page's pull-quote carries visual
+  weight" — neither of which this literally copies (Founder's ground is a still photo,
+  About's pull-quote is bare type over the page's own flat ground), but both of which
+  argue for the same thing: a section that announces itself as important before a
+  visitor reads a word of it. Here that is a bordered, padded, gently glassy panel —
+  the brightest border and the most generous padding on the page — sitting on the same
+  ground everything else on this route shares rather than inventing a second one.
+
+  `--glass-border-bright`, not `.card`'s plain `--glass-border`: the panel's edge is
+  meant to read as more present at a glance than either the numbered cards' or the
+  unit cards' quieter rims, matching how this is the one section the brief called out
+  as important content rather than a peer of what is above it.
+*/
+.animation {
+  position: relative;
+
+  margin-block-start: var(--services-gap-major);
+  padding: clamp(2.5rem, 4vw + 1.5rem, 4.5rem) clamp(1.5rem, 4vw, 3.5rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border-bright);
+
+  background-color: var(--glass-fill-light);
+  -webkit-backdrop-filter: blur(var(--glass-blur-tight));
+  backdrop-filter: blur(var(--glass-blur-tight));
+
+  text-align: center;
+}
+
+/*
+  A LARGER HEADING SCALE THAN "Specialised Units" — --text-3xl against that section's
+  --text-2xl — the direct expression of "noticeably more visual weight". It stops one
+  step short of the page's own h1 (--text-4xl) rather than matching it, so the
+  document's own top-level heading still reads as the largest thing on the page.
+*/
+.animation-title {
+  margin-block-start: var(--space-sm);
+
+  font-size: var(--text-3xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/*
+  THE BYLINE — a small gold credit line directly under the heading, in the site's
+  micro-label register (uppercase, tracked) but coloured rather than dotted: this is
+  an attribution, not a section eyebrow, so it borrows the register without the
+  leading-dot device that would otherwise mark it as one.
+*/
+.byline {
+  margin-block-start: var(--space-xs);
+
+  color: var(--color-gold);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/*
+  THE ESSAY BODY — left-aligned prose in a capped column, NOT centred like the panel's
+  heading and byline above it. Six paragraphs of running text read at a column width;
+  centring them the way the short heading and byline are centred would set every line
+  on a different left edge and actively hurt readability. `margin-inline: auto` keeps
+  the column itself centred within the panel even though its text is not.
+*/
+.animation-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  margin-block-start: var(--space-xl);
+  max-inline-size: 72ch;
+  margin-inline: auto;
+
+  text-align: start;
+
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
 }
