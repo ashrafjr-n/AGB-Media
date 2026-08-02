@@ -177,18 +177,55 @@
 
   SHORTER, BECAUSE SHORT IS THIS ELEMENT'S WHOLE JOB. The note at the top of this file
   says the bar earns its place by being the one block on the site that is not a screen
-  tall; at ~96px on an 844px viewport it was better than an eighth of a phone screen, and
-  because the two halves wrap at this width it was reading as a two-line block rather than
-  as a rule under the page.
+  tall; at ~96px on an 844px viewport it was better than an eighth of a phone screen.
 
-  Everything below is the same three values moving together — the type, the space between
-  the two lines, and the padding around them. Cutting the padding alone leaves the same
-  type crowded against the section's edge; cutting the type alone leaves it floating in
-  padding sized for something larger.
+  ONE ROW AT EVERY PHONE WIDTH, WHERE IT USED TO WRAP TO TWO. That wrap was previously
+  treated as the phone layout — the note here described the bar as reading "as a two-line
+  block" and the values were tuned around it. It is now a single line, which is what makes
+  it read as a rule under the page rather than as a small block of content, and the type is
+  sized to make that true rather than merely hoped for.
+
+  WHY IT WRAPPED, measured rather than guessed. The two halves are fixed strings, so their
+  combined width does not reflow with the viewport — at the old 9px/0.16em they came to a
+  flat 317px (rights 164, links 153) at every phone width. `.inner` is `space-between` with
+  a `--space-lg` (32px) column gap, and the available inner width is the viewport less
+  Team's `--container-padding` on both sides. So the bar fit on one line only from 414px up,
+  where the 48px of slack finally cleared that 32px gap. At 390px there were 24px of slack
+  against a 32px minimum — it missed by 8px, which is why every common phone got two lines.
+
+  FOUR VALUES COME DOWN TOGETHER and they are one decision. Shrinking the type alone leaves
+  the same wide gutters around smaller words; cutting the gaps alone does not buy enough.
+
+  - THE TYPE IS A CLAMP WITH A vw TERM, the same device Hero's ticker uses for the same
+    reason: what has to fit is a fixed run of words inside a box that is exactly the
+    viewport, so the type has to track the window rather than sit at one value. It runs 8px
+    at the 0.5rem floor up to 9px at the ceiling — never larger than the 9px this used to
+    be flat, so the bar is smaller everywhere on a phone and smallest where it has to be.
+  - TRACKING TO 0.12em, down from --tracking-widest (0.16em). It is the one value here that
+    trades against legibility rather than only against width, so it moved least: the note
+    it replaces argued these uppercase micro-labels close into single shapes below roughly
+    2px of tracking, and 0.12em holds ~1px at this size where 0.16em held ~1.4px. The type
+    got smaller, so the letters need proportionally less air between them, not more.
+  - BOTH COLUMN GAPS TO --space-2xs. `.inner`'s is a *minimum*, not the spacing you see:
+    `space-between` pushes the two halves to opposite edges at every width where there is
+    room, so cutting it changes nothing visible on a 390px phone and is purely what buys
+    the narrowest one its last few pixels.
+
+  MEASURED AT THE FLOOR AND ACROSS THE RANGE, one line at all of them: 320x844 (16px of
+  slack against an 8px minimum gap), 360x844 (56px), 375x667 (63px), 390x844 (68px),
+  430x844 (96px), and 767px, the last width this block applies to. 320px is the binding
+  case and the floor was chosen for it — it is where the clamp bottoms out.
+
+  `.inner` KEEPS `flex-wrap: wrap` and its `row-gap`, deliberately. Nothing reaches them at
+  the measured sizes, and that is the point: they are the graceful degradation if the rights
+  string or a link label is ever made longer, and the alternative to wrapping is overflow.
 
   NONE OF THE NEGATIVE MARGINS ARE TOUCHED. They are copies of Team's --container-padding
   and --team-pad, neither of which changes at this width, so the bar stays full-bleed and
   flush to the section's block end exactly as it is above 48rem.
+
+  NOTHING ABOVE 48REM IS TOUCHED — tablet and desktop keep the 0.65rem/0.2em treatment and
+  the --space-lg / --space-md gaps set in the base rules.
 */
 @media (max-width: 47.9375rem) {
   .footer {
@@ -197,26 +234,22 @@
 
   .inner {
     row-gap: var(--space-3xs);
+    /* A floor, not the visible spacing — see the note above. */
+    column-gap: var(--space-2xs);
   }
 
   /*
-    0.5625rem (9px), down from 0.65rem. The tracking goes UP with it, from 0.2em to
-    0.16em... which is down in em and up in effect: 0.2em of a 9px type is 1.8px where
-    0.2em of 10.4px was 2.1px, and below about 2px these uppercase micro-labels start to
-    close into single shapes. --tracking-widest is the scale's own value for exactly this
-    register, so the label keeps reading as a tracked-out mark rather than as small text.
-
     The two rules stay identical to each other, which is the same discipline the desktop
     values keep: .link is .rights plus a hover, and the moment they set different sizes the
     bar has two type styles in it.
   */
   .rights,
   .link {
-    font-size: 0.5625rem;
-    letter-spacing: var(--tracking-widest);
+    font-size: clamp(0.5rem, 2.2vw, 0.5625rem);
+    letter-spacing: 0.12em;
   }
 
   .links {
-    column-gap: var(--space-sm);
+    column-gap: var(--space-2xs);
   }
 }
