@@ -24,16 +24,17 @@ import styles from './WhyAgb.module.css'
   The case for the company: six reasons in one row, over the second half of the
   Founder's photograph.
 
-  STILL NOT A GRID OF CARDS, in the sense that matters: no fill behind the row, no full
-  section-wide raised surface. Each item DOES carry its own thin hairline border now
-  (2026-08-02, replacing the divider-only construction) — see the note at `.item` for
-  why that is a correction rather than a reversal of the original "not boxed" instinct.
+  SIX SMALL GLASS PANELS NOW, not the divider-only row this opened as. Each item carries
+  its own thin hairline border and a frosted fill composed from the site's shared glass
+  system (see `.item` in the stylesheet) — the separation between reasons is each card's
+  own edge rather than a rule drawn in the gap between them, which is why there is no
+  divider between items any more (removed 2026-08-02 along with the tokens that fed it).
 
-  EACH DIVIDER CARRIES A SMALL WARM GLOW AT ITS TOP, fading down into an ordinary
-  hairline — a soft radial mass layered over the same 1px line the old grid divider
-  used, both in `.item::before`. Nothing here animates; it is a static gradient, the
-  same idiom `.button-featured`'s frozen texture and `.index`'s colour-mix already use
-  elsewhere on the site, not a second moving surface.
+  THE ICON IS CENTRED, THE NUMERAL IS NOT — also 2026-08-02. Every card keeps its 01–06
+  mark pinned to the top-left corner as a small tag, while the icon, the title, the short
+  rule and the description below it are all centred as one block. See the note at
+  `.icon-ring` for why the two alignments coexist on one card rather than the whole thing
+  picking one.
 
   THERE IS NO CTA BANNER HERE ANY MORE. One shipped 2026-08-02 alongside the row — a
   bordered card below it with a headline and a "Start a Conversation" button — and was

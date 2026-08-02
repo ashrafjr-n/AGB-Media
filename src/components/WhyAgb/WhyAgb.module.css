@@ -44,8 +44,7 @@
   middle one against the other two and carrying a pointer-driven offset from a follow loop
   in WhyAgb.jsx. Everything that served it has been deleted rather than disabled. Nothing in
   this file animates now except the shared reveal ladder, so the section has no infinite
-  animation to gate and no `will-change` anywhere — the row's own divider glow is a static
-  gradient, not a second moving surface; see the note at `.item::before`.
+  animation to gate and no `will-change` anywhere.
 */
 .why {
   /*
@@ -72,9 +71,6 @@
     around it. The row's numeral is the one call site.
   */
   --why-gold-strong: color-mix(in srgb, var(--color-gold) 88%, transparent);
-  /* The divider's hairline and the soft warm mass at its top — see .item::before. */
-  --why-divider-line: color-mix(in srgb, var(--color-gold) 22%, transparent);
-  --why-divider-glow: color-mix(in srgb, var(--color-gold) 45%, transparent);
 
   position: relative;
   z-index: var(--z-base);
@@ -283,9 +279,9 @@
   at; the banner is what had pushed this past it to a rounder, more conservative 90rem.
 
   Base rule here is the STACKED, one-column layout — see the breakpoints at the foot of
-  this file for the tiers above it. `align-items: flex-start` everywhere: every item is a
-  left-aligned column of numeral / icon / title / rule / description, whatever the row's
-  own orientation.
+  this file for the tiers above it. `align-items: flex-start` on `.item` keeps the numeral
+  pinned to the top-left corner of every card; the icon and everything under it override
+  that per element — see the note at `.icon-ring`.
 */
 .row {
   display: grid;
@@ -294,17 +290,29 @@
 }
 
 /*
-  A THIN HAIRLINE BORDER, ADDED 2026-08-02 — the row's items were markup-only until now,
-  held apart by the divider between them and nothing around any one of them.
-  `--glass-border` is the same hairline every other glass edge on the site uses (Founder's
-  fact cards, Team's rim), at 0.08 white alpha — deliberately the quiet one rather than
-  `--glass-border-bright`, since six of these sitting close together read as a row of
-  panels if the edge is loud and as six grouped ideas if it barely announces itself.
-  `--radius-md` keeps the corner on the shared scale rather than a bespoke number.
+  A THIN HAIRLINE BORDER AND A FROSTED FILL — each item is now its own small glass panel
+  rather than markup held apart by a divider between them (both removed 2026-08-02; see
+  the note at the six-across breakpoint for the divider). `--glass-border` is the same
+  hairline every other glass edge on the site uses (Founder's fact cards, Team's rim), at
+  0.08 white alpha — deliberately the quiet one rather than `--glass-border-bright`, since
+  six of these sitting close together read as a row of panels if the edge is loud and as
+  six grouped ideas if it barely announces itself. `--radius-md` keeps the corner on the
+  shared scale rather than a bespoke number.
 
-  No fill. A border without a background still reads as "not a boxed card" in the sense
-  that mattered when this section first argued against cards — nothing here competes with
-  the photograph for the eye, it only marks where one reason ends and the next begins.
+  THE FILL IS THE SHARED SECTION PANE, composed rather than reinvented — the same
+  `--section-glass-fill-light` (0.4) over `--section-glass-blur-light` (7px) that
+  `.glass` below and Founder's own ground use, from shared/SectionGlass.module.css. It is
+  the site's one "subtle, light" glass tier, which is exactly the read six small cards
+  over a photograph want: `--section-glass-fill` (0.75, About's video treatment) or
+  `--glass-fill` (0.55, the header/ticker family) would both read as opaque panels at
+  this size, and a one-off alpha invented here would be the "one-off value" this was
+  asked not to be. Composing means retuning the shared token retunes these cards with it.
+
+  A card's own `backdrop-filter` blurs whatever is directly behind it — here, the
+  section's own already-blurred `.glass` pane — rather than reaching past it to the raw
+  photograph the way `.glass` does; the result reads as a second, smaller pane of the
+  same material sitting on the first, which is the intended "frosted panel on frosted
+  ground" depth rather than a flaw.
 
   MORE PADDING THAN THE DIVIDER-ONLY VERSION HAD, which had none: an item's content used
   to run flush to the row's own edges. A bordered box with its content touching every
@@ -313,6 +321,8 @@
   the ask and the row's own column-gap already does most of the inline separating.
 */
 .item {
+  composes: pane from '../shared/SectionGlass.module.css';
+
   position: relative;
 
   display: flex;
@@ -361,11 +371,19 @@
   size is not part of the one-screen budget this section is tuned against (see the pin's
   media query) — it is small and constant enough that letting it flex would buy back very
   little height for a good deal of visual inconsistency between items.
+
+  CENTRED, WHERE THE NUMERAL ABOVE IT STAYS LEFT — `align-self: center` against `.item`'s
+  own `align-items: flex-start`, so this is the one child that breaks from the numeral's
+  edge rather than the whole card re-aligning. A centred icon over left-aligned text read
+  as two different cards arguing about their own alignment, so the title, rule and
+  description below all take the same override — see each in turn — leaving the numeral
+  as a small top-left tag over an otherwise centred card.
 */
 .icon-ring {
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
   flex-shrink: 0;
 
   margin-block-end: 0.65rem;
@@ -392,24 +410,34 @@
   small headlines shouting over each other; medium is still clearly a title next to the
   light-weight description under it, without competing with the section's own --text-2xl
   heading above the row.
+
+  CENTRED, both the block (`align-self`, against `.item`'s `align-items: flex-start`) and
+  its own text (`text-align`) — a block centred under the icon with left-ragged wrapped
+  text would still read lopsided on the two-line titles. See the note at `.icon-ring` for
+  why this and the two rules below it all break from the numeral's left edge together.
 */
 .name {
+  align-self: center;
   margin-block-end: 0.35rem;
 
   font-size: var(--text-base);
   font-weight: var(--font-weight-medium);
   line-height: 1.25;
   letter-spacing: var(--tracking-tight);
+  text-align: center;
   color: var(--color-text);
 }
 
 /*
   THE SHORT RULE UNDER THE TITLE — a fixed small width, deliberately not the column's own
   width: it marks where the title ends and the description begins, the way a caption rule
-  does, rather than underlining the whole title the way a border would.
+  does, rather than underlining the whole title the way a border would. `align-self`
+  centres the whole 1.75rem bar under the now-centred title rather than anchoring it to
+  the card's left edge.
 */
 .rule {
   display: block;
+  align-self: center;
   margin-block: 0.35rem 0.5rem;
 
   inline-size: 1.75rem;
@@ -425,12 +453,15 @@
   or five at the row's own width.
 
   No measure cap. The item's own column is already the constraint at every width this
-  rule applies to.
+  rule applies to. Centred, matching the title above it — see the note at `.icon-ring`.
 */
 .description {
+  align-self: center;
+
   font-size: var(--text-xs);
   font-weight: var(--font-weight-light);
   line-height: var(--leading-relaxed);
+  text-align: center;
   color: var(--color-text-muted);
 }
 
@@ -540,8 +571,8 @@
 
   EVERY VALUE BELOW IS TYPE OR THE SPACE BETWEEN TYPE, and they were tuned as one set
   against 390x844 and 375x812. The row is a single stacked column at this width — it does
-  not exist as a grid or a row here — so nothing here interacts with the divider, the pin,
-  or the seam itself.
+  not exist as a six-across row here — so nothing here interacts with the pin or the
+  seam itself.
 
   WHY THE HEADING TAKES THE LARGEST CUT. The base size is already down to --text-2xl (see
   .title), and at that width a sentence this long still wants a shorter line than the
@@ -609,63 +640,20 @@
 }
 
 /*
-  THE SINGLE ROW OF SIX, AND ITS DIVIDERS — see the long note at `.row` for why 80rem
-  rather than this file's usual 64rem "wider layout" threshold, and the note at the pin's
-  own media query for why that gate now matches this one exactly.
+  THE SINGLE ROW OF SIX — see the long note at `.row` for why 80rem rather than this
+  file's usual 64rem "wider layout" threshold, and the note at the pin's own media query
+  for why that gate now matches this one exactly.
+
+  THERE IS NO DIVIDER BETWEEN ITEMS ANY MORE. A hairline with a warm glow concentrated at
+  its top ran down the gap between every pair of items until 2026-08-02; it is deleted
+  outright rather than hidden, along with the --why-divider-line / --why-divider-glow
+  tokens that fed it. Each item now carries its own border and frosted fill (see `.item`),
+  which is separation enough on its own — a divider between two already-bordered panels
+  was one line of emphasis too many, marking a boundary that each item's own edge was
+  already marking.
 */
 @media (min-width: 80rem) {
   .row {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  /*
-    THE DIVIDER — a hairline the full height of the row plus a soft warm mass concentrated
-    at its top, fading out before the line's own end. Only meaningful once the six sit in
-    one true row, which is why it is declared inside this breakpoint rather than reset
-    elsewhere: no earlier rule gives `.item::before` a `content`, so the pseudo-element does
-    not exist below 80rem at all.
-
-    NOT DRAWN BEFORE THE FIRST ITEM, the same convention the old grid's single centre line
-    followed: a rule marks a boundary between two things, and there is nothing to either
-    side of the first column to divide it from.
-
-    THE BOX IS WIDER THAN THE LINE IT DRAWS — 1.5rem, to leave the glow room to spread —
-    so centring it on the gap is not the old grid's single `50%`, which only worked
-    because that divider's own box WAS the 1px line. Here `inset-inline-start` has to
-    pull back by half the gap AND half the box's own width: `calc((var(--why-item-gap) +
-    1.5rem) / -2)`. Get this wrong — pull back by only half the gap, as if the box were
-    the line — and the box stops being centred on the gap at all; at this row's own gap
-    width it would sit visibly inside the following item, overlapping its numeral.
-
-    TWO LAYERS, both static. `radial-gradient` first: a warm ellipse anchored to the top of
-    the box and fading out within roughly a third of the row's height, which is what reads
-    as "a glow concentrated at the top". `linear-gradient` second, drawn at a fixed 1px
-    width via `background-size` + `no-repeat` rather than the box's own (wider) inline-size,
-    which is what keeps the actual line hairline-thin under a box wide enough to hold the
-    glow's ellipse without clipping it.
-  */
-  .item:not(:first-child)::before {
-    content: '';
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: calc((var(--why-item-gap) + 1.5rem) / -2);
-
-    inline-size: 1.5rem;
-    background-image: radial-gradient(
-        ellipse 70% 55% at 50% 0%,
-        var(--why-divider-glow),
-        transparent 70%
-      ),
-      linear-gradient(
-        to bottom,
-        var(--why-divider-line) 0%,
-        color-mix(in srgb, var(--color-gold) 8%, transparent) 45%,
-        transparent 90%
-      );
-    background-repeat: no-repeat;
-    background-position: center top, center top;
-    background-size: 100% 100%, 1px 100%;
-
-    pointer-events: none;
   }
 }
