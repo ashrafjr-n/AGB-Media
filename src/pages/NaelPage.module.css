@@ -1,0 +1,393 @@
+/*
+  /team/nael-al-jarabaa — see the long comment at the top of NaelPage.jsx for what
+  this route is and why its ground differs from /services' and /contact's. This file
+  is the layout half of that.
+
+  FLAT --color-black, NO BACKDROP-FILTER, NO FIXED PHOTOGRAPH. Depth on this page
+  comes from two things instead: the portrait itself (already shot on a dark studio
+  ground, so it meets this page's own ground almost seamlessly) and small local glass
+  panels on the credit lists (`--color-glass` + `--glass-border`, flat rather than
+  blurred — there is nothing behind them to blur). Restraint elsewhere is what keeps
+  those panels reading as glass rather than as one more surface among many.
+
+  ONE ASYMMETRIC AXIS FOR THE BODY, borrowed from /about's own rail-and-copy device
+  and repurposed as a working index rather than a decorative one — a sticky column of
+  real anchor links beside six content sections, which is the right tool for a page
+  this category-dense (CLAUDE.md's own argument for /about's axis applies here
+  without needing to be re-derived).
+
+  MOBILE IS THE PRIORITY CASE, not the fallback — every value that owns real block
+  space is a clamp with a vh middle term, and the two-column body collapses to one
+  column with the index rendered in flow above the content rather than beside it.
+*/
+
+.page {
+  --nael-gap-major: clamp(var(--space-2xl), 12vh, var(--space-3xl));
+  --nael-section-gap: clamp(var(--space-2xl), 10vh, 5rem);
+  --nael-column-gap: clamp(var(--space-xl), 6vw, 6rem);
+
+  /*
+    A LOCAL GOLD HAIRLINE, DERIVED FROM --color-gold RATHER THAN BORROWED FROM
+    --about-hairline. That token's own comment in variables.css scopes it explicitly
+    to /about's surfaces; reaching into it from a different route would tie this
+    page's rules to a token another page's stylesheet considers its own. Deriving
+    the same weight (22%) locally, the way Founder's and WhyAgb's gold hairlines are
+    built from --color-gold directly, keeps this page self-contained.
+  */
+  --nael-hairline: color-mix(in srgb, var(--color-gold) 22%, transparent);
+
+  position: relative;
+  min-block-size: 100vh;
+
+  background-color: var(--color-black);
+
+  padding-block-start: calc(var(--header-height) + var(--nael-gap-major));
+  padding-block-end: var(--nael-gap-major);
+  padding-inline: var(--container-padding);
+}
+
+.inner {
+  position: relative;
+  z-index: var(--z-base);
+
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+}
+
+/* --- The way back ------------------------------------------------------- */
+
+/*
+  A quiet wayfinding link, not a button — see the note in NaelPage.jsx for why it
+  goes to `/` rather than a hash. `--color-text-muted` at rest, brightening to
+  `--color-text` on hover/focus: the same colour-only lift the site's nav links use,
+  never a transform, so it never fights the reveal ladder its parent motion elements
+  are on.
+*/
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  margin-block-end: var(--nael-gap-major);
+
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.back:hover,
+.back:focus-visible {
+  color: var(--color-text);
+}
+
+.back svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+/* --- Masthead: portrait against the name plate --------------------------- */
+
+.masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-xl);
+  align-items: center;
+
+  margin-block-end: var(--nael-gap-major);
+}
+
+.portrait-col {
+  min-inline-size: 0;
+}
+
+/*
+  THE FRAME CLIPS AND NOTHING ELSE — no ring, no halo, no shadow, matching Founder's
+  own explicit "raw image, the clean edge against the ground is the whole effect"
+  rule for exactly the same reason: a decorative ring or glow sized to a portrait
+  this large is how Founder's own halo ended up bleeding past its section before it
+  was removed (see Founder.module.css's history). `overflow: hidden` does the crop;
+  the radius lives here rather than on the image so the clip and the corner are one
+  declaration.
+*/
+.portrait-frame {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+
+  inline-size: 100%;
+  block-size: clamp(16rem, 46vh, 28rem);
+}
+
+/*
+  ONE PIXEL LARGER THAN ITS FRAME, ON EVERY SIDE, clipped back by it — the same fix
+  Founder.module.css documents at .portrait for a full-width image inside an `fr`
+  grid track (see the 48rem block below): the track's width is routinely fractional,
+  so an image at exactly 100% can end on a half pixel the browser antialiases,
+  showing the ground through as a thin dark seam. `max-inline-size: none` overrides
+  global.css's `img { max-width: 100% }`, which would otherwise clamp the overhang
+  straight back off.
+*/
+.portrait {
+  display: block;
+  inline-size: calc(100% + 2px);
+  max-inline-size: none;
+  block-size: calc(100% + 2px);
+  margin: -1px;
+  object-fit: cover;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+
+  min-inline-size: 0;
+}
+
+/*
+  THE SITE'S MICRO-LABEL — identical to About's, WhyAgb's and the Founder's: 0.65rem,
+  medium, 0.28em tracking, the gold dot leading rather than trailing because the
+  tracking adds a space after the final letter CSS cannot trim. Reused as-is both for
+  the masthead's "The CEO" and for every content section's own eyebrow further down.
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  margin-block-end: var(--space-2xs);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/*
+  THE NAME — the site's given-name-white / family-name-gold pairing, matching
+  Founder's h2 and Team's own lead figure. Larger than either of those two, because
+  this is the whole page's h1 rather than a heading inside a larger section.
+*/
+.name {
+  font-size: var(--text-4xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.name-accent {
+  color: var(--color-gold);
+}
+
+/*
+  THE TITLE LINES — a small stacked credit block, the register film credits use for
+  a name plate: uppercase, tracked, quieter than the name it sits under. A flex
+  column rather than an actual list rhythm — two short lines, not a list a reader
+  scans.
+*/
+.titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+
+  margin-block-start: var(--space-sm);
+  padding-inline-start: var(--space-md);
+
+  border-inline-start: 1px solid var(--nael-hairline);
+}
+
+.titles li {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* --- The body: index beside content --------------------------------------- */
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--nael-column-gap);
+}
+
+/*
+  THE INDEX — a working table of contents rather than decoration. Below 64rem it
+  renders in flow above the content, at its own natural height; above it, it sticks
+  (see the 64rem block) the same way /about's chapter rail does, for the same reason:
+  a reader working through six sections wants the list of them to stay put rather
+  than scroll away after the first.
+*/
+.index {
+  min-inline-size: 0;
+  margin-block-end: var(--space-2xl);
+}
+
+.index-title {
+  margin-block-end: var(--space-sm);
+
+  color: var(--color-text-subtle);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.index-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+
+  border-inline-start: 1px solid var(--glass-border);
+}
+
+.index-link {
+  display: block;
+  padding-inline-start: var(--space-sm);
+
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.index-link:hover,
+.index-link:focus-visible {
+  color: var(--color-text);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nael-section-gap);
+
+  min-inline-size: 0;
+}
+
+/* --- A content section ------------------------------------------------------ */
+
+/*
+  THE SAME HAIRLINE-OPENED, EYEBROW-PLUS-HEADING SHAPE /about's SECTIONS USE — no
+  numeral, no icon, matching that page's own corrected state (see the note in
+  data/aboutPage.js on why those were removed there) rather than reinventing a
+  heavier identity row for a page with even more sections to get through.
+*/
+.section {
+  position: relative;
+
+  padding-block-start: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+
+  block-size: 1px;
+  background-image: linear-gradient(
+    to right,
+    var(--nael-hairline),
+    transparent 78%
+  );
+}
+
+.head {
+  margin-block-end: var(--space-lg);
+}
+
+.section-title {
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+.section-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  max-inline-size: 72ch;
+}
+
+.paragraph {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- The credit lists (Theatre, Cinema/Drama, Workshops) -------------------- */
+
+/*
+  THE ONE PLACE ON THIS PAGE THAT IS GLASS — see the top-of-file note. Applied to
+  enumerable credits only; the continuous prose above stays plain paragraphs, so a
+  panel here reads as "here is a discrete fact" rather than as decoration repeated
+  down the whole page.
+*/
+.credits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+
+  margin-block-start: var(--space-2xs);
+}
+
+.credit {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-glass);
+
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- Breakpoints ------------------------------------------------------------ */
+
+@media (min-width: 48rem) {
+  .masthead {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    column-gap: var(--nael-column-gap);
+  }
+}
+
+@media (min-width: 64rem) {
+  .body {
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 2.3fr);
+  }
+
+  /*
+    THE RAIL STICKS — clears the fixed header the same way /about's own chapter rail
+    does. `align-self: start` is required, not tidy: a grid item stretches to its
+    row's height by default, and a box already as tall as its track has nowhere to
+    travel and will never appear to stick.
+  */
+  .index {
+    position: sticky;
+    align-self: start;
+    inset-block-start: calc(var(--header-height) + var(--space-lg));
+
+    margin-block-end: 0;
+  }
+}

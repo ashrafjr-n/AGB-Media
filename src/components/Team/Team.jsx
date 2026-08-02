@@ -217,22 +217,44 @@ function Team() {
         </motion.h2>
 
         {/* --- The lead figure ---------------------------------------------- */}
-        <motion.div className={styles.lead} {...revealAt(2)}>
-          <div className={`${styles.portrait} ${styles['portrait-lead']}`}>
-            {/*
-              `alt=""` and the name in real text beside it, rather than the name as alt
-              text. The name is already a heading below the circle, so describing the
-              photograph with it would have a screen reader read him twice.
-            */}
-            <img src={lead.image} alt="" loading="lazy" decoding="async" />
-          </div>
+        {/*
+          THE CIRCLE IS NOW A REAL LINK — the "if the portraits ever become links to
+          bios" case .portrait's own comment anticipated. `.lead-link` wraps the
+          portrait AND the identity block rather than the circle alone, so the whole
+          card (photo, name, role) is one click target — the name is part of what
+          identifies him as much as the photograph is. `display: contents` on the
+          link (see .lead-link in the stylesheet) keeps it out of `.lead`'s own flex
+          layout entirely, so the portrait and identity remain direct flex children
+          exactly as before and nothing here had to change.
 
-          <div className={styles.identity}>
-            <h3 className={styles.name}>
-              Nael <span className={styles['name-accent']}>Al-Jarabah</span>
-            </h3>
-            <p className={styles.role}>{lead.title}</p>
-          </div>
+          A plain <Link>, not a motion one, for the same reason the Contact button
+          below is plain: `.lead` already animates on the reveal ladder, and a motion
+          child would compound both transforms and multiply both opacities against
+          its parent's fade.
+
+          The four seats beside him stay plain, unlinked `<div>`s — see `seats`
+          above and the note at `.portrait` in the stylesheet: they are announced
+          placeholders with no bio to send anyone to yet.
+        */}
+        <motion.div className={styles.lead} {...revealAt(2)}>
+          <Link to="/team/nael-al-jarabaa" className={styles['lead-link']}>
+            <div className={`${styles.portrait} ${styles['portrait-lead']}`}>
+              {/*
+                `alt=""` and the name in real text beside it, rather than the name as
+                alt text. The name is already a heading below the circle, so
+                describing the photograph with it would have a screen reader read
+                him twice.
+              */}
+              <img src={lead.image} alt="" loading="lazy" decoding="async" />
+            </div>
+
+            <div className={styles.identity}>
+              <h3 className={styles.name}>
+                Nael <span className={styles['name-accent']}>Al-Jarabah</span>
+              </h3>
+              <p className={styles.role}>{lead.title}</p>
+            </div>
+          </Link>
         </motion.div>
 
         {/* --- The four seats ----------------------------------------------- */}

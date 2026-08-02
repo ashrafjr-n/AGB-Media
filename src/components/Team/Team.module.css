@@ -439,11 +439,15 @@
   box-shadow: var(--shadow-soft);
 
   /*
-    Every circle is interactive-looking and should say so under the pointer. The circles
-    are not links today — the section's one destination is the Contact button below them —
-    so this is the cursor describing an affordance rather than promising a click target. It
-    goes if the portraits ever become links to bios, at which point the anchor brings its
-    own. There is no other hover effect — no transform, no colour change — by request.
+    Every circle is interactive-looking and should say so under the pointer. THE LEAD
+    CIRCLE'S IS NO LONGER JUST AN AFFORDANCE — his is now wrapped in a real `<Link>`
+    (see `.lead-link` below and the note in Team.jsx), so its pointer cursor is the
+    anchor's own default and this rule is redundant there rather than load-bearing.
+    It stays load-bearing for the four seats, which are still plain, unlinked `<div>`s
+    with no bio to send anyone to yet — this is what tells a visitor the circle looks
+    like something without promising a click target that does not exist. There is no
+    other hover effect anywhere on any circle — no transform, no colour change — by
+    request.
   */
   cursor: pointer;
 }
@@ -494,6 +498,18 @@
   gap: clamp(0.75rem, 2vh, 1.25rem);
 
   margin-block-end: var(--team-lead-gap);
+}
+
+/*
+  `display: contents` — the link wraps the portrait and the identity block (Team.jsx)
+  but must not become a THIRD box in `.lead`'s flex column alongside them. `contents`
+  drops the anchor itself from the box tree while leaving its children in place as
+  direct flex items of `.lead`, so the layout above is exactly what it was before the
+  link existed. The anchor still exists for focus, click and screen-reader purposes —
+  `contents` only removes its own generated box, not the element.
+*/
+.lead-link {
+  display: contents;
 }
 
 .identity {
