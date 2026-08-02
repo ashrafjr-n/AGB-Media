@@ -1,24 +1,29 @@
 /*
   /team/nael-al-jarabaa — see the long comment at the top of NaelPage.jsx for what
-  this route is and why its ground differs from /services' and /contact's. This file
-  is the layout half of that.
+  this route is. This file is the layout half of that.
 
-  FLAT --color-black, NO BACKDROP-FILTER, NO FIXED PHOTOGRAPH. Depth on this page
-  comes from two things instead: the portrait itself (already shot on a dark studio
-  ground, so it meets this page's own ground almost seamlessly) and small local glass
-  panels on the credit lists (`--color-glass` + `--glass-border`, flat rather than
-  blurred — there is nothing behind them to blur). Restraint elsewhere is what keeps
-  those panels reading as glass rather than as one more surface among many.
+  THE GROUND IS --about-ground, EXACTLY. A correction from this page's first pass,
+  which painted flat --color-black instead — on explicit request to match /about's
+  background treatment rather than approximate it, this page now reads `--about-ground`
+  and `--about-hairline` directly, the same two tokens /about's own stylesheet reads.
+  variables.css names both routes as their consumers now; see the note there. Flat,
+  unlit, no vignette, no gradient bleed, no second layer — /about's own "the page is
+  flat now, deliberately" argument applies here without needing to be re-derived.
+  What local depth this page has still comes from the portrait (shot on a dark studio
+  ground that meets this one almost seamlessly) and the flat glass-panel credit lists
+  further down (`--color-glass` + `--glass-border`, no blur — there is no photograph
+  behind them to blur).
 
-  ONE ASYMMETRIC AXIS FOR THE BODY, borrowed from /about's own rail-and-copy device
-  and repurposed as a working index rather than a decorative one — a sticky column of
-  real anchor links beside six content sections, which is the right tool for a page
-  this category-dense (CLAUDE.md's own argument for /about's axis applies here
-  without needing to be re-derived).
+  ONE FLOWING COLUMN NOW, NOT A RAIL BESIDE ONE. This page carried a sticky "On This
+  Page" index beside its six sections in an earlier pass, borrowed from /about's own
+  rail-and-copy device; it is deleted outright on request, along with the two-column
+  grid and the sticky positioning it needed. `.content` is a plain single-column flex
+  stack now, and every section inside it centres its own heading and body (see
+  `.head` / `.section-body` below) rather than reading against a rail that no longer
+  exists.
 
   MOBILE IS THE PRIORITY CASE, not the fallback — every value that owns real block
-  space is a clamp with a vh middle term, and the two-column body collapses to one
-  column with the index rendered in flow above the content rather than beside it.
+  space is a clamp with a vh middle term.
 */
 
 .page {
@@ -26,20 +31,10 @@
   --nael-section-gap: clamp(var(--space-2xl), 10vh, 5rem);
   --nael-column-gap: clamp(var(--space-xl), 6vw, 6rem);
 
-  /*
-    A LOCAL GOLD HAIRLINE, DERIVED FROM --color-gold RATHER THAN BORROWED FROM
-    --about-hairline. That token's own comment in variables.css scopes it explicitly
-    to /about's surfaces; reaching into it from a different route would tie this
-    page's rules to a token another page's stylesheet considers its own. Deriving
-    the same weight (22%) locally, the way Founder's and WhyAgb's gold hairlines are
-    built from --color-gold directly, keeps this page self-contained.
-  */
-  --nael-hairline: color-mix(in srgb, var(--color-gold) 22%, transparent);
-
   position: relative;
   min-block-size: 100vh;
 
-  background-color: var(--color-black);
+  background-color: var(--about-ground);
 
   padding-block-start: calc(var(--header-height) + var(--nael-gap-major));
   padding-block-end: var(--nael-gap-major);
@@ -53,40 +48,6 @@
   inline-size: 100%;
   max-inline-size: var(--container-max);
   margin-inline: auto;
-}
-
-/* --- The way back ------------------------------------------------------- */
-
-/*
-  A quiet wayfinding link, not a button — see the note in NaelPage.jsx for why it
-  goes to `/` rather than a hash. `--color-text-muted` at rest, brightening to
-  `--color-text` on hover/focus: the same colour-only lift the site's nav links use,
-  never a transform, so it never fights the reveal ladder its parent motion elements
-  are on.
-*/
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
-
-  margin-block-end: var(--nael-gap-major);
-
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-wide);
-
-  transition: color var(--duration-base) var(--ease-out);
-}
-
-.back:hover,
-.back:focus-visible {
-  color: var(--color-text);
-}
-
-.back svg {
-  inline-size: 1rem;
-  block-size: 1rem;
 }
 
 /* --- Masthead: portrait against the name plate --------------------------- */
@@ -112,13 +73,20 @@
   was removed (see Founder.module.css's history). `overflow: hidden` does the crop;
   the radius lives here rather than on the image so the clip and the corner are one
   declaration.
+
+  THE BLOCK-SIZE CLAMP IS ENLARGED FROM THE FIRST PASS'S clamp(16rem, 46vh, 28rem),
+  on request for a wider photo. Width itself comes from the masthead's own grid
+  ratio (see the 48rem block below, now weighted toward this column rather than
+  away from it) since this element is already `inline-size: 100%` of its track; the
+  block-size clamp moved up with it so a wider box does not read as short and
+  letterboxed against the taller identity column beside it.
 */
 .portrait-frame {
   overflow: hidden;
   border-radius: var(--radius-lg);
 
   inline-size: 100%;
-  block-size: clamp(16rem, 46vh, 28rem);
+  block-size: clamp(20rem, 54vh, 34rem);
 }
 
 /*
@@ -207,7 +175,7 @@
   margin-block-start: var(--space-sm);
   padding-inline-start: var(--space-md);
 
-  border-inline-start: 1px solid var(--nael-hairline);
+  border-inline-start: 1px solid var(--about-hairline);
 }
 
 .titles li {
@@ -218,67 +186,12 @@
   color: var(--color-text-muted);
 }
 
-/* --- The body: index beside content --------------------------------------- */
-
-.body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  column-gap: var(--nael-column-gap);
-}
-
-/*
-  THE INDEX — a working table of contents rather than decoration. Below 64rem it
-  renders in flow above the content, at its own natural height; above it, it sticks
-  (see the 64rem block) the same way /about's chapter rail does, for the same reason:
-  a reader working through six sections wants the list of them to stay put rather
-  than scroll away after the first.
-*/
-.index {
-  min-inline-size: 0;
-  margin-block-end: var(--space-2xl);
-}
-
-.index-title {
-  margin-block-end: var(--space-sm);
-
-  color: var(--color-text-subtle);
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-}
-
-.index-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-
-  border-inline-start: 1px solid var(--glass-border);
-}
-
-.index-link {
-  display: block;
-  padding-inline-start: var(--space-sm);
-
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.4;
-
-  transition: color var(--duration-base) var(--ease-out);
-}
-
-.index-link:hover,
-.index-link:focus-visible {
-  color: var(--color-text);
-}
+/* --- The content column ----------------------------------------------------- */
 
 .content {
   display: flex;
   flex-direction: column;
   gap: var(--nael-section-gap);
-
-  min-inline-size: 0;
 }
 
 /* --- A content section ------------------------------------------------------ */
@@ -304,13 +217,27 @@
   block-size: 1px;
   background-image: linear-gradient(
     to right,
-    var(--nael-hairline),
+    var(--about-hairline),
     transparent 78%
   );
 }
 
+/*
+  CENTRED, ON REQUEST — both the eyebrow and the heading beneath it. `text-align`
+  handles the heading (an ordinary block element); the eyebrow is a flex row (the
+  leading gold dot beside the label) and `text-align` has no say over how a flex
+  container positions its own children, so `.head .eyebrow` below adds
+  `justify-content: center` as the flex equivalent. Scoped to eyebrows inside `.head`
+  specifically — the masthead's own "The CEO" eyebrow lives in `.identity`, not
+  `.head`, and stays left-aligned with the name plate beside it.
+*/
 .head {
   margin-block-end: var(--space-lg);
+  text-align: center;
+}
+
+.head .eyebrow {
+  justify-content: center;
 }
 
 .section-title {
@@ -320,12 +247,23 @@
   color: var(--color-text);
 }
 
+/*
+  CENTRED, ON REQUEST — the block itself sits centred in the section via
+  `margin-inline: auto` (rather than left-flush against a rail that no longer
+  exists), and `text-align: center` centres the prose and the credit-list text
+  alike. Children keep the default `stretch` cross-axis sizing (nothing here sets
+  `align-items`), so paragraphs and the credit list still fill the full 72ch
+  measure as one consistent column — only the text inside is centred, not
+  shrink-wrapped to its own content width.
+*/
 .section-body {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 
   max-inline-size: 72ch;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .paragraph {
@@ -365,29 +303,15 @@
 
 /* --- Breakpoints ------------------------------------------------------------ */
 
+/*
+  THE PORTRAIT COLUMN NOW TAKES THE LARGER SHARE — 1.15fr against 0.85fr, the first
+  pass's ratio reversed, on request for a wider photo. `.portrait-frame` is already
+  `inline-size: 100%` of this track, so widening the track is what widens the image;
+  see the block-size clamp at `.portrait-frame` for the matching height increase.
+*/
 @media (min-width: 48rem) {
   .masthead {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     column-gap: var(--nael-column-gap);
-  }
-}
-
-@media (min-width: 64rem) {
-  .body {
-    grid-template-columns: minmax(0, 0.7fr) minmax(0, 2.3fr);
-  }
-
-  /*
-    THE RAIL STICKS — clears the fixed header the same way /about's own chapter rail
-    does. `align-self: start` is required, not tidy: a grid item stretches to its
-    row's height by default, and a box already as tall as its track has nowhere to
-    travel and will never appear to stick.
-  */
-  .index {
-    position: sticky;
-    align-self: start;
-    inset-block-start: calc(var(--header-height) + var(--space-lg));
-
-    margin-block-end: 0;
   }
 }

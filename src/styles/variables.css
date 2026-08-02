@@ -174,17 +174,21 @@
   */
   --color-gold-veil: rgba(201, 112, 20, 0.1);
 
-  /* --- The /about page's ground ----------------------------------------- */
+  /* --- The /about page's ground, now shared by /team/nael-al-jarabaa ---- */
 
   /*
-    THE ONE PLACE ON THE SITE THAT IS NOT --color-black, and it is deliberate rather
-    than a drift.
+    THE ONE GROUND TONE ON THE SITE THAT IS NOT --color-black, and it is deliberate
+    rather than a drift. Two routes paint it now — /about and the CEO's profile page
+    at /team/nael-al-jarabaa — and both for the same reason stated below.
 
     Everything under `/` is a single near-black tone end to end — that is the rule the
-    translucent-surface note above exists to protect, and it is unchanged. The /about
-    page is a separate route with no shared edge, no shared scroll and no surface
-    composited against a home page section, so there is no seam for a second ground tone
-    to show up in. It reads as a different room in the same building.
+    translucent-surface note above exists to protect, and it is unchanged. /about and
+    /team/nael-al-jarabaa are both separate routes with no shared edge, no shared
+    scroll and no surface composited against a home page section, so there is no seam
+    for a second ground tone to show up in either one. Each reads as a different room
+    in the same building — and, since both use this exact token rather than their own
+    values, the two read as one further room shared between them rather than as two
+    separate ones.
 
     #030201 is --color-gold's hue taken almost to black: R3 G2 B1, hue ~26deg, the same
     warm orange-brown lean the logo's midtone has. It sits only a point or two above
@@ -210,12 +214,14 @@
   --about-ground: #030201;
 
   /*
-    The rule that opens each /about section, and now also the diptych divider, the chip
-    borders and the closing statement's short rule (AboutPage.module.css) — every flat
-    or fading gold line on that page reads from this one token. Brighter than
-    --glass-border, for the same reason WhyAgb's grid divider is: there is no pane edge
-    under it for the eye to find it against, so a white hairline at 0.08 simply
-    disappears on this ground.
+    The rule that opens each /about section, the diptych divider, the chip borders and
+    the closing statement's short rule (AboutPage.module.css) — and, since it shares
+    --about-ground above, every hairline and section rule on NaelPage.module.css too.
+    Every flat or fading gold line on either page reads from this one token, which is
+    what keeps them reading as one material rather than two approximations of it.
+    Brighter than --glass-border, for the same reason WhyAgb's grid divider is: there
+    is no pane edge under it for the eye to find it against, so a white hairline at
+    0.08 simply disappears on this ground.
   */
   --about-hairline: rgba(201, 112, 20, 0.22);
 

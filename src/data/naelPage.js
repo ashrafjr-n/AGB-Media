@@ -75,19 +75,12 @@ export const workshops = [
 ]
 
 /*
-  THE PAGE'S INDEX — one entry per content section, in reading order. `id` is the DOM
-  id both the section heading and the in-page anchor link use; `label` is the index's
-  own short link text and is invented UI chrome rather than sourced prose (matching
-  the reasoning `eyebrow` carries in data/aboutPage.js). "Publications & Festivals"
-  rather than the brief's bare "Publications" because the section's own content is as
-  much about festival participation as about the two written works, and the index is
-  read before the prose that would otherwise make that clear.
+  THERE IS NO `sections` EXPORT ANY MORE. It once fed a sticky "On This Page" index
+  beside the six content sections — one `{ id, label }` entry per section, `id`
+  doubling as the anchor both the index link and the section heading used. The index
+  was removed from NaelPage.jsx outright on request, along with the two-column body
+  grid and sticky rail it needed, and this array went with it as its only consumer —
+  the six section ids and titles are written directly at each `<Section>` call site
+  in NaelPage.jsx now, the same way data/aboutPage.js's five sections never had a
+  separate index array of their own either.
 */
-export const sections = [
-  { id: 'biography', label: 'Biography' },
-  { id: 'publications', label: 'Publications & Festivals' },
-  { id: 'channel-founding', label: 'Channel Founding' },
-  { id: 'theatre', label: 'Theatre' },
-  { id: 'cinema-drama', label: 'Cinema, Drama & Channel Management' },
-  { id: 'workshops', label: 'Workshops' },
-]

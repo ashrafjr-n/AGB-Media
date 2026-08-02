@@ -1,7 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { HiArrowLeft } from 'react-icons/hi'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Header from '../components/Header/Header'
@@ -14,7 +12,6 @@ import {
   theatre,
   cinemaDrama,
   workshops,
-  sections,
 } from '../data/naelPage'
 import styles from './NaelPage.module.css'
 
@@ -31,28 +28,26 @@ import styles from './NaelPage.module.css'
   own, the same reason every secondary page resets it), and `noise-overlay` on
   `<main>`.
 
-  THE GROUND IS DIFFERENT FROM /services AND /contact ON PURPOSE. Those two are a
-  fixed photograph under the shared section glass; this page has no photograph of its
-  own to use for that (Nael's portrait is the content, not a room to read text over,
-  and reusing Founder's studio still or one of the other two pages' photos behind a
-  page about a *different* person would misattribute whose room this is). The ground
-  here is flat `--color-black` — the site's main tone rather than /about's separate
-  `--about-ground` — because this page is reached from the home page and reads as
-  part of it, not as a third room. Depth instead comes from the portrait itself (shot
-  on a dark studio backdrop that meets this ground almost seamlessly) and from local
-  glass-panel surfaces on the credit lists further down, rather than from a
-  viewport-wide backdrop-filter this page has nothing suitable to blur.
+  THE GROUND IS --about-ground, THE SAME TOKEN /about PAINTS — a correction from this
+  page's first draft, which used flat `--color-black` on the argument that this route
+  reads as part of the home page rather than as a third room. That reasoning gave way
+  to an explicit request to match /about's ground exactly rather than approximate it:
+  same token, same flat unlit treatment, no vignette, no gradient bleed, no second
+  layer (see the shared note at `--about-ground` in variables.css, which now names
+  both routes as its consumers). Depth on this page still comes mostly from the
+  portrait itself, shot on a dark studio backdrop that meets either ground almost
+  seamlessly, and from the local glass-panel credit lists further down.
 
   THE STRUCTURE IS ITS OWN, NOT A COPY OF THE FOUNDER SECTION: a masthead pairing a
-  large framed portrait against a name plate, then a sticky index rail beside six
-  content sections (biography, publications, channel founding, theatre, cinema/drama,
-  workshops) — the density the brief asked to be organised scannably. The index and
-  the rail-plus-hairline device are drawn from /about's own vocabulary (a page that
-  already had to solve "long, category-shaped prose, made to feel designed rather
-  than dumped"), reused here because it is the right tool for the same problem, not
-  because every page must look identical. No section numeral and no per-section icon
-  — eyebrow-plus-heading only — matching /about's own corrected state rather than its
-  first draft (see the note in data/aboutPage.js on why those were removed there).
+  large framed portrait against a name plate, then six content sections in a single
+  flowing column — biography, publications, channel founding, theatre, cinema/drama,
+  workshops. It carried a sticky "On This Page" index beside that column in an
+  earlier pass, borrowed from /about's own rail device; it was removed on request,
+  along with the two-column body grid it needed, so the six sections now read as one
+  ordinary scroll rather than a page with working chrome down one side. No section
+  numeral and no per-section icon — eyebrow-plus-heading only, and both centred —
+  matching /about's own corrected state rather than its first draft (see the note in
+  data/aboutPage.js on why numerals and icons were removed there).
 */
 function NaelPage() {
   const revealAt = useSectionReveal('nael-masthead')
@@ -77,20 +72,6 @@ function NaelPage() {
 
       <main className={`${styles.page} noise-overlay`}>
         <div className={styles.inner}>
-          {/*
-            THE WAY BACK. A plain, quiet link rather than a button — it is wayfinding,
-            not a call to action, and the page already has none of the site's one
-            high-emphasis button on it (CLAUDE.md §2 keeps that pair to the hero nav
-            and Team's own CTA). Goes to `/` rather than `/#team`: React Router does
-            not scroll to a hash fragment on a client-side navigation, so a link
-            promising to land back on the Team section would not actually do that —
-            better to say plainly where it goes.
-          */}
-          <Link className={styles.back} to="/">
-            <HiArrowLeft aria-hidden="true" />
-            Back to AGB Media
-          </Link>
-
           {/* --- Masthead: portrait against the name plate ---------------------- */}
           <header className={styles.masthead}>
             <motion.div className={styles['portrait-col']} {...revealAt(0)}>
@@ -150,68 +131,44 @@ function NaelPage() {
             </motion.div>
           </header>
 
-          {/* --- The index, beside six content sections -------------------------- */}
-          <div className={styles.body}>
-            {/*
-              THE INDEX — real anchor links, not decoration: CLAUDE.md's global.css
-              already sets `scroll-padding-block-start: var(--header-height)` on
-              <html>, so following one of these lands the target heading clear of the
-              fixed pill with no extra handling needed here. Sticky above 64rem,
-              matching the threshold /about's own chapter rail uses and for the same
-              reason — a narrow window has nowhere near enough vertical room for a
-              rail to have anything to hold onto.
-            */}
-            <nav className={styles.index} aria-label="Profile sections">
-              <p className={styles['index-title']}>On This Page</p>
-              <ul className={styles['index-list']}>
-                {sections.map((section) => (
-                  <li key={section.id}>
-                    <a className={styles['index-link']} href={`#${section.id}`}>
-                      {section.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+          {/* --- Six content sections, in one flowing column --------------------- */}
+          <div className={styles.content}>
+            <Section id="biography" eyebrow="Since 1999" title="Biography">
+              <p className={styles.paragraph}>{bio}</p>
+            </Section>
 
-            <div className={styles.content}>
-              <Section id="biography" eyebrow="Since 1999" title="Biography">
-                <p className={styles.paragraph}>{bio}</p>
-              </Section>
+            <Section
+              id="publications"
+              eyebrow="Words & Recognition"
+              title="Publications & Festivals"
+            >
+              <p className={styles.paragraph}>{publications}</p>
+            </Section>
 
-              <Section
-                id="publications"
-                eyebrow="Words & Recognition"
-                title="Publications & Festivals"
-              >
-                <p className={styles.paragraph}>{publications}</p>
-              </Section>
+            <Section
+              id="channel-founding"
+              eyebrow="Broadcast"
+              title="Channel Founding"
+            >
+              <p className={styles.paragraph}>{channelFounding}</p>
+            </Section>
 
-              <Section
-                id="channel-founding"
-                eyebrow="Broadcast"
-                title="Channel Founding"
-              >
-                <p className={styles.paragraph}>{channelFounding}</p>
-              </Section>
+            <Section id="theatre" eyebrow="On Stage" title="Theatre">
+              <p className={styles.paragraph}>{theatre.intro}</p>
+              <CreditList items={theatre.items} />
+            </Section>
 
-              <Section id="theatre" eyebrow="On Stage" title="Theatre">
-                <p className={styles.paragraph}>{theatre.intro}</p>
-                <CreditList items={theatre.items} />
-              </Section>
+            <Section
+              id="cinema-drama"
+              eyebrow="On Screen"
+              title="Cinema, Drama & Channel Management"
+            >
+              <CreditList items={cinemaDrama} />
+            </Section>
 
-              <Section
-                id="cinema-drama"
-                eyebrow="On Screen"
-                title="Cinema, Drama & Channel Management"
-              >
-                <CreditList items={cinemaDrama} />
-              </Section>
-
-              <Section id="workshops" eyebrow="Mentorship" title="Workshops">
-                <CreditList items={workshops} />
-              </Section>
-            </div>
+            <Section id="workshops" eyebrow="Mentorship" title="Workshops">
+              <CreditList items={workshops} />
+            </Section>
           </div>
         </div>
       </main>
