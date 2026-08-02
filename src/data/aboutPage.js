@@ -44,15 +44,11 @@ export const pullQuote =
   that fire at very different scroll depths would let the first latch the rest before
   they had ever been on screen).
 
-  `numeral` is a two-digit index (01–05), matching the device WhyAgb's row and this
-  page's own old Roman numerals both used in spirit — a mark that enumerates rather
-  than decorates. Arabic rather than Roman this time: five sections read as a numbered
-  sequence in a way three long chapters read as acts, and the site already has both
-  registers in play (WhyAgb's grid, the previous /about chapters).
-
-  `Icon` is one per section, the same "outlined mark labelling a heading" device
-  Founder's fact cards and WhyAgb's row both use — see AboutPage.jsx for which react-
-  icons entry each one is and why.
+  NO `numeral` AND NO `Icon` FIELD HERE — a two-digit index and a per-section
+  react-icons glyph both existed in the first version of this redesign and both were
+  removed the same day, on request, along with the markup and CSS that rendered them
+  (see AboutPage.jsx). Nothing in this data model replaced them; a section's identity
+  is `eyebrow` plus `title` alone now.
 
   `eyebrow` is a short kicker distinct from `title` — the site's usual micro-label
   device (About, WhyAgb and Founder each open with one of these), populated per
@@ -71,7 +67,6 @@ export const pullQuote =
 export const sections = [
   {
     id: 'about-who',
-    numeral: '01',
     eyebrow: 'Company Profile',
     title: 'Who We Are',
     body: [
@@ -82,7 +77,6 @@ export const sections = [
   },
   {
     id: 'about-vision',
-    numeral: '02',
     eyebrow: 'Looking Forward',
     title: 'Vision',
     body: [
@@ -93,7 +87,6 @@ export const sections = [
   },
   {
     id: 'about-mission',
-    numeral: '03',
     eyebrow: 'Our Purpose',
     title: 'Mission',
     body: [
@@ -103,7 +96,6 @@ export const sections = [
   },
   {
     id: 'about-record',
-    numeral: '04',
     eyebrow: 'Since 1976',
     title: 'Our Record',
     body: [
@@ -134,7 +126,6 @@ export const sections = [
   },
   {
     id: 'about-network',
-    numeral: '05',
     eyebrow: 'Global Reach',
     title: 'Strategic Network',
     body: [

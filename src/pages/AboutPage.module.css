@@ -3,18 +3,20 @@
   the top of AboutPage.jsx for what changed and why; this file is the layout half of
   that change.
 
-  STILL NOTHING HERE IS GLASS. No backdrop-filter, no blurred pane, no video — that
-  constraint from the previous version of this page is unchanged and is worth restating
-  rather than silently carrying forward: the home page's three viewport-wide
-  backdrop-filters are the most expensive thing in the project (CLAUDE.md §7), and this
-  route still deliberately takes none of that on. Depth is one fixed, painted layer of
-  stacked radial gradients (`.atmosphere`) plus flat bordered surfaces for the stat cards
-  and the chip cloud — nothing that costs a compositing layer.
+  STILL NOTHING HERE IS GLASS, AND NOW NOTHING IS A GRADIENT EITHER. No backdrop-filter,
+  no blurred pane, no video, and — as of a correction pass the same day this page
+  shipped — no `.atmosphere` layer. The first version of this redesign painted one
+  fixed layer of stacked radial gradients behind the copy (a vignette plus two warm
+  bleeds); it is deleted outright rather than tuned down, on explicit request for a flat
+  background with no shadow, glow, sheen or haze anywhere on the route. `.page`'s own
+  `background-color` is the whole of this page's ground now. What is left of the "no
+  compositing layer" argument still holds: flat bordered surfaces for the stat cards and
+  the chip cloud, nothing that costs a compositing layer.
 
-  THE GROUND IS DARKER THAN BEFORE. `--about-ground` and `--about-vignette` both moved in
-  variables.css for this redesign, on explicit request — see the comments there. Nothing
-  in this file needed to change to follow that; both tokens are consumed exactly as they
-  were.
+  THE GROUND IS DARKER AGAIN. `--about-ground` moved a second time in variables.css for
+  this correction pass, on the same explicit request — see the comment there.
+  `--about-vignette`, `--about-sheen` and `--about-sheen-soft` are gone with the layer
+  that was their only consumer; nothing in variables.css references them any more.
 
   ONE CONTAINER, A MASTHEAD, THEN FIVE SECTIONS. `.inner` still caps at --container-max
   and centres, the way the previous version's did. What is different is everything below
@@ -54,41 +56,6 @@
     AboutPage.jsx) redeclares the token for this subtree only.
   */
   --noise-opacity: 0.07;
-}
-
-/* --- The light in the room ------------------------------------------------ */
-
-/*
-  UNCHANGED IN KIND FROM THE PREVIOUS VERSION — one fixed layer, a vignette over two warm
-  masses, no blur, no blend mode, nothing animated. See the previous version's own long
-  comment (now in git history) for the full argument; the short form is that the gradient
-  stops did not need retuning when the ground darkened underneath them; they are alpha
-  values layered on top of whatever `--about-ground` resolves to, so they carry forward
-  as-is.
-*/
-.atmosphere {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-
-  pointer-events: none;
-
-  background-image:
-    radial-gradient(
-      ellipse 125% 95% at 50% 42%,
-      transparent 48%,
-      var(--about-vignette) 100%
-    ),
-    radial-gradient(
-      ellipse 55% 45% at 82% 4%,
-      var(--about-sheen),
-      transparent 68%
-    ),
-    radial-gradient(
-      ellipse 70% 45% at 10% 92%,
-      var(--about-sheen-soft),
-      transparent 70%
-    );
 }
 
 /* --- The column ----------------------------------------------------------- */
@@ -212,14 +179,13 @@
   Never recoloured or redrawn, per §5 rule 5; this is the same file every other header
   and hero reference, at a size none of them use.
 
-  IT SITS WHERE THE ATMOSPHERE'S OWN KEY LIGHT ALREADY IS. `.atmosphere`'s second
-  gradient is a warm bleed "high on the inline end" (82% 4%) — precisely the corner this
-  logo occupies at the masthead's wide layout (see the 64rem block). No separate glow
-  was added behind it for that reason: CLAUDE.md's own restraint rule ("restraint
-  elsewhere is what makes the material read") argues against a second decorative effect
-  where the page's existing lighting already does the job, and a glow sized to this mark
-  is exactly how the Founder's portrait halo ended up bleeding past its own section
-  before it was removed — see that file's history.
+  NO GLOW BEHIND IT, AND NONE SHOULD BE ADDED. This page's own atmosphere layer (a
+  fixed vignette plus two warm gradient bleeds, one of which used to sit in roughly
+  this corner) was deleted outright in a later correction pass on explicit request for
+  a flat, unlit background — see the note at the top of this file. A decorative glow
+  sized to this mark is exactly how the Founder's portrait halo ended up bleeding past
+  its own section before it was removed — see that file's history — and would also
+  reintroduce the shadow/glow-style effect this page was just cleared of.
 */
 .logo {
   display: block;
@@ -261,72 +227,28 @@
   );
 }
 
-/* --- The shared identity row: numeral, icon, eyebrow, heading --------------- */
+/* --- The shared identity row: eyebrow, heading ------------------------------ */
 
 /*
-  EVERY SECTION OPENS WITH THIS, AND ONLY THIS — the brief's "clearly identity (eyebrow
+  EVERY SECTION OPENS WITH THIS, AND ONLY THIS — the brief's "clear identity (eyebrow
   label + heading treatment)" requirement, satisfied once rather than reinvented five
   times. What varies section to section is everything BELOW this row; see each
   section's own body rules further down this file.
+
+  NO NUMERAL AND NO ICON HERE ANY MORE — both were in the first version of this row (a
+  large Arabic numeral plus a stroke-ring icon ahead of the eyebrow) and both are
+  deleted outright, not hidden, per a same-day correction request. Removing them turned
+  this from a wide flex row that needed `align-items: center` to hold three unequal
+  pieces on one baseline into a plain stack of two lines, which is the shape below —
+  the same "micro-label, then heading" device About, WhyAgb and the Founder already use
+  on the home page.
 */
 .head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-md);
-
-  margin-block-end: var(--space-xl);
-}
-
-/*
-  THE NUMERAL — Arabic rather than the previous version's Roman numerals, matching
-  WhyAgb's row device: five sections read as a numbered sequence rather than as chapters
-  in the old three-act sense. `tabular-nums` keeps 01 through 05 at one width, which
-  matters once the eye is tracking five of these down one scroll.
-
-  55% of the accent rather than the old chapter numerals' 62% — this one sits beside an
-  icon and an eyebrow rather than alone on a rail, so it can afford to sit a shade
-  quieter and still read first.
-*/
-.numeral {
-  flex-shrink: 0;
-
-  color: color-mix(in srgb, var(--color-gold) 55%, transparent);
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
-  font-weight: var(--font-weight-medium);
-  line-height: 1;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
-}
-
-/*
-  THE ICON RING — the same "outlined mark, no fill" device WhyAgb's row and Founder's
-  fact cards both use: a gold stroke on a transparent circle, never a solid disc, so it
-  reads as a label rather than as a button.
-*/
-.icon-ring {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  inline-size: clamp(2.75rem, 4vw, 3.25rem);
-  block-size: clamp(2.75rem, 4vw, 3.25rem);
-  border-radius: 50%;
-  border: 1px solid var(--color-gold);
-}
-
-.icon {
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  color: var(--color-gold);
-}
-
-.heading-group {
-  display: flex;
   flex-direction: column;
-  gap: var(--space-3xs);
-  min-inline-size: 0;
+  gap: var(--space-2xs);
+
+  margin-block-end: var(--space-lg);
 }
 
 /*

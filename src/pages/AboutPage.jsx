@@ -1,12 +1,5 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import {
-  HiOutlineCalendar,
-  HiOutlineEye,
-  HiOutlineFlag,
-  HiOutlineGlobeAlt,
-  HiOutlineUserGroup,
-} from 'react-icons/hi'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Header from '../components/Header/Header'
@@ -27,54 +20,53 @@ import styles from './AboutPage.module.css'
 
   WHAT THIS VERSION IS. A masthead pairing a large pull-quote against the AGB logo,
   followed by five sections — Who We Are, Vision, Mission, Our Record, Strategic
-  Network — that share one identity device (a numeral, an icon, an eyebrow and a
-  heading, in that order) but deliberately do NOT share one body layout. Each section's
-  copy is arranged differently: Who We Are runs a single asymmetric column; Vision opens
-  on a large lead statement and splits its remaining two paragraphs into a pair; Mission
-  sets its two short paragraphs side by side as a diptych; Our Record pairs a stat
-  callout against its copy and closes on a pulled statement; Strategic Network closes on
-  a grouped chip cloud instead of more prose. The point of the variation is stated in the
-  brief this was built against: a designed editorial sequence, not five stacked
-  paragraphs with a number next to each one.
+  Network — that share one identity device (an eyebrow, then a heading) but
+  deliberately do NOT share one body layout. Each section's copy is arranged
+  differently: Who We Are runs a single asymmetric column; Vision opens on a large lead
+  statement and splits its remaining two paragraphs into a pair; Mission sets its two
+  short paragraphs side by side as a diptych; Our Record pairs a stat callout against
+  its copy and closes on a pulled statement; Strategic Network closes on a grouped chip
+  cloud instead of more prose. The point of the variation is stated in the brief this
+  was built against: a designed editorial sequence, not five stacked paragraphs with a
+  number next to each one.
+
+  NO SECTION NUMERAL AND NO PER-SECTION ICON, as of a correction pass the same day this
+  page shipped — both were in the first version (Arabic numerals 01–05, one react-icons
+  glyph per section in a stroke ring) and were removed on request. `eyebrow` is what is
+  left to give each section its identity beyond the heading itself, matching the device
+  About, WhyAgb and the Founder each already use on the home page.
 
   EVERY WORD OF BODY COPY BELOW IS DATA, TRANSCRIBED VERBATIM — see the long comment at
   the top of data/aboutPage.js for how carefully that was checked against the previous
-  version's own (different) wording on the same three themes. Nothing in this file
+  page's own (different) wording on the same three themes. Nothing in this file
   rewords, trims or reorders a sentence of it. The only content this file adds beyond
-  that data is UI chrome — numerals, icons, eyebrows, the network chip groupings — which
-  the data file's own comments mark as invented rather than sourced.
+  that data is UI chrome — the eyebrow kickers, the network chip groupings — which the
+  data file's own comments mark as invented rather than sourced.
 
-  STILL NO VIDEO, NO GLASS, NO BACKDROP-FILTER. That constraint from the previous version
-  holds and is worth restating rather than silently dropping: this route's whole depth is
-  one fixed, painted layer of stacked radial gradients (`.atmosphere`, unchanged in kind
-  from before, only darker — see variables.css) plus flat bordered surfaces for the stat
-  cards and the chip cloud. Nothing here claims a compositing layer or a playback slot,
-  so the page costs a fraction of the home page and needs nothing from
-  useExclusiveVideo.
+  STILL NO VIDEO, NO GLASS, NO BACKDROP-FILTER, AND NOW NO GRADIENT EITHER. The previous
+  version of this route painted one fixed layer of stacked radial gradients — a vignette
+  plus two warm bleeds — behind the copy. That layer is gone outright, also on request:
+  the ground is a flat, dark, unlit fill now (`--about-ground` alone), and nothing on
+  this route composites a second background layer at all. What is left is flat bordered
+  surfaces for the stat cards and the chip cloud. Nothing here claims a compositing
+  layer or a playback slot, so the page costs a fraction of the home page and needs
+  nothing from useExclusiveVideo.
 */
 
 /*
-  A SINGLE SECTION'S IDENTITY ROW — the numeral, the icon, the eyebrow and the heading —
-  shared by all five sections below. It is a plain function rather than a component with
-  its own reveal call: the ladder rung it animates on belongs to whichever section calls
-  it, since two independent useSectionReveal scopes on one heading would be the same
-  collision the hook's own docs warn against.
+  A SINGLE SECTION'S IDENTITY ROW — the eyebrow, then the heading — shared by all five
+  sections below. It is a plain function rather than a component with its own reveal
+  call: the ladder rung it animates on belongs to whichever section calls it, since two
+  independent useSectionReveal scopes on one heading would be the same collision the
+  hook's own docs warn against.
 */
-function SectionHead({ numeral, Icon, eyebrow, title, id, revealAt }) {
+function SectionHead({ eyebrow, title, id, revealAt }) {
   return (
     <motion.div className={styles.head} {...revealAt}>
-      <span className={styles.numeral} aria-hidden="true">
-        {numeral}
-      </span>
-      <span className={styles['icon-ring']} aria-hidden="true">
-        <Icon className={styles.icon} />
-      </span>
-      <div className={styles['heading-group']}>
-        <p className={styles.eyebrow}>{eyebrow}</p>
-        <h2 className={styles.title} id={id}>
-          {title}
-        </h2>
-      </div>
+      <p className={styles.eyebrow}>{eyebrow}</p>
+      <h2 className={styles.title} id={id}>
+        {title}
+      </h2>
     </motion.div>
   )
 }
@@ -100,8 +92,6 @@ function WhoWeAre({ section }) {
       aria-labelledby={section.id}
     >
       <SectionHead
-        numeral={section.numeral}
-        Icon={HiOutlineUserGroup}
         eyebrow={section.eyebrow}
         title={section.title}
         id={section.id}
@@ -138,8 +128,6 @@ function Vision({ section }) {
       aria-labelledby={section.id}
     >
       <SectionHead
-        numeral={section.numeral}
-        Icon={HiOutlineEye}
         eyebrow={section.eyebrow}
         title={section.title}
         id={section.id}
@@ -177,8 +165,6 @@ function Mission({ section }) {
       aria-labelledby={section.id}
     >
       <SectionHead
-        numeral={section.numeral}
-        Icon={HiOutlineFlag}
         eyebrow={section.eyebrow}
         title={section.title}
         id={section.id}
@@ -215,8 +201,6 @@ function OurRecord({ section }) {
       aria-labelledby={section.id}
     >
       <SectionHead
-        numeral={section.numeral}
-        Icon={HiOutlineCalendar}
         eyebrow={section.eyebrow}
         title={section.title}
         id={section.id}
@@ -266,8 +250,6 @@ function StrategicNetwork({ section }) {
       aria-labelledby={section.id}
     >
       <SectionHead
-        numeral={section.numeral}
-        Icon={HiOutlineGlobeAlt}
         eyebrow={section.eyebrow}
         title={section.title}
         id={section.id}
@@ -325,15 +307,6 @@ function AboutPage() {
         per CLAUDE.md (it is not a module class). Unchanged from the previous version.
       */}
       <main className={`${styles.page} noise-overlay`}>
-        {/*
-          THE LIGHT AND THE VIGNETTE, one fixed layer, unchanged in kind from the previous
-          version — see the note there for why `position: fixed` with no blur and no
-          blend mode is both the effect and the cheap option. What changed is the ground
-          colour it is drawn against (variables.css, --about-ground, pushed noticeably
-          darker for this redesign) — the gradient stops themselves did not need to move.
-        */}
-        <div className={styles.atmosphere} aria-hidden="true" />
-
         <div className={styles.inner}>
           {/*
             THE MASTHEAD — a pull-quote against the logo, replacing the previous
