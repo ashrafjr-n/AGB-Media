@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
 import {
   HiOutlineGlobeAlt,
   HiOutlinePencilAlt,
@@ -19,27 +18,29 @@ import { TbShieldStar } from 'react-icons/tb'
 
 import useSectionReveal from '../../hooks/useSectionReveal'
 import backdrop from '../../assets/images/why.webp'
-import buttonStyles from '../shared/Button.module.css'
 import styles from './WhyAgb.module.css'
 
 /*
   The case for the company: six reasons in one row, over the second half of the
-  Founder's photograph, closed by a CTA banner.
+  Founder's photograph.
 
-  STILL NOT A GRID OF CARDS. Nothing here is a container: no fill, no radius, no shadow.
-  The six are held together by hairlines between them rather than by boxing each one —
-  the same instinct the old 2 x 3 grid's single centre line carried, run six-wide now
-  instead of two. That matters on this site because every raised surface elsewhere is
-  glass over footage, and a card on a photograph would be the one surface the design
-  system has no answer for. The CTA banner below IS a bordered card, deliberately — it
-  is the one place in the section that wants to read as a raised stop rather than as
-  copy on the ground, which is why it is built differently from the row above it.
+  STILL NOT A GRID OF CARDS, in the sense that matters: no fill behind the row, no full
+  section-wide raised surface. Each item DOES carry its own thin hairline border now
+  (2026-08-02, replacing the divider-only construction) — see the note at `.item` for
+  why that is a correction rather than a reversal of the original "not boxed" instinct.
 
   EACH DIVIDER CARRIES A SMALL WARM GLOW AT ITS TOP, fading down into an ordinary
   hairline — a soft radial mass layered over the same 1px line the old grid divider
   used, both in `.item::before`. Nothing here animates; it is a static gradient, the
   same idiom `.button-featured`'s frozen texture and `.index`'s colour-mix already use
   elsewhere on the site, not a second moving surface.
+
+  THERE IS NO CTA BANNER HERE ANY MORE. One shipped 2026-08-02 alongside the row — a
+  bordered card below it with a headline and a "Start a Conversation" button — and was
+  removed the same day on request, along with the `.button-outline` variant it was the
+  only call site of (see Button.module.css). The section now closes with the row itself;
+  Founder's and Team's own CTAs already close the page, and this was a third that was
+  not wanted.
 */
 
 /*
@@ -92,8 +93,9 @@ function WhyAgb() {
     for the timings, and for the reduced-motion branch that is why nothing here checks
     the preference.
 
-    THREE RUNGS NOW, not two: the eyebrow, the title, and the new CTA banner, which
-    reveals as its own beat after the row rather than sharing a rung with either.
+    TWO RUNGS: the eyebrow, then the title. It briefly carried a third for the CTA
+    banner's own reveal; that block is gone (see the note at the top of this file) and
+    the ladder is back to what the grid version used.
   */
   const revealAt = useSectionReveal('why-agb')
 
@@ -174,8 +176,7 @@ function WhyAgb() {
           flow, top to bottom, same order the reference lays out per item. The icon sits
           in a plain circle with a gold stroke and no fill (.icon-ring), matching the
           "outlined, not filled" material every other raised mark on this site avoids
-          being a solid shape — see Button.module.css's own outline variant for the same
-          instinct applied to the banner's CTA below.
+          being a solid shape.
         */}
         <ol className={styles.row}>
           {reasons.map(({ title, description, Icon }, index) => (
@@ -194,50 +195,6 @@ function WhyAgb() {
             </motion.li>
           ))}
         </ol>
-
-        {/*
-          --- The closing CTA banner ------------------------------------------
-
-          THE ONE BORDERED CARD IN THE SECTION, on purpose — see the note at the top of
-          this file for why the row above deliberately avoids this treatment. It closes
-          the section the way Founder's and Team's own CTAs close theirs, but as a full
-          banner rather than a single centred button, because this is the page's last
-          word rather than one more reason among six.
-
-          NO PHOTOGRAPH BLEEDS IN FROM THE LEFT. The only unused stills in the repo
-          (src/assets/abdullah/00X.jpg) all carry a broadcaster's bug and the subject's
-          name burned into the frame in Arabic — unusable on a site with no Arabic
-          anywhere (CLAUDE.md §1), even faded to near-invisible. `.cta::before` paints a
-          soft warm gradient bleeding in from the inline start instead, at low enough
-          alpha to read as light in the corner of the card rather than as a graphic.
-
-          Wrapped in one motion.div on the section's own ladder (revealAt(2)) rather than
-          the row's per-cell scope — it is one block, not six, and it is meant to land as
-          a single closing beat after the row has finished.
-        */}
-        <motion.div className={styles.cta} {...revealAt(2)}>
-          <div className={styles['cta-copy']}>
-            <p className={styles['cta-label']}>Ready to create impact</p>
-            <p className={styles['cta-headline']}>
-              Let&rsquo;s bring your story to life.
-            </p>
-          </div>
-
-          <span className={styles['cta-divider']} aria-hidden="true" />
-
-          {/*
-            .button-outline — the fourth surface in Button.module.css, added for this
-            call site. See that file for why: none of the other three variants is a
-            plain hairline pill, which is what a card-bound CTA over the site's own dark
-            ground actually wants.
-          */}
-          <Link
-            to="/contact"
-            className={`${buttonStyles.button} ${buttonStyles['button-outline']} ${styles['cta-button']}`}
-          >
-            Start a Conversation →
-          </Link>
-        </motion.div>
       </div>
     </section>
   )

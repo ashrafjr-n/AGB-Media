@@ -1,8 +1,9 @@
 /*
   The closing section: six reasons in one row, over the second half of the Founder's
-  photograph, closed by a bordered CTA banner. It was a 2 x 3 grid until 2026-08-02 —
-  see the row/item rules below for the replacement, and the CTA banner rules for what
-  is genuinely new rather than reshaped.
+  photograph. It was a 2 x 3 grid until 2026-08-02 — see the row/item rules below for
+  the replacement. A bordered CTA banner shipped below the row the same day and was
+  removed later that day; see the note at WhyAgb.jsx for why, and the pin's media
+  query below for what its removal changed about this section's height budget.
 
   It takes over the slot the empty `.placeholder` held, and it inherits that element's one
   structural requirement along with the position. `position: relative` + --z-base is not
@@ -19,8 +20,7 @@
   STILL `min-block-size: 100vh` WITH THE COLUMN CENTRED — a floor, not a height — and
   every value that owns real height is still a clamp with a vh middle term, for the same
   reason as before: a layout tuned to look right at 900px tall overflows at 700 and floats
-  at 1100. The CTA banner adds real height the 2 x 3 grid never carried, so the dials below
-  run tighter than the grid version did; see the note at --why-cta-gap.
+  at 1100.
 
   THE GROUND IS A PHOTOGRAPH, and it is the second half of the Founder's. `--color-black`
   is still the true base and still the section's own `background-color`; what sits on it is
@@ -44,33 +44,27 @@
   middle one against the other two and carrying a pointer-driven offset from a follow loop
   in WhyAgb.jsx. Everything that served it has been deleted rather than disabled. Nothing in
   this file animates now except the shared reveal ladder, so the section has no infinite
-  animation to gate and no `will-change` anywhere — the CTA banner's own divider glow is a
-  static gradient, not a second moving surface; see the note at `.item::before`.
+  animation to gate and no `will-change` anywhere — the row's own divider glow is a static
+  gradient, not a second moving surface; see the note at `.item::before`.
 */
 .why {
   /*
     Every value in the section that owns height, in one place. These are the first dials
     to reach for if the section ever needs to breathe more or fit into less.
 
-    TIGHTER THAN THE GRID VERSION'S, across the board — not because this section wants to
-    read as cramped, but because it now carries a sixth's worth more content (the CTA
-    banner) than the grid did, and the one-screen budget the pin below depends on has to
-    absorb that from somewhere. See the note at the pin's media query for the arithmetic
-    this was sized against.
+    BACK TO THE GRID VERSION'S OWN GENEROUS RANGE, 2026-08-02 — these were tightened when
+    the row briefly closed on a CTA banner, to keep the section's floor height inside the
+    pin's budget. The banner is gone (see the note at the top of this file), so there is
+    no longer anything downstream competing for this space; see the arithmetic at the
+    pin's media query for the headroom that buys back.
   */
-  --why-pad: clamp(1.5rem, 4vh, 3rem);
-  --why-opening-gap: clamp(0.75rem, 3vh, 1.75rem);
+  --why-pad: clamp(1.75rem, 5vh, 4.5rem);
+  --why-opening-gap: clamp(var(--space-md), 4.75vh, var(--space-2xl));
 
   /* Column gap between the six items in the row — horizontal only, costs no height. */
   --why-item-gap: clamp(1.25rem, 2.4vw, 2rem);
   /* Row gap for the wrapped/stacked layouts below the six-across breakpoint. */
   --why-item-row-gap: clamp(1.75rem, 4vh, 2.75rem);
-
-  /* The gap between the row and the CTA banner that closes the section. */
-  --why-cta-gap: clamp(1.5rem, 3.5vh, 2.5rem);
-  /* The banner's own block padding — see .cta. */
-  --why-cta-pad-block: clamp(1.25rem, 3vh, 2rem);
-  --why-cta-pad-inline: clamp(1.25rem, 3vw, 2.5rem);
 
   /*
     Gold at 88%, matching the strength Founder's own --founder-gold-strong uses for a mark
@@ -269,15 +263,24 @@
 
 /*
   SIX ITEMS, ONE ROW, ONLY AT THE WIDTH WHERE EACH ONE HAS ROOM TO BE ONE — enabled at
-  90rem in the breakpoint block at the foot of this file, not at the 64rem most of this
+  80rem in the breakpoint block at the foot of this file, not at the 64rem most of this
   site's "give it the wider layout" breakpoints use. The reason is `--container-max`
-  (75rem/1200px): past roughly 90rem of viewport the content column has already hit that
-  cap, so a wider window buys the row nothing more — meaning 90rem is not an arbitrary
-  choice past which room keeps growing, it is close to the point past which it stops. Below
-  it, six real sentences of description text in a column narrower than that cap read as a
-  ladder of half-words rather than as reasons; the fallback tiers below (three-up, then
-  two-up, then stacked) are not a compromise on the way to the row, they are the layout for
-  every width that cannot comfortably hold it.
+  (75rem/1200px) plus this section's own `--container-padding` on both sides: the content
+  column hits that cap once the viewport reaches 75rem + 2 * --container-padding, which is
+  78rem — so 80rem is the first clean round number past the point a wider window stops
+  buying the row anything. Below it, six real sentences of description text in a column
+  narrower than that cap read as a ladder of half-words rather than as reasons; the
+  fallback tiers below (three-up, then two-up, then stacked) are not a compromise on the
+  way to the row, they are the layout for every width that cannot comfortably hold it.
+
+  IT WAS 90REM, moved down to 80rem on 2026-08-02 once the CTA banner was removed and the
+  arithmetic at the pin's media query showed the section clearing 720px with room to
+  spare even at this narrower, more-wrapped width. 80rem is not a revert to the
+  pre-redesign 64rem the grid version pinned at — that width still cuts each column to
+  roughly 130px, which was measured to wrap the longest description five lines deep, a
+  legibility cost this section does not need to pay just because the height budget could
+  now absorb it. 80rem is the number the readability argument above was always pointing
+  at; the banner is what had pushed this past it to a rounder, more conservative 90rem.
 
   Base rule here is the STACKED, one-column layout — see the breakpoints at the foot of
   this file for the tiers above it. `align-items: flex-start` everywhere: every item is a
@@ -290,6 +293,25 @@
   row-gap: var(--why-item-row-gap);
 }
 
+/*
+  A THIN HAIRLINE BORDER, ADDED 2026-08-02 — the row's items were markup-only until now,
+  held apart by the divider between them and nothing around any one of them.
+  `--glass-border` is the same hairline every other glass edge on the site uses (Founder's
+  fact cards, Team's rim), at 0.08 white alpha — deliberately the quiet one rather than
+  `--glass-border-bright`, since six of these sitting close together read as a row of
+  panels if the edge is loud and as six grouped ideas if it barely announces itself.
+  `--radius-md` keeps the corner on the shared scale rather than a bespoke number.
+
+  No fill. A border without a background still reads as "not a boxed card" in the sense
+  that mattered when this section first argued against cards — nothing here competes with
+  the photograph for the eye, it only marks where one reason ends and the next begins.
+
+  MORE PADDING THAN THE DIVIDER-ONLY VERSION HAD, which had none: an item's content used
+  to run flush to the row's own edges. A bordered box with its content touching every
+  side reads as clipped rather than framed, so this adds a modest amount of breathing
+  room on both axes — block a little more than inline, since "increase the height" was
+  the ask and the row's own column-gap already does most of the inline separating.
+*/
 .item {
   position: relative;
 
@@ -298,13 +320,18 @@
   align-items: flex-start;
 
   min-inline-size: 0;
+  padding: clamp(1.1rem, 2.6vh, 1.5rem) clamp(0.9rem, 1.8vw, 1.25rem);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
 }
 
 /*
-  THE NUMERAL — large, solid gold, top-left of the item, exactly as it was in the grid
-  version but sized up: it used to sit as a small tag above a title it laid straight
-  beside; here it is the first mark in a column that also carries an icon below it, so it
-  has to read as the more prominent of the two on its own.
+  THE NUMERAL — solid gold, top-left of the item, labelling the icon and title below it
+  rather than competing with them for the eye. IT WAS clamp(1.25rem, 2vw, 1.75rem),
+  sized up on the theory that it needed to out-rank the icon on its own; sitting next to
+  the icon and the title in a bordered, padded item, that size read as louder than the
+  title it was meant to introduce. This is a mark again, the way the old grid's own
+  numeral was, not a headline.
 
   `tabular-nums` so 01 through 06 occupy identical width, which matters more here than it
   did in the two-column grid — six of these now sit close enough across a row (on the
@@ -316,7 +343,7 @@
   margin-block-end: 0.4rem;
 
   color: var(--why-gold-strong);
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
   font-weight: var(--font-weight-bold);
   line-height: 1;
   letter-spacing: var(--tracking-tight);
@@ -357,17 +384,20 @@
 }
 
 /*
-  THE TITLE — bold, white, allowed to wrap to two lines, which it will at the row's own
+  THE TITLE — white, allowed to wrap to two lines, which it will at the row's own
   narrower columns for the longer entries ("Integrated Production Management", "Deep
-  Understanding of Gulf Culture"). Weight comes from this rule rather than the h3 default
-  in global.css (--font-weight-bold, 600) because --font-weight-heavy reads closer to the
-  reference's own bold white titles at this size.
+  Understanding of Gulf Culture"). --font-weight-medium (500) rather than the h3 default
+  in global.css (--font-weight-bold, 600) or the --font-weight-heavy (700) this opened
+  at — six of these sitting close together at the heavy cut of the scale read as six
+  small headlines shouting over each other; medium is still clearly a title next to the
+  light-weight description under it, without competing with the section's own --text-2xl
+  heading above the row.
 */
 .name {
   margin-block-end: 0.35rem;
 
   font-size: var(--text-base);
-  font-weight: var(--font-weight-heavy);
+  font-weight: var(--font-weight-medium);
   line-height: 1.25;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
@@ -404,120 +434,6 @@
   color: var(--color-text-muted);
 }
 
-/* --- The CTA banner ---------------------------------------------------------- */
-
-/*
-  THE ONE BORDERED CARD IN THE SECTION — see the note at the top of WhyAgb.jsx for why
-  the row above deliberately avoids this treatment and the banner deliberately takes it.
-  `--color-glass` is the dark glass fill kept in variables.css for exactly this: "the
-  future raised surface" note there names it directly, and the Founder's metadata cards
-  were the first call site — this is the second.
-
-  Flex row on the breakpoints wide enough to hold one (see the foot of this file); the
-  base rule here is the stacked, narrow-viewport form.
-*/
-.cta {
-  position: relative;
-  overflow: hidden;
-
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-
-  margin-block-start: var(--why-cta-gap);
-  padding: var(--why-cta-pad-block) var(--why-cta-pad-inline);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-
-  background-color: var(--color-glass);
-}
-
-/*
-  THE FAINT BLEED FROM THE INLINE START, and it is a gradient rather than a photograph.
-  The only stills in the repo that are not already spoken for by another section
-  (src/assets/abdullah/00X.jpg) each carry a broadcaster bug and the subject's name
-  burned into the frame in Arabic — unusable here even faded to near nothing, since
-  CLAUDE.md §1 is explicit that there is no Arabic anywhere on this site. A warm mass low
-  in the corner reads as light bleeding into the card, which is what the brief actually
-  asked the image to do; it just does it without a photograph behind it.
-
-  Two layers: a soft gold ellipse anchored to the inline start edge, and an even fainter
-  white one high in the same corner for a touch of lit variation rather than one flat
-  colour. Both stop well short of the card's far edge, which is what keeps this a
-  "bleed" rather than a wash across the whole banner — the copy on top of it still sits
-  on the card's own --color-glass fill, not on a tinted one.
-*/
-.cta::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-
-  background-image: radial-gradient(
-      ellipse 65% 90% at 0% 65%,
-      color-mix(in srgb, var(--color-gold) 16%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 40% 60% at 8% 10%,
-      rgba(255, 255, 255, 0.05),
-      transparent 75%
-    );
-
-  pointer-events: none;
-}
-
-.cta-copy {
-  position: relative;
-  z-index: 1;
-
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.cta-label {
-  color: var(--color-gold);
-  font-size: 0.7rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-}
-
-.cta-headline {
-  max-inline-size: 22ch;
-
-  font-size: clamp(1.15rem, 1rem + 1vw, 1.5rem);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.2;
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-text);
-}
-
-/*
-  THE VERTICAL DIVIDER between the text block and the button — only meaningful once the
-  two sit side by side, so it is declared here at `display: none` and switched on in the
-  same breakpoint that turns `.cta` into a row (see the foot of this file). A plain
-  element rather than a border on `.cta-copy`, because its height needs to match the
-  row's own cross-axis stretch rather than either child's own content height.
-*/
-.cta-divider {
-  display: none;
-
-  align-self: stretch;
-  inline-size: 1px;
-
-  background-color: var(--glass-border-bright);
-}
-
-.cta-button {
-  position: relative;
-  z-index: 1;
-
-  align-self: flex-start;
-  white-space: nowrap;
-}
-
 /* --- The pin -------------------------------------------------------------- */
 
 /*
@@ -549,28 +465,41 @@
   would be the wrong fix: it would say the layering is a decision when it is a consequence,
   and it would put Team above a Founder that is at the same level for unrelated reasons.
 
-  WHY THE GATE, AND WHY THE WIDTH TERM MOVED TO 90REM ON 2026-08-02. A box pinned to the
-  block start shows its own first screen and nothing below it — sticky cannot lift its own
-  top edge above the offset, so anything past the first viewport is not merely scrolled
-  past, it is unreachable for the life of the page. The pin is therefore only enabled where
-  this section genuinely fits one screen, and "fits one screen" now means "is in its
-  six-across row form", because the three-up and two-up fallbacks below 90rem are taller
-  than one viewport on ordinary windows and were never measured to be pin-safe. The row's
-  own single-row breakpoint and the pin's width gate are therefore the same number on
-  purpose — see the note at `.row` for why 90rem rather than the usual 64rem.
+  WHY THE GATE, AND WHY THE WIDTH TERM IS 80REM. A box pinned to the block start shows its
+  own first screen and nothing below it — sticky cannot lift its own top edge above the
+  offset, so anything past the first viewport is not merely scrolled past, it is
+  unreachable for the life of the page. The pin is therefore only enabled where this
+  section genuinely fits one screen, and "fits one screen" means "is in its six-across
+  row form" — the three-up and two-up fallbacks below 80rem are taller than one viewport
+  on ordinary windows and were never measured to be pin-safe. The row's own single-row
+  breakpoint and the pin's width gate are therefore the same number on purpose — see the
+  note at `.row` for why 80rem rather than the usual 64rem.
 
-  - `min-width: 90rem` (1440px), moved up from 64rem when the CTA banner was added. Below
-    it the section is a taller, wrapped layout that was never intended to be pinned.
-  - `min-height: 45rem` (720px) is UNCHANGED from the grid version. Arithmetic at the
-    six-across row's own floor values — every clamp above at its minimum bound, which is
-    what a very short viewport converges toward — comes to roughly 510px for the padding,
-    the opening block, the tallest row item (worst case: "Flexible Production Teams" at
-    two title lines over its own longest description, four lines), the CTA gap and the
-    banner. That is comfortable room under 720px, which is why this dial did not need to
-    move even though the section gained a whole extra element. This is arithmetic on the
-    layout as written, not a rendered measurement — this codebase cannot run a browser to
-    confirm it — so treat 510px as the figure this gate was chosen against rather than a
-    verified fact, and re-check it if the row's copy or the banner's own padding changes.
+  THE NUMBER HAS MOVED TWICE, and the history is worth keeping straight. The grid version
+  pinned at 64rem. Redesigning the section into a six-across row plus a CTA banner
+  (2026-08-02) pushed this to 90rem — a conservative round number chosen while the banner
+  was adding a fixed block of extra height to every viewport that could engage the pin.
+  Removing the banner the same day (see the note at the top of WhyAgb.jsx) freed that
+  budget back up, and re-running the arithmetic below against the row's OWN true
+  readability floor — 80rem, not 90 — showed the section clearing 720px with comfortable
+  room even there. 80rem is therefore not a partial revert sitting between the grid's
+  64rem and the banner's 90rem; it is the number the row's own column-width argument
+  was pointing at all along, freed of a constraint (the banner) that no longer exists.
+
+  - `min-width: 80rem` (1280px). Below it the row is in its three-up or two-up wrapped
+    form, taller than one viewport on ordinary windows, and was never measured pin-safe.
+  - `min-height: 45rem` (720px), unchanged from the grid version throughout every
+    revision of this section. Arithmetic at the row's own floor values — every clamp
+    above at its minimum bound, `.item`'s new border and padding included, at this
+    section's narrowest pinned column width (roughly 173px at 80rem) — comes to about
+    520px for the padding, the opening block and the tallest row item ("Flexible
+    Production Teams" at two title lines over its own longest description, wrapped to
+    five lines at this column width). That is comfortable room under 720px — nearly
+    200px of slack, most of it freed by the CTA banner's removal. This is arithmetic on
+    the layout as written, not a rendered measurement — this codebase cannot run a
+    browser to confirm it — so treat 520px as the figure this gate was chosen against
+    rather than a verified fact, and re-check it if the row's copy or `.item`'s own
+    padding changes.
 
   THE SAME TWO CONDITIONS ARE REPEATED IN Team.module.css, where they enable `--team-tuck` —
   the extra block-start height that carries Team's rounded corner off the top of the screen
@@ -586,7 +515,7 @@
   threshold, which is precisely the machinery HeroBackdrop's rewrite deleted. It is not worth
   buying back for this.
 */
-@media (min-width: 90rem) and (min-height: 45rem) {
+@media (min-width: 80rem) and (min-height: 45rem) {
   .why {
     position: sticky;
     inset-block-start: 0;
@@ -605,9 +534,9 @@
   start, deliberately, because the image is half of a picture whose other half is the
   Founder's and the seam only survives while both are drawn at one screen. So the ground
   cannot follow the content the way About's does — the content has to come back to the
-  ground. At 390x844 the section measured 1166px against the old grid; the row and the new
-  CTA banner add more height still, so anything past the photograph's own screen falls onto
-  `.why`'s own opaque --color-black same as before.
+  ground. At 390x844 the section measured 1166px against the old grid, and the row runs
+  taller still, so anything past the photograph's own screen falls onto `.why`'s own
+  opaque --color-black same as before.
 
   EVERY VALUE BELOW IS TYPE OR THE SPACE BETWEEN TYPE, and they were tuned as one set
   against 390x844 and 375x812. The row is a single stacked column at this width — it does
@@ -625,15 +554,12 @@
     /*
       The height dials, all down. The vh middle terms come down with the rem
       ceilings rather than instead of them — the ratios between them are what make the
-      section read as heading / row / banner / next, and cutting one alone would collapse
-      a level of that hierarchy rather than tighten the whole.
+      section read as heading / row / next, and cutting one alone would collapse a
+      level of that hierarchy rather than tighten the whole.
     */
     --why-pad: clamp(1.25rem, 3.6vh, 2.5rem);
     --why-opening-gap: var(--space-sm);
     --why-item-row-gap: clamp(1.5rem, 3.2vh, 2.25rem);
-    --why-cta-gap: clamp(1.25rem, 3vh, 2rem);
-    --why-cta-pad-block: clamp(1rem, 2.6vh, 1.5rem);
-    --why-cta-pad-inline: var(--space-md);
   }
 
   .title {
@@ -651,9 +577,12 @@
     line-height: 1.15;
   }
 
-  .index {
-    font-size: 1.1rem;
-  }
+  /*
+    No override for .index here any more — the base clamp's own floor (0.9rem, set when
+    the numeral was sized down, see the note there) is already below what this rule used
+    to force it to, since a phone's narrow viewport pins the clamp's vw term to that
+    floor without help.
+  */
 
   .icon-ring {
     inline-size: 2.5rem;
@@ -664,53 +593,12 @@
     inline-size: 1rem;
     block-size: 1rem;
   }
-
-  .cta-headline {
-    font-size: var(--text-lg);
-  }
 }
 
 @media (min-width: 48rem) {
   .row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: var(--why-item-gap);
-  }
-
-  /*
-    `.cta-copy` takes `flex: 1` rather than this rule reaching for
-    `justify-content: space-between` — with three children and a banner far wider than
-    the text needs, space-between would treat the divider as a middle item and centre it
-    in whatever space is left, floating it away from both the copy and the button
-    instead of sitting flush against either. Growing the copy column pushes the divider
-    and the button to the inline end as one group, `gap` apart from each other and from
-    the copy — which is the "text block, then a divider, then the CTA on the right" the
-    brief describes.
-  */
-  .cta {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-lg);
-  }
-
-  .cta-copy {
-    flex: 1;
-    min-inline-size: 0;
-  }
-
-  .cta-divider {
-    display: block;
-    block-size: 2.5rem;
-  }
-
-  /*
-    Overrides the base rule's `align-self: flex-start`, which exists to stop the button
-    stretching full-width in the stacked column layout below this breakpoint (a flex
-    column with no `align-items` set defaults to stretch). Here `.cta` is a row with
-    `align-items: center`, and flex-start would pin the button to the row's block-start
-    edge instead of levelling it with the text and the divider.
-  */
-  .cta-button {
-    align-self: center;
   }
 }
 
@@ -721,11 +609,11 @@
 }
 
 /*
-  THE SINGLE ROW OF SIX, AND ITS DIVIDERS — see the long note at `.row` for why 90rem
+  THE SINGLE ROW OF SIX, AND ITS DIVIDERS — see the long note at `.row` for why 80rem
   rather than this file's usual 64rem "wider layout" threshold, and the note at the pin's
   own media query for why that gate now matches this one exactly.
 */
-@media (min-width: 90rem) {
+@media (min-width: 80rem) {
   .row {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
@@ -735,7 +623,7 @@
     at its top, fading out before the line's own end. Only meaningful once the six sit in
     one true row, which is why it is declared inside this breakpoint rather than reset
     elsewhere: no earlier rule gives `.item::before` a `content`, so the pseudo-element does
-    not exist below 90rem at all.
+    not exist below 80rem at all.
 
     NOT DRAWN BEFORE THE FIRST ITEM, the same convention the old grid's single centre line
     followed: a rule marks a boundary between two things, and there is nothing to either

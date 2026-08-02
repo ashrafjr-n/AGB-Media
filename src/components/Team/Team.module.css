@@ -108,7 +108,7 @@
     it just visible.
 
     0 BY DEFAULT, and set only inside the gate at the foot of this file — the same
-    `90rem x 45rem` envelope that enables WhyAgb's pin. Outside it there is no pin, Team is
+    `80rem x 45rem` envelope that enables WhyAgb's pin. Outside it there is no pin, Team is
     an ordinary section in flow that is already taller than the screen, and its top edge is
     far above the viewport by the end of the page without any help. Adding height there
     would only push this section's tuned spacing down for nothing.
@@ -757,10 +757,12 @@
   that boundary. If the envelope moves, it moves in both places; the argument for the two
   numbers is written out at the WhyAgb end, which is where the pin itself lives.
 
-  THE WIDTH TERM MOVED FROM 64REM TO 90REM ON 2026-08-02, when WhyAgb's grid became a
-  six-across row with a CTA banner closing it — see the note at WhyAgb's own pin media
-  query for why "fits one screen" now means "is in its six-across row form", and why that
-  form does not exist below 90rem.
+  THE WIDTH TERM HAS MOVED TWICE. 64rem to 90rem on 2026-08-02, when WhyAgb's grid became
+  a six-across row with a CTA banner closing it; then 90rem to 80rem the same day, once
+  that banner was removed and WhyAgb's own row-readability argument — not the banner —
+  turned out to be what actually set the floor. See the note at WhyAgb's own pin media
+  query for the full arithmetic; "fits one screen" still means "is in its six-across row
+  form", and that form now starts at 80rem rather than 90.
 
   What breaks if they drift: the tuck without the pin is 24px of dead space at the top of an
   ordinary section, and the pin without the tuck parks the rounded corner permanently on the
@@ -769,7 +771,7 @@
   Everything downstream is a calc against this one value: the section's height, its
   block-start padding, and both full-bleed layers' heights. Nothing else is conditional.
 */
-@media (min-width: 90rem) and (min-height: 45rem) {
+@media (min-width: 80rem) and (min-height: 45rem) {
   .team {
     --team-tuck: calc(var(--team-radius) + 0.25rem);
   }

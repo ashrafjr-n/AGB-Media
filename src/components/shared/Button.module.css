@@ -1,21 +1,23 @@
 /*
   THE buttons for the site. Every call to action pulls from this file — nothing is
-  restyled inside a section module. There is one shared base plus four variants, and
+  restyled inside a section module. There is one shared base plus three variants, and
   a call site applies the base *and* exactly one variant:
 
     .button .button-featured  glass, frozen texture, travelling edge light
                                                                    (hero nav "Contact")
     .button .button-glass     glass, drifting gold sheen           (About)
     .button .button-solid     solid gold fill, no glass at all     (Founder)
-    .button .button-outline   hairline gold pill, transparent fill (WhyAgb CTA banner)
 
   Two earlier variants — .button-quiet (a gold hairline pill) and .button-reveal (a
   sliding-panel hover) — were deleted in a cleanup pass once the glass pair had replaced
   them at both call sites; neither had been referenced from any JSX for some time. They
   are in the git history if a non-glass surface ever needs a starting point.
-  .button-outline, added 2026-08-02, is a *different* hairline pill from either of
-  those — it fills solid gold on hover rather than staying inert, which neither deleted
-  variant did — so it is a new declaration rather than a revival.
+
+  A fourth, .button-outline (a hairline gold pill that filled solid on hover), lived here
+  briefly on 2026-08-02 for WhyAgb's CTA banner and was removed the same day when that
+  banner was cut from the section entirely — it had exactly one call site, and with that
+  call site gone there was nothing left for the variant to serve. It is in git history if
+  a hairline pill with an invert-on-hover ever needs a starting point again.
 
   .button-featured was the site's single high-emphasis button for most of this file's
   life — glass, one per screen, never sharing a viewport with another emphatic surface
@@ -33,13 +35,6 @@
   with either beyond the base rule — no fill, blur, isolation or overflow, because there
   is no pseudo-element material to contain. It is the simplest of the three for exactly
   that reason: a flat colour needs none of the machinery a translucent one does.
-
-  .button-outline shares that same simplicity — no fill, blur, isolation or overflow —
-  because the base rule already draws almost all of it: a 1px gold border and transparent
-  background is what .button renders before any variant is applied at all. The variant
-  exists to round that into a pill and to add the one thing the base has no opinion on,
-  a hover state, rather than to leave a call site applying the base alone — see the note
-  at .button-outline itself for why "base with no variant" is not this file's convention.
 
   Note what .button-featured and .button-glass do to the "only the hero ticker moves"
   rule the rest of the site holds to: featured's *texture* is still frozen, and what
@@ -276,39 +271,6 @@
 */
 .button-solid:hover {
   background-color: var(--color-gold-light);
-}
-
-/* --- The outline button ----------------------------------------------------- */
-
-/*
-  A hairline gold pill, transparent at rest — WhyAgb's closing CTA banner, the fourth
-  surface this file draws. It sits on a bordered card rather than over footage or a
-  frosted section ground, which is exactly the one context none of the other three
-  variants was built for: featured and glass both need something translucent behind
-  them to be glass over, and solid is a filled stop meant to read as unmissable
-  against a plain ground — a second filled surface a few lines below one is what §2's
-  one-high-emphasis-button rule would flag if this used .button-solid instead.
-
-  radius-full rather than -md, matching the pill ContactPage's own .profile-download
-  draws (that file has no reach into this one — it is an independent declaration of
-  the same shape, not a shared rule, the same way `.button-glass` and `.button-solid`
-  do not share their fills). Border colour and text colour both come from the base
-  rule and are left untouched; this variant only adds the radius and the hover.
-
-  THE ONE VARIANT WHOSE HOVER INVERTS THE SURFACE rather than merely brightening it —
-  transparent-with-a-border becomes solid gold, and the label flips to --color-black
-  to stay legible on it, the same pairing .button-solid rests at. It reads as the
-  outline "filling in" under the cursor, which is a fair use of the base rule's
-  colour-only transition (unchanged, still never `transform` or `all` — see the note
-  on .button for why).
-*/
-.button-outline {
-  border-radius: var(--radius-full);
-}
-
-.button-outline:hover {
-  background-color: var(--color-gold);
-  color: var(--color-black);
 }
 
 /* --- The featured button's frozen texture --------------------------------- */
