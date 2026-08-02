@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Header from '../components/Header/Header'
-import portrait from '../assets/nael/nael.webp'
+import portrait from '../assets/nael/nael-profile/nael-profile.webp'
 import {
   nameTitle,
   bio,

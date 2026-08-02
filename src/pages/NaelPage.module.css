@@ -74,19 +74,20 @@
   the radius lives here rather than on the image so the clip and the corner are one
   declaration.
 
-  THE BLOCK-SIZE CLAMP IS ENLARGED FROM THE FIRST PASS'S clamp(16rem, 46vh, 28rem),
-  on request for a wider photo. Width itself comes from the masthead's own grid
-  ratio (see the 48rem block below, now weighted toward this column rather than
-  away from it) since this element is already `inline-size: 100%` of its track; the
-  block-size clamp moved up with it so a wider box does not read as short and
-  letterboxed against the taller identity column beside it.
+  THE BLOCK-SIZE CLAMP HAS BEEN ENLARGED TWICE NOW — clamp(16rem, 46vh, 28rem) in the
+  first pass, then clamp(20rem, 54vh, 34rem), now clamp(20rem, 56vh, 36rem), each time
+  on request for a wider photo. Width itself comes from the masthead's own grid ratio
+  (see the 48rem block below, now weighted toward this column rather than away from
+  it) since this element is already `inline-size: 100%` of its track; the block-size
+  clamp moves up with it so a wider box does not read as short and letterboxed
+  against the taller identity column beside it.
 */
 .portrait-frame {
   overflow: hidden;
   border-radius: var(--radius-lg);
 
   inline-size: 100%;
-  block-size: clamp(20rem, 54vh, 34rem);
+  block-size: clamp(20rem, 56vh, 36rem);
 }
 
 /*
@@ -304,14 +305,14 @@
 /* --- Breakpoints ------------------------------------------------------------ */
 
 /*
-  THE PORTRAIT COLUMN NOW TAKES THE LARGER SHARE — 1.15fr against 0.85fr, the first
-  pass's ratio reversed, on request for a wider photo. `.portrait-frame` is already
+  THE PORTRAIT COLUMN TAKES AN EVEN LARGER SHARE NOW — 1.3fr against 0.7fr, widened
+  again from 1.15fr/0.85fr on request for a wider photo. `.portrait-frame` is already
   `inline-size: 100%` of this track, so widening the track is what widens the image;
   see the block-size clamp at `.portrait-frame` for the matching height increase.
 */
 @media (min-width: 48rem) {
   .masthead {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
     column-gap: var(--nael-column-gap);
   }
 }
