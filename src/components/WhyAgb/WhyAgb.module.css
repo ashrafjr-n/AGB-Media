@@ -1,6 +1,8 @@
 /*
-  The closing section: six reasons in a 2 x 3 grid, over the second half of the Founder's
-  photograph.
+  The closing section: six reasons in one row, over the second half of the Founder's
+  photograph, closed by a bordered CTA banner. It was a 2 x 3 grid until 2026-08-02 —
+  see the row/item rules below for the replacement, and the CTA banner rules for what
+  is genuinely new rather than reshaped.
 
   It takes over the slot the empty `.placeholder` held, and it inherits that element's one
   structural requirement along with the position. `position: relative` + --z-base is not
@@ -14,12 +16,11 @@
   It also makes this section a stacking context, which is what lets the ground sit at
   z-index 0 and the content at z-index 1 without either escaping into the page.
 
-  ONE SCREEN, the same way the Founder gets one: `min-block-size: 100vh` with the column
-  centred, and every value that owns real height written as a clamp with a vh middle term.
-  A layout tuned to look right at 900px tall overflows at 700 and floats at 1100; scaling
-  the block padding, the gaps and the numeral together keeps heading-plus-grid inside a
-  screen from 1280x720 up. `min-block-size` rather than `block-size` so a phone — where six
-  stacked cells are far taller than the screen — simply grows past it and scrolls.
+  STILL `min-block-size: 100vh` WITH THE COLUMN CENTRED — a floor, not a height — and
+  every value that owns real height is still a clamp with a vh middle term, for the same
+  reason as before: a layout tuned to look right at 900px tall overflows at 700 and floats
+  at 1100. The CTA banner adds real height the 2 x 3 grid never carried, so the dials below
+  run tighter than the grid version did; see the note at --why-cta-gap.
 
   THE GROUND IS A PHOTOGRAPH, and it is the second half of the Founder's. `--color-black`
   is still the true base and still the section's own `background-color`; what sits on it is
@@ -41,37 +42,45 @@
   THE WORDMARK FIELD IS GONE TOO, and it was the last moving thing in this section. Three
   rows of outlined "AGB MEDIA" drifted behind the content on infinite CSS keyframes, the
   middle one against the other two and carrying a pointer-driven offset from a follow loop
-  in WhyAgb.jsx. Everything that served it has been deleted rather than disabled: `.field`
-  and its four descendant rules, the `wordmark-drift` keyframes, the --why-field-stroke
-  dial, and the loop with its refs and listeners. Nothing in this file animates now except
-  the shared reveal ladder, so the section has no infinite animation to gate and no
-  `will-change` anywhere — the two questions CLAUDE.md §7 asks of every always-on layer
-  simply do not arise here any more.
+  in WhyAgb.jsx. Everything that served it has been deleted rather than disabled. Nothing in
+  this file animates now except the shared reveal ladder, so the section has no infinite
+  animation to gate and no `will-change` anywhere — the CTA banner's own divider glow is a
+  static gradient, not a second moving surface; see the note at `.item::before`.
 */
 .why {
   /*
     Every value in the section that owns height, in one place. These are the first dials
     to reach for if the section ever needs to breathe more or fit into less.
+
+    TIGHTER THAN THE GRID VERSION'S, across the board — not because this section wants to
+    read as cramped, but because it now carries a sixth's worth more content (the CTA
+    banner) than the grid did, and the one-screen budget the pin below depends on has to
+    absorb that from somewhere. See the note at the pin's media query for the arithmetic
+    this was sized against.
   */
-  --why-pad: clamp(1.75rem, 5vh, 4.5rem);
-  /*
-    A step up the spacing scale: the ceiling was 3.25rem and is now --space-2xl, with the
-    vh term raised to match. The heading is a full sentence and the grid below it opens
-    with a gold numeral; at the old gap the numeral row read as the heading's fourth line.
-    The floor stays --space-md so the section still fits one screen at 1280x720 —
-    verified, not assumed.
-  */
-  --why-opening-gap: clamp(var(--space-md), 4.75vh, var(--space-2xl));
-  --why-row-gap: clamp(1.5rem, 3.6vh, 2.75rem);
-  --why-column-gap: clamp(2rem, 6vw, 5.5rem);
+  --why-pad: clamp(1.5rem, 4vh, 3rem);
+  --why-opening-gap: clamp(0.75rem, 3vh, 1.75rem);
+
+  /* Column gap between the six items in the row — horizontal only, costs no height. */
+  --why-item-gap: clamp(1.25rem, 2.4vw, 2rem);
+  /* Row gap for the wrapped/stacked layouts below the six-across breakpoint. */
+  --why-item-row-gap: clamp(1.75rem, 4vh, 2.75rem);
+
+  /* The gap between the row and the CTA banner that closes the section. */
+  --why-cta-gap: clamp(1.5rem, 3.5vh, 2.5rem);
+  /* The banner's own block padding — see .cta. */
+  --why-cta-pad-block: clamp(1.25rem, 3vh, 2rem);
+  --why-cta-pad-inline: clamp(1.25rem, 3vw, 2.5rem);
 
   /*
-    The gap under the numeral label. Small on purpose: the numeral belongs to the title
-    beneath it, and the pair has to read as one block against --why-row-gap separating the
-    cells. It replaces a --why-numeral-lead of 1.5-2.5rem, which was clearance for a
-    numeral sitting *behind* the title rather than above it.
+    Gold at 88%, matching the strength Founder's own --founder-gold-strong uses for a mark
+    that has to read as unambiguously gold without sitting brighter than the white type
+    around it. The row's numeral is the one call site.
   */
-  --why-numeral-gap: clamp(0.3rem, 0.8vh, 0.5rem);
+  --why-gold-strong: color-mix(in srgb, var(--color-gold) 88%, transparent);
+  /* The divider's hairline and the soft warm mass at its top — see .item::before. */
+  --why-divider-line: color-mix(in srgb, var(--color-gold) 22%, transparent);
+  --why-divider-glow: color-mix(in srgb, var(--color-gold) 45%, transparent);
 
   position: relative;
   z-index: var(--z-base);
@@ -105,7 +114,7 @@
 
   ONE SCREEN, pinned to the start of the section, mirroring the Founder's ground pinned to
   the end of its own. `min-block-size: 100vh` on `.why` is a floor, not a height: on a
-  phone six stacked cells run well past it, and a ground at `inset: 0` would grow with them
+  phone six stacked items run well past it, and a ground at `inset: 0` would grow with them
   — a taller box, a different cover scale, and therefore a different rendered width from
   the Founder's, which is the one thing that breaks the seam. Anything past the first
   screen falls onto `.why`'s own opaque --color-black.
@@ -157,11 +166,11 @@
 
   IT IS ALSO WHAT MAKES THE COPY READABLE, which is why the pane is here at all rather than
   being left off a photograph that is dark almost everywhere. why.webp carries a large lit
-  AGB wordmark straight through the middle of the section — exactly where the grid's right
-  column sits — and it is the brightest thing in either half. Measured on the visible crop
+  AGB wordmark straight through the middle of the section — exactly where the row's middle
+  items sit — and it is the brightest thing in either half. Measured on the visible crop
   at 1440x900, composited under this pane: the ground runs at relative luminance 0.002
   through the median and 0.055 at the 99th percentile, peaking at 0.18 on the wordmark's
-  specular edge. Against that 99th percentile the heading and the cell titles hold ~8:1 and
+  specular edge. Against that 99th percentile the heading and the item titles hold ~8:1 and
   the muted descriptions ~4.3:1; on the peak itself the white type is still ~4.2:1 and the
   descriptions ~2.7:1 across a few hundred pixels of a section that is above AA everywhere
   else. Without the pane the same peak puts white type at 1.4:1. The fill is the dial, and
@@ -235,16 +244,13 @@
   --text-2xl rather than the --text-3xl this opened at, and lighter than the h2 default
   (--font-weight-heavy) at --font-weight-medium — a full sentence of about ninety
   characters read as too bold and too large at the top of the scale. It stays the
-  section's dominant element: clearly larger than --text-xl .name and clearly lighter in
+  section's dominant element: clearly larger than the row's titles and clearly lighter in
   weight, which is what keeps a bigger cut from reading as a demotion.
 
-  The measure is 34ch, where it was 22. That is the one change the one-screen cap forced on
-  the heading: at 22ch this sets as four lines on a 1280px window, which is more of the
-  720px budget than the grid can spare. 34ch holds it to two or three lines at every
-  desktop width and still reads as a statement rather than a paragraph. `text-wrap:
-  balance` is not set here — at three lines the browser's own greedy break is even enough,
-  and balance on a heading this long is a measurable layout cost for a difference nobody
-  sees.
+  The measure is 34ch, so the heading holds to two or three lines at every desktop width
+  and still reads as a statement rather than a paragraph. `text-wrap: balance` is not set
+  here — at three lines the browser's own greedy break is even enough, and balance on a
+  heading this long is a measurable layout cost for a difference nobody sees.
 
   line-height under the global --leading-tight for the same reason About's title runs at
   0.95: a multi-line display heading wants to read as a block, not as a ladder.
@@ -259,108 +265,257 @@
   color: var(--color-text);
 }
 
-/* --- The grid ------------------------------------------------------------- */
+/* --- The row ---------------------------------------------------------------- */
 
 /*
-  Two columns, three rows, and a single hairline down the middle.
+  SIX ITEMS, ONE ROW, ONLY AT THE WIDTH WHERE EACH ONE HAS ROOM TO BE ONE — enabled at
+  90rem in the breakpoint block at the foot of this file, not at the 64rem most of this
+  site's "give it the wider layout" breakpoints use. The reason is `--container-max`
+  (75rem/1200px): past roughly 90rem of viewport the content column has already hit that
+  cap, so a wider window buys the row nothing more — meaning 90rem is not an arbitrary
+  choice past which room keeps growing, it is close to the point past which it stops. Below
+  it, six real sentences of description text in a column narrower than that cap read as a
+  ladder of half-words rather than as reasons; the fallback tiers below (three-up, then
+  two-up, then stacked) are not a compromise on the way to the row, they are the layout for
+  every width that cannot comfortably hold it.
 
-  NO ROW DIVIDERS AND NO CELL BORDERS. The six items were full-width rows separated by
-  hairlines; as a grid, a rule between every row and every column would draw a table. One
-  vertical line is enough to say the six are one structure, and it is the only line here.
-
-  `position: relative` for that divider, which is a pseudo-element rather than a
-  `border-inline-start` on the second column's cells: a border would be three separate
-  segments broken by the row gaps, where this is one unbroken line down the grid's full
-  height. It is also what makes it independent of how many rows there are.
+  Base rule here is the STACKED, one-column layout — see the breakpoints at the foot of
+  this file for the tiers above it. `align-items: flex-start` everywhere: every item is a
+  left-aligned column of numeral / icon / title / rule / description, whatever the row's
+  own orientation.
 */
-.grid {
-  position: relative;
-
+.row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  column-gap: var(--why-column-gap);
-  row-gap: var(--why-row-gap);
+  row-gap: var(--why-item-row-gap);
+}
+
+.item {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  min-inline-size: 0;
 }
 
 /*
-  The divider is only drawn where there are two columns to divide — the stacked layout
-  below 48rem has no middle. Enabled in the breakpoint at the foot of this file.
-*/
-.grid::before {
-  content: none;
-}
+  THE NUMERAL — large, solid gold, top-left of the item, exactly as it was in the grid
+  version but sized up: it used to sit as a small tag above a title it laid straight
+  beside; here it is the first mark in a column that also carries an icon below it, so it
+  has to read as the more prominent of the two on its own.
 
-/*
-  The numeral, as a label on its own line directly above the title.
-
-  IT WAS A DECORATIVE WASH BEHIND THE TITLE — 7rem of gold at 8%, absolutely positioned,
-  with the copy layered over it. That needed the cell to be a positioning context and the
-  copy to live in a wrapper of its own. This is the opposite treatment and needs neither:
-  a small, clearly legible mark that reads as an index, in normal flow, so the cell is
-  simply numeral, title, description down the page.
-
-  70% of the accent, where it was 8%. At label size a wash is illegible rather than subtle,
-  and the number now has a job — it enumerates — so it has to be readable. Full --color-gold
-  would sit brighter than the titles it labels, which inverts the hierarchy; at 70% it reads
-  as gold and stays a step under the white.
-
-  --font-weight-medium rather than the heavy the decorative version used: at 1.5rem a heavy
-  numeral is a heading, and this is a tag.
-
-  `tabular-nums` so 01 through 06 occupy identical width and the six sit on one vertical
-  edge. Clash Display may not carry the feature, in which case this costs nothing.
+  `tabular-nums` so 01 through 06 occupy identical width, which matters more here than it
+  did in the two-column grid — six of these now sit close enough across a row (on the
+  breakpoints where the row IS a row) that a proportional 1 next to a proportional 0 would
+  visibly stagger their left edges.
 */
 .index {
   display: block;
-  margin-block-end: var(--why-numeral-gap);
+  margin-block-end: 0.4rem;
 
-  color: color-mix(in srgb, var(--color-gold) 70%, transparent);
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  font-weight: var(--font-weight-medium);
+  color: var(--why-gold-strong);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-weight: var(--font-weight-bold);
   line-height: 1;
   letter-spacing: var(--tracking-tight);
   font-variant-numeric: tabular-nums;
 }
 
 /*
-  No `position` any more. The cell was a positioning context only so the numeral could be
-  absolutely placed behind the copy; with everything in flow there is nothing to position
-  against, and leaving it would be a stacking context created and destroyed on every reveal
-  (Framer writes an inline transform on this element).
+  THE ICON — a plain circle with a gold stroke and no fill, matching the "outlined, not
+  filled" material the button variants avoid turning solid outside of `.button-solid`
+  itself. It is drawn as a ring rather than a filled disc on purpose: a solid gold circle
+  this size, six times across one row, would read as six small buttons rather than as six
+  marks labelling six ideas — the stroke keeps it a mark.
+
+  Fixed rem sizing, not a vw/vh clamp: unlike the numeral or the row's own gaps, the icon's
+  size is not part of the one-screen budget this section is tuned against (see the pin's
+  media query) — it is small and constant enough that letting it flex would buy back very
+  little height for a good deal of visual inconsistency between items.
 */
-.item {
-  min-inline-size: 0;
+.icon-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  margin-block-end: 0.65rem;
+
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-gold);
+  background-color: transparent;
+}
+
+.icon {
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  color: var(--color-gold);
 }
 
 /*
-  --text-xl, a clear tier below the section title and clearly above the description, which
-  is the three-level hierarchy the cell needs. Weight comes from global.css, where h3 is
-  --font-weight-bold (600).
+  THE TITLE — bold, white, allowed to wrap to two lines, which it will at the row's own
+  narrower columns for the longer entries ("Integrated Production Management", "Deep
+  Understanding of Gulf Culture"). Weight comes from this rule rather than the h3 default
+  in global.css (--font-weight-bold, 600) because --font-weight-heavy reads closer to the
+  reference's own bold white titles at this size.
 */
 .name {
-  margin-block-end: var(--space-2xs);
+  margin-block-end: 0.35rem;
 
-  font-size: var(--text-xl);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-heavy);
+  line-height: 1.25;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/*
+  THE SHORT RULE UNDER THE TITLE — a fixed small width, deliberately not the column's own
+  width: it marks where the title ends and the description begins, the way a caption rule
+  does, rather than underlining the whole title the way a border would.
+*/
+.rule {
+  display: block;
+  margin-block: 0.35rem 0.5rem;
+
+  inline-size: 1.75rem;
+  block-size: 2px;
+  background-color: var(--color-gold);
+}
+
+/*
+  Quiet body text, matching the register About's paragraph and the Founder's bio use:
+  light weight, muted colour, relaxed leading. --text-xs rather than the grid version's
+  --text-sm, because the row's columns are narrower than the old grid's two ever were —
+  the size step is what keeps every description to two or three lines instead of four
+  or five at the row's own width.
+
+  No measure cap. The item's own column is already the constraint at every width this
+  rule applies to.
+*/
+.description {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-light);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* --- The CTA banner ---------------------------------------------------------- */
+
+/*
+  THE ONE BORDERED CARD IN THE SECTION — see the note at the top of WhyAgb.jsx for why
+  the row above deliberately avoids this treatment and the banner deliberately takes it.
+  `--color-glass` is the dark glass fill kept in variables.css for exactly this: "the
+  future raised surface" note there names it directly, and the Founder's metadata cards
+  were the first call site — this is the second.
+
+  Flex row on the breakpoints wide enough to hold one (see the foot of this file); the
+  base rule here is the stacked, narrow-viewport form.
+*/
+.cta {
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  margin-block-start: var(--why-cta-gap);
+  padding: var(--why-cta-pad-block) var(--why-cta-pad-inline);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+
+  background-color: var(--color-glass);
+}
+
+/*
+  THE FAINT BLEED FROM THE INLINE START, and it is a gradient rather than a photograph.
+  The only stills in the repo that are not already spoken for by another section
+  (src/assets/abdullah/00X.jpg) each carry a broadcaster bug and the subject's name
+  burned into the frame in Arabic — unusable here even faded to near nothing, since
+  CLAUDE.md §1 is explicit that there is no Arabic anywhere on this site. A warm mass low
+  in the corner reads as light bleeding into the card, which is what the brief actually
+  asked the image to do; it just does it without a photograph behind it.
+
+  Two layers: a soft gold ellipse anchored to the inline start edge, and an even fainter
+  white one high in the same corner for a touch of lit variation rather than one flat
+  colour. Both stop well short of the card's far edge, which is what keeps this a
+  "bleed" rather than a wash across the whole banner — the copy on top of it still sits
+  on the card's own --color-glass fill, not on a tinted one.
+*/
+.cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  background-image: radial-gradient(
+      ellipse 65% 90% at 0% 65%,
+      color-mix(in srgb, var(--color-gold) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 60% at 8% 10%,
+      rgba(255, 255, 255, 0.05),
+      transparent 75%
+    );
+
+  pointer-events: none;
+}
+
+.cta-copy {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cta-label {
+  color: var(--color-gold);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.cta-headline {
+  max-inline-size: 22ch;
+
+  font-size: clamp(1.15rem, 1rem + 1vw, 1.5rem);
+  font-weight: var(--font-weight-medium);
   line-height: 1.2;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
 }
 
 /*
-  Quiet body text, matching the register About's paragraph and the Founder's bio use:
-  light weight, muted colour, relaxed leading. --text-sm rather than --text-base because
-  it is a caption to the title above it rather than running copy.
-
-  No measure cap. The grid column is already the constraint — at --container-max with the
-  column gap it is about 550px, which is a comfortable measure at this size and holds every
-  description to one or two lines. A `ch` cap on top of it would only add lines, and lines
-  are what the one-screen budget is short of.
+  THE VERTICAL DIVIDER between the text block and the button — only meaningful once the
+  two sit side by side, so it is declared here at `display: none` and switched on in the
+  same breakpoint that turns `.cta` into a row (see the foot of this file). A plain
+  element rather than a border on `.cta-copy`, because its height needs to match the
+  row's own cross-axis stretch rather than either child's own content height.
 */
-.description {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-light);
-  line-height: var(--leading-relaxed);
-  color: var(--color-text-muted);
+.cta-divider {
+  display: none;
+
+  align-self: stretch;
+  inline-size: 1px;
+
+  background-color: var(--glass-border-bright);
+}
+
+.cta-button {
+  position: relative;
+  z-index: 1;
+
+  align-self: flex-start;
+  white-space: nowrap;
 }
 
 /* --- The pin -------------------------------------------------------------- */
@@ -394,28 +549,28 @@
   would be the wrong fix: it would say the layering is a decision when it is a consequence,
   and it would put Team above a Founder that is at the same level for unrelated reasons.
 
-  WHY THE GATE, AND WHY IT IS TWO CONDITIONS. A box pinned to the block start shows its own
-  first screen and nothing below it — sticky cannot lift its own top edge above the offset,
-  so anything past the first viewport is not merely scrolled past, it is unreachable for the
-  life of the page. On a phone that would be four of the six reasons, permanently. The pin
-  is therefore only enabled where this section genuinely fits one screen:
+  WHY THE GATE, AND WHY THE WIDTH TERM MOVED TO 90REM ON 2026-08-02. A box pinned to the
+  block start shows its own first screen and nothing below it — sticky cannot lift its own
+  top edge above the offset, so anything past the first viewport is not merely scrolled
+  past, it is unreachable for the life of the page. The pin is therefore only enabled where
+  this section genuinely fits one screen, and "fits one screen" now means "is in its
+  six-across row form", because the three-up and two-up fallbacks below 90rem are taller
+  than one viewport on ordinary windows and were never measured to be pin-safe. The row's
+  own single-row breakpoint and the pin's width gate are therefore the same number on
+  purpose — see the note at `.row` for why 90rem rather than the usual 64rem.
 
-  - `min-width: 64rem` (1024px). NOT the 48rem where the grid becomes 2 x 3, and the
-    difference is measured rather than cautious. At 768 the two columns are about 337px
-    each, which wraps the longer titles to two lines and the descriptions to three; the
-    section works out around 810px tall and would strand its last row on a 720px window —
-    the exact failure this gate exists to prevent, inside the gate. By 1024 the columns are
-    ~465px, most titles are one line, and the section comes in around 690px.
-  - `min-height: 45rem` (720px) — the shorter side of the 1280x720 window this section's
-    one-screen budget was measured against (see the note at --why-opening-gap).
-
-  1024 x 720 IS THE TIGHT CORNER of that envelope, with roughly 30px to spare. If this
-  section's copy ever grows — a longer heading, a seventh reason, a bigger --why-opening-gap
-  — that corner is what to re-measure, and raising the gate is the correct response rather
-  than shrinking the section to fit it.
-
-  Outside that envelope this section and Team are ordinary siblings in flow, which is what
-  they were before the pairing existed.
+  - `min-width: 90rem` (1440px), moved up from 64rem when the CTA banner was added. Below
+    it the section is a taller, wrapped layout that was never intended to be pinned.
+  - `min-height: 45rem` (720px) is UNCHANGED from the grid version. Arithmetic at the
+    six-across row's own floor values — every clamp above at its minimum bound, which is
+    what a very short viewport converges toward — comes to roughly 510px for the padding,
+    the opening block, the tallest row item (worst case: "Flexible Production Teams" at
+    two title lines over its own longest description, four lines), the CTA gap and the
+    banner. That is comfortable room under 720px, which is why this dial did not need to
+    move even though the section gained a whole extra element. This is arithmetic on the
+    layout as written, not a rendered measurement — this codebase cannot run a browser to
+    confirm it — so treat 510px as the figure this gate was chosen against rather than a
+    verified fact, and re-check it if the row's copy or the banner's own padding changes.
 
   THE SAME TWO CONDITIONS ARE REPEATED IN Team.module.css, where they enable `--team-tuck` —
   the extra block-start height that carries Team's rounded corner off the top of the screen
@@ -431,7 +586,7 @@
   threshold, which is precisely the machinery HeroBackdrop's rewrite deleted. It is not worth
   buying back for this.
 */
-@media (min-width: 64rem) and (min-height: 45rem) {
+@media (min-width: 90rem) and (min-height: 45rem) {
   .why {
     position: sticky;
     inset-block-start: 0;
@@ -450,13 +605,14 @@
   start, deliberately, because the image is half of a picture whose other half is the
   Founder's and the seam only survives while both are drawn at one screen. So the ground
   cannot follow the content the way About's does — the content has to come back to the
-  ground. At 390x844 the section measured 1166px, which left the last two reasons and most
-  of a third sitting on bare --color-black below the photograph.
+  ground. At 390x844 the section measured 1166px against the old grid; the row and the new
+  CTA banner add more height still, so anything past the photograph's own screen falls onto
+  `.why`'s own opaque --color-black same as before.
 
   EVERY VALUE BELOW IS TYPE OR THE SPACE BETWEEN TYPE, and they were tuned as one set
-  against 390x844 and 375x812, measured rather than estimated. The two-column grid is not
-  involved — it does not exist at this width — so nothing here interacts with the
-  divider, the pin, or the seam itself.
+  against 390x844 and 375x812. The row is a single stacked column at this width — it does
+  not exist as a grid or a row here — so nothing here interacts with the divider, the pin,
+  or the seam itself.
 
   WHY THE HEADING TAKES THE LARGEST CUT. The base size is already down to --text-2xl (see
   .title), and at that width a sentence this long still wants a shorter line than the
@@ -467,15 +623,17 @@
 @media (max-width: 47.9375rem) {
   .why {
     /*
-      The four height dials, all down. The vh middle terms come down with the rem
-      ceilings rather than instead of them — the ratios between the four are what make the
-      section read as numeral / title / description / next, and cutting one alone would
-      collapse a level of that hierarchy rather than tighten the whole.
+      The height dials, all down. The vh middle terms come down with the rem
+      ceilings rather than instead of them — the ratios between them are what make the
+      section read as heading / row / banner / next, and cutting one alone would collapse
+      a level of that hierarchy rather than tighten the whole.
     */
     --why-pad: clamp(1.25rem, 3.6vh, 2.5rem);
     --why-opening-gap: var(--space-sm);
-    --why-row-gap: clamp(1rem, 2.1vh, 1.75rem);
-    --why-numeral-gap: var(--space-3xs);
+    --why-item-row-gap: clamp(1.5rem, 3.2vh, 2.25rem);
+    --why-cta-gap: clamp(1.25rem, 3vh, 2rem);
+    --why-cta-pad-block: clamp(1rem, 2.6vh, 1.5rem);
+    --why-cta-pad-inline: var(--space-md);
   }
 
   .title {
@@ -493,71 +651,133 @@
     line-height: 1.15;
   }
 
-  /*
-    The numeral drops from ~16px to 13px, which is where it should have been read as a
-    tag all along at this width: it enumerates the title beneath it, and at 16px against a
-    16px title it was competing with the thing it labels rather than indexing it.
-  */
   .index {
-    font-size: 0.8125rem;
+    font-size: 1.1rem;
   }
 
-  .name {
-    margin-block-end: var(--space-3xs);
-
-    /*
-      --text-base, down from --text-xl. It is worth stating what this buys beyond its own
-      four pixels: at 20px, "Integrated Production Management" and "Deep Understanding of
-      Gulf Culture" both wrapped to two lines, and at 16px neither does. Two of the six
-      cells therefore lose a whole line rather than a few pixels of leading, which is most
-      of where the grid's height actually went.
-    */
-    font-size: var(--text-base);
-    line-height: 1.25;
+  .icon-ring {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
   }
 
-  /*
-    0.8125rem (13px) with the leading pulled in from --leading-relaxed (1.85) to 1.5.
-    These are captions to the titles above them, two lines each at this measure, and 1.85
-    is a leading written for running copy — twelve lines of it cost more than the heading
-    does. The leading is the lever rather than the size here: 1.85 to 1.5 is 4.5px a line
-    and 54px across the grid, where the same saving in font-size would have taken the
-    descriptions under 12px.
+  .icon {
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
 
-    It is also what clears the last few pixels on a 360x800 window, which is the tightest
-    of the common phone sizes for this section: the vh terms in the four dials above are
-    still off their floors there, so the leading is the only lever left that does not cost
-    a legible size.
-  */
-  .description {
-    font-size: 0.8125rem;
-    line-height: 1.5;
+  .cta-headline {
+    font-size: var(--text-lg);
   }
 }
 
 @media (min-width: 48rem) {
-  .grid {
+  .row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--why-item-gap);
   }
 
   /*
-    The one line in the section. Exactly on the row's centre — the two tracks are equal, so
-    50% is the middle of the gap whatever the gap is — and spanning the grid's full height
-    rather than stopping at the last row's text, so it reads as the structure the six cells
-    hang on rather than as a divider between them.
-
-    --color-gold at 16%, a little above the --glass-border hairline the rest of the site
-    uses, because this one is unsupported by any surface: there is no pane edge here for
-    the eye to find it against.
+    `.cta-copy` takes `flex: 1` rather than this rule reaching for
+    `justify-content: space-between` — with three children and a banner far wider than
+    the text needs, space-between would treat the divider as a middle item and centre it
+    in whatever space is left, floating it away from both the copy and the button
+    instead of sitting flush against either. Growing the copy column pushes the divider
+    and the button to the inline end as one group, `gap` apart from each other and from
+    the copy — which is the "text block, then a divider, then the CTA on the right" the
+    brief describes.
   */
-  .grid::before {
+  .cta {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  .cta-copy {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .cta-divider {
+    display: block;
+    block-size: 2.5rem;
+  }
+
+  /*
+    Overrides the base rule's `align-self: flex-start`, which exists to stop the button
+    stretching full-width in the stacked column layout below this breakpoint (a flex
+    column with no `align-items` set defaults to stretch). Here `.cta` is a row with
+    `align-items: center`, and flex-start would pin the button to the row's block-start
+    edge instead of levelling it with the text and the divider.
+  */
+  .cta-button {
+    align-self: center;
+  }
+}
+
+@media (min-width: 64rem) {
+  .row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/*
+  THE SINGLE ROW OF SIX, AND ITS DIVIDERS — see the long note at `.row` for why 90rem
+  rather than this file's usual 64rem "wider layout" threshold, and the note at the pin's
+  own media query for why that gate now matches this one exactly.
+*/
+@media (min-width: 90rem) {
+  .row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  /*
+    THE DIVIDER — a hairline the full height of the row plus a soft warm mass concentrated
+    at its top, fading out before the line's own end. Only meaningful once the six sit in
+    one true row, which is why it is declared inside this breakpoint rather than reset
+    elsewhere: no earlier rule gives `.item::before` a `content`, so the pseudo-element does
+    not exist below 90rem at all.
+
+    NOT DRAWN BEFORE THE FIRST ITEM, the same convention the old grid's single centre line
+    followed: a rule marks a boundary between two things, and there is nothing to either
+    side of the first column to divide it from.
+
+    THE BOX IS WIDER THAN THE LINE IT DRAWS — 1.5rem, to leave the glow room to spread —
+    so centring it on the gap is not the old grid's single `50%`, which only worked
+    because that divider's own box WAS the 1px line. Here `inset-inline-start` has to
+    pull back by half the gap AND half the box's own width: `calc((var(--why-item-gap) +
+    1.5rem) / -2)`. Get this wrong — pull back by only half the gap, as if the box were
+    the line — and the box stops being centred on the gap at all; at this row's own gap
+    width it would sit visibly inside the following item, overlapping its numeral.
+
+    TWO LAYERS, both static. `radial-gradient` first: a warm ellipse anchored to the top of
+    the box and fading out within roughly a third of the row's height, which is what reads
+    as "a glow concentrated at the top". `linear-gradient` second, drawn at a fixed 1px
+    width via `background-size` + `no-repeat` rather than the box's own (wider) inline-size,
+    which is what keeps the actual line hairline-thin under a box wide enough to hold the
+    glow's ellipse without clipping it.
+  */
+  .item:not(:first-child)::before {
     content: '';
     position: absolute;
     inset-block: 0;
-    /* Half a pixel back so the 1px line straddles the centre rather than starting at it. */
-    inset-inline-start: calc(50% - 0.5px);
+    inset-inline-start: calc((var(--why-item-gap) + 1.5rem) / -2);
 
-    inline-size: 1px;
-    background-color: color-mix(in srgb, var(--color-gold) 16%, transparent);
+    inline-size: 1.5rem;
+    background-image: radial-gradient(
+        ellipse 70% 55% at 50% 0%,
+        var(--why-divider-glow),
+        transparent 70%
+      ),
+      linear-gradient(
+        to bottom,
+        var(--why-divider-line) 0%,
+        color-mix(in srgb, var(--color-gold) 8%, transparent) 45%,
+        transparent 90%
+      );
+    background-repeat: no-repeat;
+    background-position: center top, center top;
+    background-size: 100% 100%, 1px 100%;
+
+    pointer-events: none;
   }
 }
