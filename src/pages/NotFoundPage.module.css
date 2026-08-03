@@ -1,0 +1,211 @@
+/*
+  The 404 page — a standalone full-screen moment, and the smallest stylesheet on the
+  site by some margin. That is the design: one centred column of three elements on the
+  site's own ground, with nothing else on the screen.
+
+  THE GROUND IS --color-black, NOT --about-ground. Both are available and the choice is
+  deliberate: the brown ground is shared by the routes that are *company profile* pages
+  (/about, /team/nael-al-jarabah, /founder), where CLAUDE.md's "different room in the
+  same building" argument applies. A 404 is not one of those rooms — it is reached from
+  an arbitrary URL, belongs to no route family, and should read as the site's own default
+  surface. Services and Contact make the same call for the same reason, and this file
+  copies their shell exactly: --color-black, one screen, the grain boosted for the route.
+
+  NO VIDEO, NO GLASS, NO BACKDROP-FILTER. Nothing here claims a compositing layer or a
+  playback slot; the page costs a fraction of any other route on the site, which is the
+  right budget for a screen a visitor should be leaving immediately.
+*/
+
+.page {
+  position: relative;
+
+  /*
+    svh rather than vh, matching Hero's own landing measure. This page is a single
+    centred screen with no scrolling below it, so it is exactly the case svh exists for:
+    on a phone, vh resolves against the *largest* viewport, which would push the centred
+    column below the fold while the URL bar is showing.
+  */
+  min-block-size: 100svh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: var(--color-black);
+
+  /*
+    Symmetric block padding, unlike every other secondary page — those clear the fixed
+    site header with `calc(var(--header-height) + …)` at the block start. This route
+    renders no header (see NotFoundPage.jsx), so there is nothing to clear, and an
+    asymmetric top padding would push the optical centre off the screen's own.
+  */
+  padding-block: var(--space-2xl);
+  padding-inline: var(--container-padding);
+
+  /*
+    THE GRAIN BOOST FOR THIS ROUTE — the same value and the same argument as About's,
+    Services' and Contact's. `.noise-overlay` (applied to this element in
+    NotFoundPage.jsx) reads --noise-opacity, so redeclaring it here overrides the
+    site-wide 0.03 for this subtree only. It matters more here than on a busy page:
+    with a near-empty screen the texture is most of what keeps the ground from reading
+    as a flat black rectangle.
+  */
+  --noise-opacity: 0.07;
+}
+
+/*
+  THE VIGNETTE — the page's one atmospheric layer, and the only decoration on it beyond
+  the grain and the gold rule below.
+
+  --color-overlay rather than a raw black: CLAUDE.md is explicit that nothing on this
+  site darkens a surface with rgba(0,0,0,…), because pure black is neither as light nor
+  as cool as the ground tone and leaves a visible step wherever the two meet. That token
+  is --color-black at 0.72 and has had no call site since the modal it was written for;
+  a vignette over that exact ground is precisely what it is for.
+
+  It starts at 55% of the radius, so the whole centred column sits inside the untouched
+  middle and only the far corners close down. Anything tighter reads as a spotlight
+  pointed at the copy rather than as the edges of the frame falling away.
+
+  z-index 0 against `.inner`'s --z-base puts it behind the content. `.noise-overlay`
+  makes this element an isolated stacking context, so both indices are local to it.
+*/
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  pointer-events: none;
+  background-image: radial-gradient(
+    ellipse 75% 70% at 50% 50%,
+    transparent 55%,
+    var(--color-overlay) 100%
+  );
+}
+
+.inner {
+  position: relative;
+  z-index: var(--z-base);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  inline-size: 100%;
+  max-inline-size: 34rem;
+
+  text-align: center;
+}
+
+/*
+  THE SITE'S MICRO-LABEL, with one departure. The dot, the size, the uppercase and the
+  0.28em tracking are the values About, WhyAgb, the Founder and every /about section
+  share — that device is how a block on this site announces itself, and a page that
+  invented its own would stop reading as the same site.
+
+  What differs is the label's own colour: --color-gold here, where the home page's
+  eyebrows sit at --color-text-subtle beside their gold dot. Those eyebrows label a
+  section inside a page full of other content and are deliberately quiet about it. This
+  one is the only piece of type on the screen above the heading, on a page with no
+  imagery, no video and no other accent — the gold is the page's single warm note, and
+  at --color-text-subtle it would read as grey text with a stray dot next to it. The
+  dot stays because it is the recognisable half of the device.
+
+  `justify-content: center` because this column is centred, where every other call site
+  of this device is in a left-aligned block.
+*/
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+
+  color: var(--color-gold);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  flex-shrink: 0;
+
+  inline-size: 0.3125rem;
+  block-size: 0.3125rem;
+  border-radius: 50%;
+  background-color: var(--color-gold);
+}
+
+/*
+  THE HEADING. Light rather than the 700 global.css gives an h1, and the same reasoning
+  as /about's pull-quote: at display size a heavy weight on a near-empty screen reads as
+  a shout, and the line is an apology rather than an announcement. --color-text, never
+  --color-text-bright — the bright token is reserved for nav-link hover and a large
+  statement is exactly the temptation that rule exists to refuse.
+
+  A `ch` measure plus `text-wrap: balance` rather than a hand-inserted break: the line
+  has to break somewhere at every width, and balance distributes it evenly instead of
+  leaving one word alone on the last line.
+*/
+.heading {
+  margin-block-start: var(--space-md);
+  max-inline-size: 20ch;
+
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-light);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+/*
+  THE ONE DECORATIVE ELEMENT — a short gold hairline between the heading and the way
+  out, fading to nothing at both ends.
+
+  The same family as the fading gold rules on /about (the pull-quote's spine, each
+  stat's spine) and the Founder's `.bio::before`, turned on its side: a pseudo-element
+  rather than a border, because a border-colour cannot fade. Centred and symmetric here,
+  where all of those are vertical and anchored to the inline start, because this column
+  is centred and a rule that faded in only one direction would pull the eye off axis.
+
+  --color-gold at full strength in the middle, over a 1px line 4rem long: it registers
+  as a mark and disappears the moment the reader stops looking at it, which is the whole
+  brief for it.
+*/
+.rule {
+  inline-size: 4rem;
+  block-size: 1px;
+  margin-block-start: var(--space-lg);
+
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    var(--color-gold),
+    transparent
+  );
+}
+
+/*
+  Spacing ONLY, per Button.module.css — where a button sits is the calling page's
+  decision, and a local class here that set a colour, radius, border or background
+  would have forked the button. Nothing else is declared.
+*/
+.cta {
+  margin-block-start: var(--space-lg);
+}
+
+@media (max-width: 47.9375rem) {
+  /*
+    The heading comes down a step on a phone: --text-3xl already clamps, but its floor
+    (2rem) is tuned for a heading with a section of content under it rather than for a
+    six-word sentence that is the whole screen. Nothing else in the column needs a
+    phone value — it is one centred flex column at every width.
+  */
+  .heading {
+    font-size: var(--text-2xl);
+    max-inline-size: none;
+  }
+}
