@@ -92,12 +92,14 @@ function ContactPage() {
         <div className={styles.inner}>
           <div className={styles.card}>
             {/*
-              --- Left column: identity ------------------------------------
-              The page's own heading now anchors this column — logo and socials
-              read as the signature beneath it, all centred as one stacked block.
+              --- Left half: identity ---------------------------------------
+              One vertically centred, horizontally centred stack: heading, then the
+              mark, then the social row. Nothing in it grows to fill its half — the
+              half is sized generously and the stack sits centred inside it, which is
+              what stops the extra room reading as dead space rather than as air.
             */}
             <div className={styles.identity}>
-              <h1 className={styles['identity-title']}>Contact Us Now</h1>
+              <h1 className={styles['identity-title']}>Contact Us</h1>
 
               <img
                 className={styles.logo}
@@ -127,20 +129,20 @@ function ContactPage() {
 
             {/*
               THE COLUMN DIVIDER — a real grid track rather than a percentage-positioned
-              pseudo-element, because the two columns are deliberately uneven (see the
-              grid-template-columns in the stylesheet). WhyAgb's grid divider can afford
-              to sit at a literal 50% because its two columns are equal; these are not,
-              so the line has to be an actual middle track for its position to follow
-              the columns rather than assume them.
+              pseudo-element, because the two halves are deliberately not identical in
+              width (see the grid-template-columns in the stylesheet). WhyAgb's grid
+              divider can afford to sit at a literal 50% because its two columns are
+              equal; these are not, so the line has to be an actual middle track for its
+              position to follow the halves rather than assume them.
             */}
             <div className={styles.divider} aria-hidden="true" />
 
-            {/* --- Right column: the form ------------------------------------ */}
+            {/* --- Right half: the form -------------------------------------- */}
             <div className={styles.form}>
               {/*
-                THE EMAIL, FIRST — the one address this page lists, given the same
-                eyebrow treatment "Get In Touch" used to carry above the old heading,
-                so it reads immediately rather than waiting at the bottom of a column.
+                THE EMAIL, FIRST AND LEFT-ALIGNED — it shares the inline start of every
+                field label below it, so the address and the form read as one left rail
+                rather than as a centred header sitting on top of a left-aligned form.
               */}
               <div className={styles['contact-email']}>
                 <p className={styles.eyebrow}>Get In Touch</p>

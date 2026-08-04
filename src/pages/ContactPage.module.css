@@ -94,7 +94,15 @@
   gap: clamp(var(--space-lg), 4vh, var(--space-xl));
 
   inline-size: 100%;
-  max-inline-size: 84rem;
+  /*
+    NARROWED FROM 84rem. That cap was set while the card was a form with a sidebar
+    beside it; the card is now two halves either side of a centre line, and a half of
+    84rem is wider than any of the content in it wants to be — the identity stack
+    ended up as a small centred island in a very large field. At 66rem each half is
+    close to the width its own content fills, which is what makes the divider read as
+    a middle rather than as a line drawn at an arbitrary offset.
+  */
+  max-inline-size: 66rem;
 }
 
 /* --- The card ------------------------------------------------------------------ */
@@ -142,12 +150,12 @@
 }
 
 /*
-  --- Left column: identity ----------------------------------------------------
-  A centred signature block now, not a running-text rail — the heading anchors it,
-  the logo sits beneath as the mark, and the social row closes it. All three stay
-  centred at every width (see the removed 48rem override below the breakpoint
-  section), so nothing here is a left-aligned column that happens to centre its
-  first line.
+  --- Left half: identity ------------------------------------------------------
+  A centred signature block: heading, mark, social row, in that order, centred on
+  both axes of its own half. `justify-content: center` is what does the vertical
+  half of that — the half is a grid item stretched to the card's full height, so the
+  stack is centred against the form beside it rather than sitting at the top of a
+  tall box. All three children stay centred at every width.
 */
 
 .identity {
@@ -160,8 +168,14 @@
   text-align: center;
 }
 
+/*
+  --text-3xl, up a step from --text-2xl. It is the page's <h1> and the top of a stack
+  that has a whole half to itself; at the smaller size it set the same width as the
+  social row two beats below it, so the stack read as three same-sized things rather
+  than as a heading with a signature under it.
+*/
 .identity-title {
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   line-height: 1.05;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text);
@@ -169,13 +183,17 @@
 
 /*
   Height-driven, per CLAUDE.md's rule for this mark: the logo is portrait (360x672),
-  so block-size sets the constraint and inline-size derives from it. Enlarged again,
-  now that it carries the column on its own beneath the (smaller) heading rather than
-  needing to read as the column's biggest element by itself — spacing between it and
-  its neighbours comes from `.identity`'s own `gap`, not a margin on the logo.
+  so block-size sets the constraint and inline-size derives from it.
+
+  SCALED BACK DOWN, DELIBERATELY — it was clamp(8rem, 21vw, 13rem), sized from when it
+  was meant to be the biggest thing in its column. It is a modest brand mark now, one
+  of three equal beats in a stack: at this size its rendered width (~4rem, from the
+  portrait ratio) sits between the heading's cap height and the social row's ~13rem,
+  so nothing in the stack dominates the other two. Spacing around it still comes from
+  `.identity`'s own `gap`, not a margin here.
 */
 .logo {
-  block-size: clamp(8rem, 21vw, 13rem);
+  block-size: clamp(5.5rem, 10vw, 8rem);
   inline-size: auto;
 }
 
@@ -218,17 +236,23 @@
   color: var(--color-gold-light);
 }
 
-/* --- The email, at the top of the right column -------------------------------- */
+/* --- The email, at the top of the right half ---------------------------------- */
 
+/*
+  LEFT-ALIGNED, NOT CENTRED. It used to be centred over the form, which put the one
+  piece of copy above the fields on a different axis from every label below it. Sharing
+  the fields' inline start makes the whole half one rail: eyebrow, address, Name, Email,
+  Message all begin on the same line.
+*/
 .contact-email {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3xs);
 
   margin-block-end: clamp(var(--space-sm), 2.5vh, var(--space-md));
 
-  text-align: center;
+  text-align: start;
 }
 
 /*
@@ -427,21 +451,22 @@
 @media (min-width: 48rem) {
   .card {
     /*
-      REBUILT AS max-content / auto / 1fr, REPLACING A PAIR OF NEAR-EQUAL fr TRACKS —
-      the earlier 0.85/1.15 and then 0.95/1.05 splits both handed the identity column
-      a wide flexible share it never used (its content is a centred heading, a logo
-      and an icon row — none of it grows to fill a track) while the form column was
-      then capped narrower still with its own max-inline-size, leaving dead space on
-      the trailing edge of BOTH columns at once. There is no longer a cap to fight:
-      identity is sized to exactly what its content needs (`max-content`, the same
-      keyword the divider's `auto` track already used) and the form takes literally
-      everything left over (`minmax(0, 1fr)`, the only flexible track), so it fills
-      its column edge to edge by construction rather than by a width chosen to match.
-      A three-field form naturally wants more room than a centred logo stack, and
-      this is what lets it have as much as the card can give it instead of an amount
-      picked to look close to equal.
+      TWO FLEXIBLE HALVES EITHER SIDE OF THE DIVIDER'S OWN TRACK, and the ratio is the
+      whole decision. It was `max-content auto minmax(0, 1fr)` — identity shrink-wrapped
+      to its content and the form given every remaining pixel — which sized the halves
+      but left the divider wherever that arithmetic happened to put it, well off centre
+      on a wide window. Two `fr` shares put it at a fixed fraction of the card instead,
+      so it reads as a middle at every width.
+
+      1fr / 1fr, and measured rather than assumed: with equal shares the line lands on
+      the card's own centre to the pixel (at 1440px, halves of 424px either side of a
+      1px track, centre 734 in a card spanning 230–1239). A 0.85/1.15 lean was tried
+      first, on the theory that the form uses width and the identity stack does not —
+      it pushed the line ~64px off centre, which is close enough to the middle to read
+      as a mistake rather than as a decision. The stack is a heading, a mark and four
+      icons that together fill most of a 424px half anyway, so there was nothing to buy.
     */
-    grid-template-columns: max-content auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     /* Both gaps either side of the divider track — see the note above. */
     column-gap: var(--space-xl);
   }
@@ -449,24 +474,20 @@
   /*
     NO DESKTOP OVERRIDE FOR `.identity` HERE, ON PURPOSE. It used to flip to a
     left-aligned rail at this breakpoint with the logo nudged further in by its own
-    margin; both are gone now that the column is a centred signature block — heading,
-    logo, social row — at every width. It needs no width override either: `max-content`
-    above already sizes the track to exactly this content, so `.identity`'s own
-    `align-items: center` has nothing left to centre WITHIN beyond its own children,
-    which is the point — the column is never wider than what it holds.
-  */
+    margin; both are gone now that the half is a centred signature block — heading,
+    logo, social row — at every width. Its `align-items: center` centres that stack
+    inside the whole 0.85fr half, which is exactly what the two-half structure wants.
 
-  /*
     NO WIDTH OVERRIDE ON `.form` HERE EITHER — it previously carried its own
-    `max-inline-size` cap plus `justify-self: start`, which was the other half of the
-    dead-space bug: the cap trapped the fields in a narrow strip flush to the divider
-    while the rest of the column's `1fr` track sat empty beside them. Removed outright
-    rather than retuned. `.form` is a grid item with the default `justify-self: stretch`
-    and `.form-body`, `.field` and every `.field-control` inside it stretch in turn
-    (each is a flex child of a column flex container with no `align-items` override,
-    so the default `stretch` carries all the way down) — which is what makes every
-    input and the textarea span the column's full width without any explicit
-    `inline-size: 100%` anywhere in this file.
+    `max-inline-size` cap plus `justify-self: start`, which trapped the fields in a
+    narrow strip flush to the divider while the rest of its track sat empty beside
+    them. Removed outright rather than retuned, and it must stay removed: `.form` is a
+    grid item at the default `justify-self: stretch`, and `.form-body`, `.field` and
+    every `.field-control` inside it stretch in turn (each is a flex child of a column
+    flex container with no `align-items` override, so the default `stretch` carries all
+    the way down). That chain is what makes every input and the textarea span the half
+    edge to edge with no explicit `inline-size: 100%` anywhere in this file — a cap
+    anywhere along it reintroduces the trailing gap.
   */
 
   /* A fading vertical hairline marking the seam between the two columns. */
