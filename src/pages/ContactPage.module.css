@@ -193,7 +193,7 @@
   `.identity`'s own `gap`, not a margin here.
 */
 .logo {
-  block-size: clamp(5.5rem, 10vw, 8rem);
+  block-size: clamp(6.5rem, 11vw, 9rem);
   inline-size: auto;
 }
 
