@@ -427,15 +427,21 @@
 @media (min-width: 48rem) {
   .card {
     /*
-      A NARROW IDENTITY RAIL, A THIN DIVIDER TRACK, A FORM COLUMN TRIMMED A STEP
-      NARROWER THAN IT WAS. The divider is a real grid column rather than a
-      percentage-positioned pseudo-element, because the two content columns are
-      deliberately uneven — a line placed at a literal 50% would sit inside the
-      wider form column instead of on the seam. The ratio shifted from 0.85/1.15 to
-      0.95/1.05 in the same pass that enlarged the logo again, so the identity rail
-      has the room the bigger mark needs and the form reads a touch more compact.
+      REBUILT AS max-content / auto / 1fr, REPLACING A PAIR OF NEAR-EQUAL fr TRACKS —
+      the earlier 0.85/1.15 and then 0.95/1.05 splits both handed the identity column
+      a wide flexible share it never used (its content is a centred heading, a logo
+      and an icon row — none of it grows to fill a track) while the form column was
+      then capped narrower still with its own max-inline-size, leaving dead space on
+      the trailing edge of BOTH columns at once. There is no longer a cap to fight:
+      identity is sized to exactly what its content needs (`max-content`, the same
+      keyword the divider's `auto` track already used) and the form takes literally
+      everything left over (`minmax(0, 1fr)`, the only flexible track), so it fills
+      its column edge to edge by construction rather than by a width chosen to match.
+      A three-field form naturally wants more room than a centred logo stack, and
+      this is what lets it have as much as the card can give it instead of an amount
+      picked to look close to equal.
     */
-    grid-template-columns: minmax(0, 0.95fr) auto minmax(0, 1.05fr);
+    grid-template-columns: max-content auto minmax(0, 1fr);
     /* Both gaps either side of the divider track — see the note above. */
     column-gap: var(--space-xl);
   }
@@ -444,23 +450,24 @@
     NO DESKTOP OVERRIDE FOR `.identity` HERE, ON PURPOSE. It used to flip to a
     left-aligned rail at this breakpoint with the logo nudged further in by its own
     margin; both are gone now that the column is a centred signature block — heading,
-    logo, social row — at every width, not a running-text rail that only centres
-    below its own first line.
+    logo, social row — at every width. It needs no width override either: `max-content`
+    above already sizes the track to exactly this content, so `.identity`'s own
+    `align-items: center` has nothing left to centre WITHIN beyond its own children,
+    which is the point — the column is never wider than what it holds.
   */
 
   /*
-    A MODEST WIDTH CAP ON THE FORM COLUMN — this grid item stretches to fill its
-    track by default; the cap trims a bit of that off on top of the narrower track
-    above, so the column reads shorter and a touch narrower rather than the two
-    columns competing for equal visual weight. `justify-self: start` keeps the
-    trimmed box flush against the divider instead of centring in the leftover
-    track space. Scoped to this breakpoint only — below it `.form` is the single
-    stacked column and has to stay full width.
+    NO WIDTH OVERRIDE ON `.form` HERE EITHER — it previously carried its own
+    `max-inline-size` cap plus `justify-self: start`, which was the other half of the
+    dead-space bug: the cap trapped the fields in a narrow strip flush to the divider
+    while the rest of the column's `1fr` track sat empty beside them. Removed outright
+    rather than retuned. `.form` is a grid item with the default `justify-self: stretch`
+    and `.form-body`, `.field` and every `.field-control` inside it stretch in turn
+    (each is a flex child of a column flex container with no `align-items` override,
+    so the default `stretch` carries all the way down) — which is what makes every
+    input and the textarea span the column's full width without any explicit
+    `inline-size: 100%` anywhere in this file.
   */
-  .form {
-    justify-self: start;
-    max-inline-size: 24rem;
-  }
 
   /* A fading vertical hairline marking the seam between the two columns. */
   .divider {
