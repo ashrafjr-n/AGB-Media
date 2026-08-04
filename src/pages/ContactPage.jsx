@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaFacebookF, FaInstagram, FaWhatsapp, FaYoutube } from 'react-icons/fa6'
+import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa6'
 import { HiOutlineDownload, HiOutlineMail } from 'react-icons/hi'
 
 import Header from '../components/Header/Header'
@@ -30,27 +30,22 @@ import styles from './ContactPage.module.css'
 /*
   Structured the way navLinks.js structures the nav, so filling in a real profile URL
   later is editing one field rather than touching markup. Email is deliberately last,
-  matching the brief's own order, and points at the general inbox — the three specific
-  addresses are listed in full just below the row rather than hidden behind the icon.
+  matching the brief's own order, and points at the one address the page lists in
+  full just below the row.
 */
 const socialLinks = [
   { id: 'facebook', label: 'Facebook', href: '#', Icon: FaFacebookF },
   { id: 'instagram', label: 'Instagram', href: '#', Icon: FaInstagram },
-  { id: 'whatsapp', label: 'WhatsApp', href: '#', Icon: FaWhatsapp },
   { id: 'youtube', label: 'YouTube', href: '#', Icon: FaYoutube },
   {
     id: 'email',
     label: 'Email',
-    href: 'mailto:contact@agb-media.net',
+    href: 'mailto:ceo@agb-media.net',
     Icon: HiOutlineMail,
   },
 ]
 
-const emails = [
-  { label: 'CEO', address: 'ceo@agb-media.net' },
-  { label: 'General Contact', address: 'contact@agb-media.net' },
-  { label: 'Info', address: 'info@agb-media.net' },
-]
+const CONTACT_EMAIL = 'ceo@agb-media.net'
 
 function ContactPage() {
   const formRef = useRef(null)
@@ -130,19 +125,12 @@ function ContactPage() {
               */}
               <div className={styles['identity-divider']} aria-hidden="true" />
 
-              <ul className={styles['email-list']}>
-                {emails.map(({ label, address }) => (
-                  <li className={styles['email-row']} key={address}>
-                    <span className={styles['email-label']}>{label}</span>
-                    <a
-                      className={styles['email-address']}
-                      href={`mailto:${address}`}
-                    >
-                      {address}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <a
+                className={styles['email-address']}
+                href={`mailto:${CONTACT_EMAIL}`}
+              >
+                {CONTACT_EMAIL}
+              </a>
             </div>
 
             {/*

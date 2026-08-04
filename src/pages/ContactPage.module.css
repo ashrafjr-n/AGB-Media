@@ -229,36 +229,11 @@
   );
 }
 
-.email-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-
-  inline-size: 100%;
-  max-inline-size: 18rem;
-}
-
-.email-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3xs);
-}
-
-/* The site's meta-label register — see Team's .role for the same values. */
-.email-label {
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-text-subtle);
-}
-
 /*
-  `align-self: flex-start` IS THE FIX FOR THE HIT AREA, not decoration. `.email-row` is
+  `align-self: flex-start` IS THE FIX FOR THE HIT AREA, not decoration. `.identity` is
   a column flex container, and a flex item's default `align-self: stretch` blockifies
-  it to the FULL WIDTH of that container on the cross axis — so without this, the
-  anchor's clickable and hoverable box reached the row's whole width (as wide as
-  `.email-list`, up to 18rem, or wider still once that cap lifts on desktop) rather
+  it to the full width of that container on the cross axis — so without this, the
+  anchor's clickable and hoverable box would reach the column's whole width rather
   than stopping at the text. This shrinks it back to its own content width, which is
   what makes the hover/click area exactly the email string.
 */
@@ -495,10 +470,6 @@
 
   .social-list {
     justify-content: flex-start;
-  }
-
-  .email-list {
-    max-inline-size: none;
   }
 
   /*
