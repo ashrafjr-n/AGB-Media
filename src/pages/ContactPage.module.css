@@ -94,7 +94,7 @@
   gap: clamp(var(--space-lg), 4vh, var(--space-xl));
 
   inline-size: 100%;
-  max-inline-size: 76rem;
+  max-inline-size: 84rem;
 }
 
 /* --- The card ------------------------------------------------------------------ */
@@ -110,8 +110,8 @@
   from the ground behind it. There was a soft outer bloom plus --shadow-soft here;
   both are gone, by request, rather than the glow being tuned down.
 
-  WIDER THAN IT IS TALL, DELIBERATELY. `.inner`'s cap has widened twice now, most
-  recently to 76rem, and this card's own padding and internal gaps are tuned tighter
+  WIDER THAN IT IS TALL, DELIBERATELY. `.inner`'s cap has widened three times now, most
+  recently to 84rem, and this card's own padding and internal gaps are tuned tighter
   than a first pass would reach for — together they are what turns a form-plus-sidebar
   into a single low, wide panel instead of two stacked squares.
 */
@@ -175,7 +175,7 @@
   its neighbours comes from `.identity`'s own `gap`, not a margin on the logo.
 */
 .logo {
-  block-size: clamp(7rem, 18vw, 11rem);
+  block-size: clamp(8rem, 21vw, 13rem);
   inline-size: auto;
 }
 
@@ -223,35 +223,28 @@
 .contact-email {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-3xs);
 
-  margin-block-end: clamp(var(--space-md), 3vh, var(--space-lg));
+  margin-block-end: clamp(var(--space-sm), 2.5vh, var(--space-md));
+
+  text-align: center;
 }
 
 /*
-  `align-self: flex-start` IS THE FIX FOR THE HIT AREA, not decoration. `.contact-email`
-  is a column flex container, and a flex item's default `align-self: stretch` blockifies
-  it to the full width of that container on the cross axis — so without this, the
-  anchor's clickable and hoverable box would reach the column's whole width rather
-  than stopping at the text. This shrinks it back to its own content width, which is
-  what makes the hover/click area exactly the email string.
-
   Sized at --text-xl and medium weight — this is the one address the page lists, so
   it has to read as the clear, immediate answer to "how do I reach you" rather than
   as a quiet footnote the way it sat below the icon row before.
+
+  NO HOVER OR FOCUS COLOUR, BY REQUEST — this is a plain mailto link with no
+  interactive treatment: the cursor still shows a pointer (the browser's own default
+  for an anchor with an `href`) but nothing here changes on hover or focus, so there
+  is no `color` transition and no `:hover`/`:focus-visible` rule to write.
 */
 .email-address {
-  align-self: flex-start;
-
   font-size: var(--text-xl);
   font-weight: var(--font-weight-medium);
   color: var(--color-text);
-  transition: color var(--duration-fast) var(--ease-in-out);
-}
-
-.email-address:hover,
-.email-address:focus-visible {
-  color: var(--color-gold-light);
 }
 
 /* --- The column divider ------------------------------------------------------ */
@@ -302,7 +295,7 @@
 .form-body {
   display: flex;
   flex-direction: column;
-  gap: clamp(var(--space-sm), 2.5vh, var(--space-md));
+  gap: clamp(var(--space-xs), 2vh, var(--space-sm));
 }
 
 .field {
@@ -334,7 +327,7 @@
   sitting a step behind it.
 */
 .field-control {
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-xs) var(--space-lg);
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border-white);
 
@@ -374,7 +367,7 @@
 
 .field-textarea {
   resize: vertical;
-  min-block-size: clamp(3.25rem, 7vh, 4.5rem);
+  min-block-size: clamp(3rem, 6vh, 4rem);
 }
 
 .submit {
@@ -434,12 +427,15 @@
 @media (min-width: 48rem) {
   .card {
     /*
-      A NARROW IDENTITY RAIL, A THIN DIVIDER TRACK, A WIDER FORM. The divider is a real
-      grid column rather than a percentage-positioned pseudo-element, because the two
-      content columns are deliberately uneven (0.85fr / 1.15fr) — a line placed at a
-      literal 50% would sit inside the wider form column instead of on the seam.
+      A NARROW IDENTITY RAIL, A THIN DIVIDER TRACK, A FORM COLUMN TRIMMED A STEP
+      NARROWER THAN IT WAS. The divider is a real grid column rather than a
+      percentage-positioned pseudo-element, because the two content columns are
+      deliberately uneven — a line placed at a literal 50% would sit inside the
+      wider form column instead of on the seam. The ratio shifted from 0.85/1.15 to
+      0.95/1.05 in the same pass that enlarged the logo again, so the identity rail
+      has the room the bigger mark needs and the form reads a touch more compact.
     */
-    grid-template-columns: minmax(0, 0.85fr) auto minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 0.95fr) auto minmax(0, 1.05fr);
     /* Both gaps either side of the divider track — see the note above. */
     column-gap: var(--space-xl);
   }
@@ -451,6 +447,20 @@
     logo, social row — at every width, not a running-text rail that only centres
     below its own first line.
   */
+
+  /*
+    A MODEST WIDTH CAP ON THE FORM COLUMN — this grid item stretches to fill its
+    track by default; the cap trims a bit of that off on top of the narrower track
+    above, so the column reads shorter and a touch narrower rather than the two
+    columns competing for equal visual weight. `justify-self: start` keeps the
+    trimmed box flush against the divider instead of centring in the leftover
+    track space. Scoped to this breakpoint only — below it `.form` is the single
+    stacked column and has to stay full width.
+  */
+  .form {
+    justify-self: start;
+    max-inline-size: 24rem;
+  }
 
   /* A fading vertical hairline marking the seam between the two columns. */
   .divider {
