@@ -91,8 +91,14 @@ function ContactPage() {
 
         <div className={styles.inner}>
           <div className={styles.card}>
-            {/* --- Left column: identity ------------------------------------ */}
+            {/*
+              --- Left column: identity ------------------------------------
+              The page's own heading now anchors this column — logo and socials
+              read as the signature beneath it, all centred as one stacked block.
+            */}
             <div className={styles.identity}>
+              <h1 className={styles['identity-title']}>Contact Us Now</h1>
+
               <img
                 className={styles.logo}
                 src="/assets/images/agb-logo.png"
@@ -117,20 +123,6 @@ function ContactPage() {
                   </li>
                 ))}
               </ul>
-
-              {/*
-                A short rule between the icon row and the emails — the one internal
-                divider this column gets, marking "here is how to reach us" as two
-                related but distinct groups rather than one long list.
-              */}
-              <div className={styles['identity-divider']} aria-hidden="true" />
-
-              <a
-                className={styles['email-address']}
-                href={`mailto:${CONTACT_EMAIL}`}
-              >
-                {CONTACT_EMAIL}
-              </a>
             </div>
 
             {/*
@@ -145,8 +137,20 @@ function ContactPage() {
 
             {/* --- Right column: the form ------------------------------------ */}
             <div className={styles.form}>
-              <p className={styles.eyebrow}>Get In Touch</p>
-              <h1 className={styles['form-title']}>Contact Us Now</h1>
+              {/*
+                THE EMAIL, FIRST — the one address this page lists, given the same
+                eyebrow treatment "Get In Touch" used to carry above the old heading,
+                so it reads immediately rather than waiting at the bottom of a column.
+              */}
+              <div className={styles['contact-email']}>
+                <p className={styles.eyebrow}>Get In Touch</p>
+                <a
+                  className={styles['email-address']}
+                  href={`mailto:${CONTACT_EMAIL}`}
+                >
+                  {CONTACT_EMAIL}
+                </a>
+              </div>
 
               <form
                 ref={formRef}

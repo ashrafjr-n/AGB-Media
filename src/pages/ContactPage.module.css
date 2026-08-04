@@ -94,7 +94,7 @@
   gap: clamp(var(--space-lg), 4vh, var(--space-xl));
 
   inline-size: 100%;
-  max-inline-size: 70rem;
+  max-inline-size: 76rem;
 }
 
 /* --- The card ------------------------------------------------------------------ */
@@ -110,10 +110,10 @@
   from the ground behind it. There was a soft outer bloom plus --shadow-soft here;
   both are gone, by request, rather than the glow being tuned down.
 
-  WIDER THAN IT IS TALL, DELIBERATELY. `.inner`'s cap widened to 70rem and this card's
-  own padding and internal gaps are tuned tighter than a first pass would reach for —
-  together they are what turns a form-plus-sidebar into a single low, wide panel
-  instead of two stacked squares.
+  WIDER THAN IT IS TALL, DELIBERATELY. `.inner`'s cap has widened twice now, most
+  recently to 76rem, and this card's own padding and internal gaps are tuned tighter
+  than a first pass would reach for — together they are what turns a form-plus-sidebar
+  into a single low, wide panel instead of two stacked squares.
 */
 .card {
   position: relative;
@@ -122,6 +122,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-md);
+
+  /* Fills `.inner`'s cap rather than shrinking to content — see the widened cap above. */
+  inline-size: 100%;
 
   /*
     A modest reduction from a first pass that ran a touch tall — the ceiling came
@@ -138,35 +141,48 @@
   backdrop-filter: blur(var(--glass-blur-wide));
 }
 
-/* --- Left column: identity -------------------------------------------------- */
+/*
+  --- Left column: identity ----------------------------------------------------
+  A centred signature block now, not a running-text rail — the heading anchors it,
+  the logo sits beneath as the mark, and the social row closes it. All three stay
+  centred at every width (see the removed 48rem override below the breakpoint
+  section), so nothing here is a left-aligned column that happens to centre its
+  first line.
+*/
 
 .identity {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: clamp(var(--space-sm), 2.5vh, var(--space-md));
 
   text-align: center;
 }
 
+.identity-title {
+  font-size: var(--text-2xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
 /*
   Height-driven, per CLAUDE.md's rule for this mark: the logo is portrait (360x672),
-  so block-size sets the constraint and inline-size derives from it. Enlarged a second
-  time — the first pass read as barely bigger than the icon row beneath it; this is
-  clearly the identity column's anchor now, at the cost of a slightly larger share of
-  the card's height budget (the social row and email list simply sit that much lower,
-  which is fine in a column that already grows top to bottom).
+  so block-size sets the constraint and inline-size derives from it. Enlarged again,
+  now that it carries the column on its own beneath the (smaller) heading rather than
+  needing to read as the column's biggest element by itself — spacing between it and
+  its neighbours comes from `.identity`'s own `gap`, not a margin on the logo.
 */
 .logo {
-  block-size: clamp(5.5rem, 14vw, 8.5rem);
+  block-size: clamp(7rem, 18vw, 11rem);
   inline-size: auto;
-
-  margin-block-end: clamp(var(--space-sm), 2vh, var(--space-md));
 }
 
 .social-list {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-sm);
 }
 
@@ -202,45 +218,33 @@
   color: var(--color-gold-light);
 }
 
-/*
-  THE ONE INTERNAL DIVIDER IN THIS COLUMN — a short rule rather than a full-width one,
-  which is what keeps it reading as a soft break between two related groups (how to
-  follow us / how to write to us) instead of a hard rule cutting the column in half.
-  Fades at both ends for the same reason About's chapter hairline does: a gradient run
-  flat to full transparency at a hard edge reads as a rendering artefact.
-*/
-.identity-divider {
-  inline-size: 5rem;
-  block-size: 1px;
-  margin-block: clamp(var(--space-sm), 2vh, var(--space-md));
+/* --- The email, at the top of the right column -------------------------------- */
 
-  /*
-    The same plateau-then-fade shape `.divider` uses in the 48rem breakpoint below —
-    a flat bright run through the middle 60%, fading only in the outer 20% at each
-    end — so the two genuinely read as one device turned 90 degrees rather than two
-    different gradients that happen to share a token.
-  */
-  background-image: linear-gradient(
-    to right,
-    transparent,
-    var(--glass-border-bright) 20%,
-    var(--glass-border-bright) 80%,
-    transparent
-  );
+.contact-email {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+
+  margin-block-end: clamp(var(--space-md), 3vh, var(--space-lg));
 }
 
 /*
-  `align-self: flex-start` IS THE FIX FOR THE HIT AREA, not decoration. `.identity` is
-  a column flex container, and a flex item's default `align-self: stretch` blockifies
+  `align-self: flex-start` IS THE FIX FOR THE HIT AREA, not decoration. `.contact-email`
+  is a column flex container, and a flex item's default `align-self: stretch` blockifies
   it to the full width of that container on the cross axis — so without this, the
   anchor's clickable and hoverable box would reach the column's whole width rather
   than stopping at the text. This shrinks it back to its own content width, which is
   what makes the hover/click area exactly the email string.
+
+  Sized at --text-xl and medium weight — this is the one address the page lists, so
+  it has to read as the clear, immediate answer to "how do I reach you" rather than
+  as a quiet footnote the way it sat below the icon row before.
 */
 .email-address {
   align-self: flex-start;
 
-  font-size: var(--text-sm);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text);
   transition: color var(--duration-fast) var(--ease-in-out);
 }
@@ -295,25 +299,16 @@
   background-color: var(--color-gold);
 }
 
-.form-title {
-  margin-block-end: clamp(var(--space-sm), 2vh, var(--space-md));
-
-  font-size: var(--text-3xl);
-  line-height: 1.05;
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-text);
-}
-
 .form-body {
   display: flex;
   flex-direction: column;
-  gap: clamp(var(--space-xs), 2vh, var(--space-sm));
+  gap: clamp(var(--space-sm), 2.5vh, var(--space-md));
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2xs);
+  gap: var(--space-3xs);
 }
 
 .field-label {
@@ -333,12 +328,14 @@
   where a soft inward shadow gives the well a shallow depth the card's own surface
   does not have.
 
-  --radius-md rather than --radius-sm — the sharper radius read as boxy next to the
-  card's own --radius-lg corners; this is the half-step between the two.
+  --radius-lg, matching the card's own corners — a first pass at the half-step
+  between --radius-sm and --radius-lg read as boxy next to the card once the fields'
+  padding grew to match, so the well now shares the card's exact radius rather than
+  sitting a step behind it.
 */
 .field-control {
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border-white);
 
   background-color: var(--glass-fill-white);
@@ -382,7 +379,7 @@
 
 .submit {
   align-self: flex-start;
-  margin-block-start: var(--space-3xs);
+  margin-block-start: var(--space-xs);
 }
 
 .confirmation {
@@ -447,35 +444,15 @@
     column-gap: var(--space-xl);
   }
 
-  .identity {
-    align-items: flex-start;
-    text-align: left;
-  }
-
   /*
-    SHIFTED OFF THE COLUMN'S OWN EDGE, ON ITS OWN — the logo alone, not the whole
-    column. `.identity` stays flush left below (the icons and the emails are meant to
-    line up against the seam, not float toward the middle of their track), so this is
-    a margin on the logo specifically rather than a change to the column's alignment.
-
-    RAISED A SECOND TIME — the first cap (--space-xl, 48px) read as barely off the
-    edge against a ~300-350px column at typical desktop widths, closer to "left
-    aligned with a little air" than "centre-left". --space-3xl (112px) puts it closer
-    to a third of the way into the column, which is what actually reads as shifted
-    toward the middle rather than nudged.
+    NO DESKTOP OVERRIDE FOR `.identity` HERE, ON PURPOSE. It used to flip to a
+    left-aligned rail at this breakpoint with the logo nudged further in by its own
+    margin; both are gone now that the column is a centred signature block — heading,
+    logo, social row — at every width, not a running-text rail that only centres
+    below its own first line.
   */
-  .logo {
-    margin-inline-start: clamp(var(--space-xl), 9vw, var(--space-3xl));
-  }
 
-  .social-list {
-    justify-content: flex-start;
-  }
-
-  /*
-    A fading vertical hairline, matching the fade direction of `.identity-divider`
-    beside it — the two are the same device turned 90 degrees.
-  */
+  /* A fading vertical hairline marking the seam between the two columns. */
   .divider {
     display: block;
 
