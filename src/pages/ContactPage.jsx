@@ -35,13 +35,37 @@ import styles from './ContactPage.module.css'
   matching the brief's own order, and points at the one address the page lists in
   full just below the row.
 */
+/*
+  `label` IS THE ICON'S ONLY ACCESSIBLE NAME — each link renders nothing but the
+  glyph (`aria-hidden`, see the map below), so this string is what a screen
+  reader announces, not decoration. It reads as a full sentence fragment
+  ("Visit our Facebook page") rather than the bare platform name, per an
+  accessibility pass: a bare "Facebook" announces the destination but not the
+  action, where sighted users get both from the icon plus its position in a
+  "find us on social media" row.
+*/
 const socialLinks = [
-  { id: 'facebook', label: 'Facebook', href: '#', Icon: FaFacebookF },
-  { id: 'instagram', label: 'Instagram', href: '#', Icon: FaInstagram },
-  { id: 'youtube', label: 'YouTube', href: '#', Icon: FaYoutube },
+  {
+    id: 'facebook',
+    label: 'Visit our Facebook page',
+    href: '#',
+    Icon: FaFacebookF,
+  },
+  {
+    id: 'instagram',
+    label: 'Visit our Instagram page',
+    href: '#',
+    Icon: FaInstagram,
+  },
+  {
+    id: 'youtube',
+    label: 'Visit our YouTube channel',
+    href: '#',
+    Icon: FaYoutube,
+  },
   {
     id: 'email',
-    label: 'Email',
+    label: 'Email AGB Media',
     href: 'mailto:ceo@agb-media.net',
     Icon: HiOutlineMail,
   },

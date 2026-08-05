@@ -103,12 +103,47 @@
     </script>
 
     <!--
-      Manrope is loaded via @import in src/styles/global.css (Google Fonts).
-      Preconnecting to the CDN here lets the handshake start during HTML parse
-      instead of waiting for the stylesheet to resolve the @import.
+      Manrope is loaded via @import in src/styles/global.css (Google Fonts) — the
+      only external origin this site loads anything from (checked: no analytics,
+      no EmailJS, no other CDN anywhere in src/). Preconnecting to both here lets
+      the DNS/TLS handshake start during HTML parse instead of waiting for the
+      stylesheet to resolve the @import; dns-prefetch is a plain fallback for the
+      handful of browsers that honour it but not preconnect.
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+
+    <!--
+      THE FONT FILE ITSELF, preloaded by URL rather than left to wait for the
+      @import above to be discovered. Google Fonts' css2 endpoint turns out to
+      serve every weight this site requests (200–700) from the exact same latin
+      subset file — confirmed by fetching the stylesheet directly (`curl` with a
+      modern desktop UA string, since the endpoint varies its response by
+      User-Agent and an old/unrecognised one gets served ttf instead of woff2):
+      every @font-face block's "latin" rule points at the identical
+      xn7gYHE41ni1AdIRggexSg.woff2. One preload therefore covers the whole
+      weight ladder rather than needing one per weight.
+
+      `crossorigin` is required even though the font is same-origin-looking in
+      URL terms — fonts are always fetched anonymous-mode, and a preload whose
+      `crossorigin` does not match the eventual @font-face fetch is discarded
+      as a wasted, unused request rather than reused.
+
+      REGENERATE THIS URL IF THE WEIGHT LIST IN global.css'S @import EVER
+      CHANGES. Google Fonts versions its files (the "/v20/" segment) and can
+      reissue a new hash on its own schedule too; if Lighthouse or a build
+      warning ever flags this preload as unused, re-fetch the stylesheet and
+      swap the URL rather than deleting the tag.
+    -->
+    <link
+      rel="preload"
+      href="https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggexSg.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
 
     <!--
       The hero's footage, requested during HTML parse.

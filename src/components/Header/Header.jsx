@@ -171,7 +171,12 @@ function Header({ visible = false }) {
         </svg>
 
         <div className={styles.inner}>
-          <Link to="/" className={styles.logo} onClick={closeMenu}>
+          <Link
+            to="/"
+            className={styles.logo}
+            onClick={closeMenu}
+            aria-label="AGB Media — home"
+          >
             <img src="/assets/images/agb-logo.png" alt="AGB Media" />
           </Link>
 
