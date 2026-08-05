@@ -1,0 +1,7 @@
+/* Zero-footprint defs host — the same rule FluidBar.module.css's .defs uses. This
+   element draws nothing; it only carries the <filter> other elements reference. */
+.defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
