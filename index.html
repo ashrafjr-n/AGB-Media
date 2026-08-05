@@ -61,9 +61,12 @@
       and this graph should never assert a URL nobody can follow. Add the array
       back the day those three hrefs are real.
 
-      SITE_URL IS A PLACEHOLDER — see the note at its one source of truth,
-      src/data/siteMeta.js. Both `url` fields below must move together with it if
-      the real production domain turns out to be different.
+      SITE_URL IS CONFIRMED — https://agb-media.net is the real, registered,
+      live production domain (see the note at its one source of truth,
+      src/data/siteMeta.js). Both `url`/`@id` fields below are literal rather
+      than templated because this is static markup parsed before any JS runs;
+      if the domain ever changes, it has to move here by hand alongside that
+      constant.
     -->
     <script type="application/ld+json">
       {

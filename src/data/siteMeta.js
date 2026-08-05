@@ -4,12 +4,13 @@
   root JSON-LD read from. One place, because a domain typed into eight page files
   would drift the moment it needs to change.
 
-  SITE_URL IS A PLACEHOLDER. Nothing else in this codebase names the real
-  production domain — no env file, no existing canonical tag, no deployed
-  reference — so "https://agb-media.net" is a best guess from the project's own
-  name, not a confirmed value. Replace it here once the real domain is known;
-  every canonical link, og:url/twitter, and the JSON-LD in index.html reads from
-  this one constant, so fixing it here fixes it everywhere.
+  SITE_URL IS CONFIRMED — "https://agb-media.net" is the real, registered,
+  live production domain (confirmed 2026-08-05; it had been a placeholder
+  guessed from the project's own name until then, since nothing else in the
+  codebase — no env file, no existing canonical tag, no deployed reference —
+  named it). Every canonical link, og:url/twitter, the sitemap and the JSON-LD
+  in index.html read from this one constant, so a future domain change is
+  still a one-place fix, but there is no open question left about the value.
 */
 export const SITE_URL = 'https://agb-media.net'
 export const SITE_NAME = 'AGB Media'
