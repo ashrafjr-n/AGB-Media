@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
-import Header from '../components/Header/Header'
 import {
   SITE_URL,
   ORGANIZATION_ID,
@@ -117,7 +116,10 @@ function ServicesPage() {
         structuredData={[serviceCatalogueSchema, breadcrumbSchema]}
       />
 
-      <Header visible />
+      {/*
+        No local `<Header>` here — App.jsx (AnimatedRoutes) mounts one instance above every
+        route, defaulted to visible on every route but the home page and the 404 wildcard.
+      */}
 
       {/*
         `noise-overlay` — the global utility from global.css, applied as a literal

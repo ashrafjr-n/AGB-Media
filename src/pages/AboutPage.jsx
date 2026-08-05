@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
-import Header from '../components/Header/Header'
 import { buildBreadcrumb } from '../data/siteMeta'
 import { pullQuote, sections, networkGroups } from '../data/aboutPage'
 import styles from './AboutPage.module.css'
@@ -308,10 +307,11 @@ function AboutPage() {
       />
 
       {/*
-        Always visible on this route — there is no in-flow hero header here to collide
-        with, unlike the home page's HeroHeader/Header handoff.
+        No local `<Header>` here — App.jsx (AnimatedRoutes) mounts one instance above every
+        route and defaults it to visible everywhere except the home page and the 404
+        wildcard, so this route gets it for free. There is no in-flow hero header on this
+        route to collide with, unlike the home page's HeroHeader/Header handoff.
       */}
-      <Header visible />
 
       {/*
         `noise-overlay` — the global utility from global.css, applied as a literal string

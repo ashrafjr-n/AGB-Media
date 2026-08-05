@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 import Loader from './components/Loader/Loader'
+import Header from './components/Header/Header'
 import HomePage from './pages/HomePage'
 import AboutPage from './pages/AboutPage'
 import ServicesPage from './pages/ServicesPage'
@@ -9,6 +11,22 @@ import ContactPage from './pages/ContactPage'
 import NaelPage from './pages/NaelPage'
 import AbdullahPage from './pages/AbdullahPage'
 import NotFoundPage from './pages/NotFoundPage'
+
+/*
+  THE ROUTE TABLE, as bare paths rather than buried inside six `<Route>` tags — so the
+  same list can decide both what `<Routes>` renders and, in AnimatedRoutes below, whether
+  the current pathname is one of these six rather than the wildcard. Keep it in sync with
+  the SIX ROUTES comment at the foot of this file; that comment explains what each path is
+  and why it exists, this one only needs the paths themselves.
+*/
+const ROUTE_PATHS = [
+  '/',
+  '/about',
+  '/services',
+  '/contact',
+  '/team/nael-al-jarabah',
+  '/founder',
+]
 
 /*
   THE ROUTE TRANSITION, and it is deliberately the smallest thing that could work.
@@ -33,9 +51,10 @@ import NotFoundPage from './pages/NotFoundPage'
   rather than a taste call, because the wrapper below is an ancestor of every page:
 
     - a `transform` (or `will-change: transform`) on it becomes the containing block for
-      `position: fixed` descendants, which would break the site header's floating pill on
-      every route that shows one — it would scroll away with the page instead of staying
-      put;
+      `position: fixed` descendants — the site header itself no longer risks this, since it
+      now mounts above this wrapper rather than inside a page (see AnimatedRoutes), but a
+      page-local fixed element (ContactPage and ServicesPage both have one) would still
+      scroll away with the page instead of staying put;
     - a `filter`, a `mask` or a lingering `opacity < 1` makes it a BACKDROP ROOT, which is
       what the home page's frosted grounds sample through (see CLAUDE.md §7 on `.stage` and
       `.stage-content`, which are forbidden the same properties for the same reason).
@@ -80,6 +99,30 @@ function AnimatedRoutes() {
   const location = useLocation()
 
   /*
+    HEADER VISIBILITY, ACROSS A ROUTE CHANGE.
+
+    Every route wants the fixed site header at a flat `true` EXCEPT two: the home page,
+    where it is a scroll-derived boolean owned by HomePage (the Story section's midpoint
+    or-ed with "the hero is behind us" — see HomePage.jsx and the note on Header's
+    `visible` prop), and the wildcard, which renders no nav on purpose (see the note at
+    the top of NotFoundPage.jsx). `homeHeaderVisible` is the one piece of that state that
+    cannot be derived from the route alone, so it is the one piece lifted here; HomePage
+    reports into it through the setter handed to its route element below.
+
+    Deriving the flag from `ROUTE_PATHS` rather than resetting it on unmount is what keeps
+    this correct with no timing window: there is no frame where a stale value from the
+    page just left is shown, because a route that is not home or the wildcard never reads
+    `homeHeaderVisible` at all.
+  */
+  const [homeHeaderVisible, setHomeHeaderVisible] = useState(false)
+  const isKnownRoute = ROUTE_PATHS.includes(location.pathname)
+  const headerVisible = !isKnownRoute
+    ? false
+    : location.pathname === '/'
+      ? homeHeaderVisible
+      : true
+
+  /*
     Reduced motion gets an instant cut: no fade in either direction, and a zero duration so
     AnimatePresence still resolves the exit and swaps the page without waiting. The
     preference is honoured here in JS because Framer writes these values inline, where the
@@ -107,33 +150,49 @@ function AnimatedRoutes() {
       }
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={location.pathname}
-        initial={fade.initial}
-        animate={fade.animate}
-        exit={fade.exit}
-        transition={{
-          duration: reduceMotion ? 0 : TRANSITION_IN,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-      >
-        {/*
-          `location` is passed explicitly. Without it <Routes> reads the CURRENT location
-          on every render, so the outgoing page would re-render as the new route mid-exit
-          and the fade would play over the wrong content.
-        */}
-        <Routes location={location}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/team/nael-al-jarabah" element={<NaelPage />} />
-          <Route path="/founder" element={<AbdullahPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </motion.div>
-    </AnimatePresence>
+    <>
+      {/*
+        OUTSIDE the AnimatePresence wrapper below, and that is the whole fix: the header
+        used to be mounted per-page, inside the fading `motion.div`, so it faded out and
+        back in on every navigation along with the page beneath it — a flicker on an
+        element that is meant to read as constant chrome, not as page content. Rendered
+        here it mounts once for the life of the router and never unmounts on a route
+        change; only its own `data-hidden` CSS transition (Header.module.css) shows or
+        hides it, exactly as it already did within a single page.
+      */}
+      <Header visible={headerVisible} />
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={location.pathname}
+          initial={fade.initial}
+          animate={fade.animate}
+          exit={fade.exit}
+          transition={{
+            duration: reduceMotion ? 0 : TRANSITION_IN,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        >
+          {/*
+            `location` is passed explicitly. Without it <Routes> reads the CURRENT location
+            on every render, so the outgoing page would re-render as the new route mid-exit
+            and the fade would play over the wrong content.
+          */}
+          <Routes location={location}>
+            <Route
+              path="/"
+              element={<HomePage onHeaderVisibleChange={setHomeHeaderVisible} />}
+            />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/team/nael-al-jarabah" element={<NaelPage />} />
+            <Route path="/founder" element={<AbdullahPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </motion.div>
+      </AnimatePresence>
+    </>
   )
 }
 
@@ -151,8 +210,10 @@ function AnimatedRoutes() {
   obvious to read, and it is the only route here whose position carries any meaning at
   all. It catches every unmatched URL, including a mistyped path and one of the two
   profile routes with a wrong slug; without it those render an empty document rather
-  than a page. See the note at the top of NotFoundPage.jsx for why that route alone
-  renders no site header.
+  than a page. `ROUTE_PATHS` above does not list `*` for exactly this reason — it is
+  the "known route" list, and the wildcard is what a pathname falls through to when it
+  matches none of them, which is also how the header knows to hide itself there. See
+  the note at the top of NotFoundPage.jsx for why that route alone shows no site header.
 
   No code splitting, deliberately. The app is one chunk, and none of the secondary
   pages carries assets of its own beyond what is already bundled elsewhere (Nael's page

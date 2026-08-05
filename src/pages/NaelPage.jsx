@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
-import Header from '../components/Header/Header'
 import {
   SITE_URL,
   ORGANIZATION_ID,
@@ -28,11 +27,11 @@ import styles from './NaelPage.module.css'
   That is deliberate rather than an oversight — this is a profile page for one person,
   not a section of the primary site map, and it does not belong in either header's nav.
 
-  THE SHELL FOLLOWS THE SAME CONVENTION /about, /services AND /contact ALL SHARE:
-  `<Header visible />` (no in-flow hero header on this route to hand off from), a
-  mount-only `window.scrollTo(0, 0)` (this route has no scroll restoration of its
-  own, the same reason every secondary page resets it), and `noise-overlay` on
-  `<main>`.
+  THE SHELL FOLLOWS THE SAME CONVENTION /about, /services AND /contact ALL SHARE: the
+  fixed site header (mounted once above every route by App.jsx, no in-flow hero header
+  on this route to hand off from), a mount-only `window.scrollTo(0, 0)` (this route has
+  no scroll restoration of its own, the same reason every secondary page resets it), and
+  `noise-overlay` on `<main>`.
 
   THE GROUND IS --about-ground, THE SAME TOKEN /about PAINTS — a correction from this
   page's first draft, which used flat `--color-black` on the argument that this route

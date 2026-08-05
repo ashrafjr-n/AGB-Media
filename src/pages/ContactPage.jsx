@@ -3,7 +3,6 @@ import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa6'
 import { HiOutlineDownload, HiOutlineMail } from 'react-icons/hi'
 
 import Seo from '../components/shared/Seo'
-import Header from '../components/Header/Header'
 import buttonStyles from '../components/shared/Button.module.css'
 import { SITE_URL, buildBreadcrumb } from '../data/siteMeta'
 import backdrop from '../assets/images/contact.webp'
@@ -106,7 +105,10 @@ function ContactPage() {
         structuredData={[breadcrumbSchema]}
       />
 
-      <Header visible />
+      {/*
+        No local `<Header>` here — App.jsx (AnimatedRoutes) mounts one instance above every
+        route, defaulted to visible on every route but the home page and the 404 wildcard.
+      */}
 
       <main className={`${styles.page} noise-overlay`}>
         {/*

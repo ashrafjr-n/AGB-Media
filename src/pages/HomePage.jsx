@@ -1,10 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import useScrollPosition, {
   isPastFirstViewport,
 } from '../hooks/useScrollPosition'
 import Seo from '../components/shared/Seo'
-import Header from '../components/Header/Header'
 import HeroBackdrop from '../components/Hero/HeroBackdrop'
 import Hero from '../components/Hero/Hero'
 import About from '../components/About/About'
@@ -13,13 +12,25 @@ import WhyAgb from '../components/WhyAgb/WhyAgb'
 import Team from '../components/Team/Team'
 import styles from './HomePage.module.css'
 
-function HomePage() {
+/**
+ * @param {object} props
+ * @param {(visible: boolean) => void} props.onHeaderVisibleChange
+ *   Reports this page's answer to "is the fixed site header due" up to AnimatedRoutes
+ *   (App.jsx), which owns the actual `<Header>` instance — mounted once, above every
+ *   route, so it survives a navigation without fading. Every other route hands that
+ *   component a flat `true`; the home page is the one route where visibility is a
+ *   scroll-derived boolean, so it is the one route App hands a setter to. See the
+ *   HEADER VISIBILITY comment in App.jsx for the other half of this arrangement.
+ */
+function HomePage({ onHeaderVisibleChange }) {
   /*
     WHEN THE FIXED SITE HEADER IS DUE — the Story section's own halfway mark, reported
     from that section because it is measured against that section's box.
 
-    It is wired here because Header and About are siblings that know nothing of each
-    other, and this page is the only thing that knows they are on the same screen. Header
+    It is computed here because About and this page are the only things that know Story
+    and the hero are on the same screen; About reports its own half-visible reading up
+    through `onHalfVisibleChange` below, and this page combines it with `heroBehind` and
+    reports the result on to App, which is what actually owns the header now. Header
     used to answer this itself, from a scroll threshold; the note on its `visible` prop
     has the before and after.
 
@@ -55,6 +66,15 @@ function HomePage() {
   */
   const heroBehind = useScrollPosition(isPastFirstViewport)
 
+  /*
+    The report to App, on every change of either half of the answer. `onHeaderVisibleChange`
+    is a `useState` setter identity, so it is stable across renders and never re-fires this
+    effect on its own — only a real change of `storyHalfVisible` or `heroBehind` does.
+  */
+  useEffect(() => {
+    onHeaderVisibleChange(storyHalfVisible || heroBehind)
+  }, [storyHalfVisible, heroBehind, onHeaderVisibleChange])
+
   return (
     <>
       <Seo
@@ -62,7 +82,6 @@ function HomePage() {
         description="AGB Media is a Doha-based arts and media production house specializing in film, television, theatre, animation, and post-production across Qatar and the Gulf."
         path="/"
       />
-      <Header visible={storyHalfVisible || heroBehind} />
       <main>
         {/*
           THE STAGE: the hero, the Story section, and the footage behind both.
