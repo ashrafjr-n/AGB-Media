@@ -563,6 +563,16 @@
   --z-header: 50;
   --z-noise: 9999;
 
+  /*
+    THE ONE LAYER ABOVE THE FILM GRAIN, and the only thing that may ever use it: the
+    first-visit loader (components/Loader/). It sits above --z-noise deliberately — the
+    grain is `position: fixed` over the whole viewport, so anything below it would be
+    textured by the site's own 0.03 layer while the loader wants /about's heavier 0.07
+    (it carries its own `.noise-overlay`, which is why it has to be on top rather than
+    under the global one).
+  */
+  --z-loader: 10000;
+
   /* --- Texture ---------------------------------------------------------- */
 
   /*
