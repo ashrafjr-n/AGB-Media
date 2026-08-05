@@ -23,6 +23,12 @@ import { useReducedMotion } from 'framer-motion'
   WhyAgb->Team). Nothing here touches scroll position, and nothing here mounts, unmounts
   or re-renders any section — the overlay is a sibling of the router, painting over the
   page while it is up and gone entirely afterwards.
+
+  IT HAS EXACTLY ONE OUTWARD SIGNAL, and it is one-way: the gate at the foot of the next
+  block, which says "the curtain has finished lifting". HeroBackdrop waits on it before
+  calling play(), so the hero's footage does not spend its first second running behind an
+  overlay. Nothing else reads it, nothing writes back, and it is already open before the
+  first render on every visit but a session's first.
 */
 
 /*

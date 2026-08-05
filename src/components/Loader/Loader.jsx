@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 import useFirstVisitLoader, {
   LOADER_MAX_MS,
+  releaseLoaderGate,
 } from '../../hooks/useFirstVisitLoader'
 import styles from './Loader.module.css'
 
@@ -45,8 +46,19 @@ function Loader() {
       says to hide it — it has to fade before it unmounts. `initial` is not disabled here
       (unlike the route transition's): the loader is meant to be there on the first frame,
       and `initial={{ opacity: 1 }}` below states that rather than leaving it implicit.
+
+      `onExitComplete` IS THE HERO'S START SIGNAL, and it is on this callback rather than
+      on the state change for a reason: the fade-out is where the curtain actually lifts,
+      and footage that started playing when the *timer* resolved would have run its first
+      half-second behind an overlay still at full opacity. Releasing here means the video's
+      first visible frame is its first frame, full stop.
+
+      It is a signal, not a coupling — see the gate's note in useFirstVisitLoader.js. The
+      hero reads a latch and nothing here knows the hero exists. On every visit after the
+      session's first the latch is already open at module evaluation, so this callback
+      never fires and the hero plays exactly as it did before the loader existed.
     */
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={releaseLoaderGate}>
       {visible && (
         <motion.div
           key="loader"

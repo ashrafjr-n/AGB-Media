@@ -4,6 +4,7 @@ import useScrollPosition, {
   isPastFirstViewport,
 } from '../../hooks/useScrollPosition'
 import useHeroStoryScrollAssist from '../../hooks/useHeroStoryScrollAssist'
+import { useLoaderSettled } from '../../hooks/useFirstVisitLoader'
 import styles from './HeroBackdrop.module.css'
 
 /*
@@ -72,6 +73,19 @@ function HeroBackdrop() {
   */
   useHeroStoryScrollAssist()
 
+  /*
+    THE FIRST-VISIT LOADER'S CURTAIN, as a boolean. False only while that overlay is on
+    screen — which is at most once per browser session, and never at all for a returning
+    visitor, for whom this is `true` from the first render and the effect below is exactly
+    what it was before the loader existed.
+
+    It gates STARTING, not loading. The element keeps its `preload="auto"` and goes on
+    buffering underneath the overlay, which is both what makes the first visible frame
+    instant and what the loader's own "hero asset ready" check depends on — the two would
+    deadlock if this held the download rather than the playhead.
+  */
+  const loaderSettled = useLoaderSettled()
+
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
@@ -82,13 +96,24 @@ function HeroBackdrop() {
     }
 
     /*
+      No pause() on this branch, deliberately: nothing has started yet, so there is nothing
+      to stop. Pausing here would be a second, redundant way of saying "not playing" — and
+      the rule this file has always had is that the hero is never paused for anyone's
+      benefit but its own (CLAUDE.md §7). This waits to start; it does not take playback
+      away.
+
+      The gate is one-way, so this branch is passed at most once per page.
+    */
+    if (!loaderSettled) return
+
+    /*
       play() returns a promise that rejects if the element is torn down or the call is
       interrupted. It no longer rejects for the reason it used to — this video starts
       muted now, so the browser permits it — but the catch stays, because an unhandled
       rejection here would be noise.
     */
     video.play()?.catch(() => {})
-  }, [isHeroCovered])
+  }, [isHeroCovered, loaderSettled])
 
   /*
     Sound, on the first real interaction — which is what makes starting muted a delay
