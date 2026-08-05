@@ -144,9 +144,19 @@ function HeroBackdrop() {
         its first frame. Sound is restored on the first real interaction instead, by the
         second effect above.
       */}
+      {/*
+        `data-hero-asset` is an OPT-IN READ BY THE FIRST-VISIT LOADER and by nothing else.
+        hooks/useFirstVisitLoader.js waits on whichever element in the document carries it
+        before lifting the overlay, so this attribute is what makes "the hero's footage is
+        ready" a condition the loader can hold on without holding a ref into this
+        component or knowing which route is mounted. It changes nothing about playback:
+        the effects above still own that, and this element is unaffected on every load
+        after the session's first. A route with no such element gates on the fonts alone.
+      */}
       <video
         ref={videoRef}
         className={styles['backdrop-video']}
+        data-hero-asset
         src={HERO_VIDEO}
         loop
         muted

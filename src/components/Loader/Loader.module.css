@@ -1,0 +1,141 @@
+/*
+  The first-visit loader's surface. See Loader.jsx for what it is and
+  hooks/useFirstVisitLoader.js for when it leaves.
+
+  THE GROUND IS /about'S, NOT THE HOME PAGE'S, and that is deliberate rather than a stray
+  colour. --about-ground is the site's one non-black ground — the accent's own hue taken
+  almost to black — and it is exactly the right tone for a surface that is a room of its
+  own rather than part of a page: the loader shares no edge, no scroll and no composited
+  surface with anything beneath it, which is the same argument that lets /about and the
+  CEO's profile page use it. The "one ground per route, no seams" rule is untouched; there
+  is no seam here to put a second tone into.
+
+  Nothing on this surface is glass. No backdrop-filter, no blur, no gradient bleed — the
+  page under the overlay is fully painted and a blur of it would read as the loader
+  sampling the very content it exists to withhold. Flat ground, grain, logo, one bar.
+*/
+
+/*
+  `div.loader`, not `.loader`, and the element selector is load-bearing.
+
+  The root carries the global `.noise-overlay` utility as well, and that utility sets
+  `position: relative`. Two single-class selectors would be an equal-specificity race
+  decided by stylesheet injection order — which happens to favour this module today (
+  global.css is imported first, by main.jsx) but is not something an overlay's positioning
+  should rest on. Adding the element bumps specificity past it outright, so `fixed` wins
+  by the cascade rather than by luck.
+*/
+div.loader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-loader);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(var(--space-lg), 5vh, var(--space-2xl));
+
+  padding-inline: var(--container-padding);
+
+  background-color: var(--about-ground);
+
+  /*
+    /about's film-stock grain rather than the site's ambient 0.03 — the same redeclaration
+    that page makes, for the same reason: this ground is flat and dark enough that the
+    heavier texture is what stops it reading as a void. The global grain layer
+    (body::after) sits below --z-loader and is covered, so this is the only grain on
+    screen while the loader is up.
+  */
+  --noise-opacity: 0.07;
+}
+
+/*
+  Medium — large enough to be the subject of the screen, short enough that the bar below it
+  stays part of the same group rather than a separate element further down.
+
+  DRIVEN ON BLOCK-SIZE WITH THE INLINE AXIS LEFT AUTO. The mark is portrait (360x672), so
+  width must derive from the capped height; the `width`/`height` attributes in the JSX are
+  the intrinsic ratio, present so the box is known before the image decodes.
+*/
+.logo {
+  block-size: clamp(5.5rem, 16vh, 9rem);
+  inline-size: auto;
+}
+
+/*
+  The bar's track. A hairline, not a slab: the loader is a logo with a line under it, and
+  anything thicker starts reading as a UI component on a splash screen.
+*/
+.track {
+  position: relative;
+  overflow: hidden;
+
+  inline-size: clamp(9rem, 38vw, 15rem);
+  block-size: 2px;
+  border-radius: var(--radius-full);
+
+  background-color: var(--glass-border);
+}
+
+/*
+  THE FILL IS SCALED, NOT SIZED. `transform: scaleX()` is a compositor property, so the
+  travel costs no layout and no paint for its whole run; animating `inline-size` would
+  relayout the bar on every frame of a three-and-a-half second animation, which is a
+  ridiculous price for a line 2px tall.
+
+  `transform-origin: 0 50%` rather than `left center` — same result, and it says "the
+  start of the inline axis" without naming a side, which is how the rest of this codebase
+  writes direction-dependent values.
+*/
+.fill {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: inherit;
+
+  background-image: linear-gradient(
+    90deg,
+    var(--color-gold),
+    var(--color-gold-light)
+  );
+
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+/*
+  THE BAR IS AN HONEST APPROXIMATION AND IS BUILT TO STAY ONE.
+
+  It travels toward 92% over exactly the loader's own maximum, on a curve that spends most
+  of its time slowing down — so it moves decisively at first and is still visibly creeping
+  at three seconds. It never reaches the end on its own, because it cannot know which of
+  the two exit conditions will fire; a bar that sat full while the overlay was still up
+  would read as stuck, which is the one thing progress feedback must never do.
+
+  --loader-max is set inline by Loader.jsx from the hook's own constant. Do not write the
+  number here.
+*/
+.fill[data-phase='running'] {
+  transform: scaleX(0.92);
+  transition: transform var(--loader-max) cubic-bezier(0.12, 0.62, 0.24, 1);
+}
+
+/*
+  The snap to full, on the frame the loader is told to leave. It runs underneath the
+  overlay's own fade, so the bar completes while the curtain lifts rather than after it.
+*/
+.fill[data-phase='complete'] {
+  transform: scaleX(1);
+  transition: transform 260ms var(--ease-out);
+}
+
+/*
+  Reduced motion: the bar is present and complete, and it never moves. The timing above it
+  is unchanged — see the note at the end of useFirstVisitLoader.js. This is a separate
+  phase rather than a media query so there is exactly one thing deciding it (the hook's
+  useReducedMotion), and no second answer in CSS that could disagree with it.
+*/
+.fill[data-phase='static'] {
+  transform: scaleX(1);
+  transition: none;
+}
