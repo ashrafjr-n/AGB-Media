@@ -29,6 +29,23 @@ import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '../../data/siteMeta'
 
   `canonical` defaults to true and NotFoundPage is the one call site that
   passes false.
+
+  `structuredData` IS PAGE-SPECIFIC JSON-LD, ADDITIONAL TO THE SITE-WIDE GRAPH.
+  The Organization + LocalBusiness @graph lives once in index.html because it
+  describes the one company on every route; this prop is for the schema that
+  is true of THIS page alone — a Person on the two profile pages, the Service
+  catalogue on /services, a BreadcrumbList on everything but Home — so it takes
+  an array of already-complete schema objects (each carrying its own
+  "@context") rather than one shape this component would have to know about.
+  Defaults to an empty array, so a route that adds none renders none.
+
+  EACH ENTRY BECOMES ITS OWN <script> TAG, not one shared one: multiple
+  unrelated root-level types (a Person and a BreadcrumbList, say) read as
+  separate documents to a parser, which is what the JSON-LD spec expects when
+  the types are not woven into one @graph. Where a page's own schema IS a
+  family of the same type — /services' eleven Service entries — the call site
+  combines them into one @graph itself before this ever sees them, so this
+  component still renders exactly one script per array entry.
 */
 function Seo({
   title,
@@ -38,6 +55,7 @@ function Seo({
   type = 'website',
   noindex = false,
   canonical = true,
+  structuredData = [],
 }) {
   const url = `${SITE_URL}${path}`
 
@@ -62,6 +80,12 @@ function Seo({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+
+      {structuredData.map((schema, index) => (
+        <script key={index} type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      ))}
     </Helmet>
   )
 }

@@ -5,7 +5,7 @@ import { HiOutlineDownload, HiOutlineMail } from 'react-icons/hi'
 import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
 import buttonStyles from '../components/shared/Button.module.css'
-import { SITE_URL } from '../data/siteMeta'
+import { SITE_URL, buildBreadcrumb } from '../data/siteMeta'
 import backdrop from '../assets/images/contact.webp'
 import styles from './ContactPage.module.css'
 
@@ -70,6 +70,8 @@ function ContactPage() {
     formRef.current?.reset()
   }
 
+  const breadcrumbSchema = buildBreadcrumb('Contact', '/contact')
+
   return (
     <>
       <Seo
@@ -77,6 +79,7 @@ function ContactPage() {
         description="Get in touch with AGB Media in Doha, Qatar. Reach out to discuss film, television, theatre, or animation productions across Qatar and the wider Gulf region."
         path="/contact"
         image={`${SITE_URL}/assets/og/og-contact.jpg`}
+        structuredData={[breadcrumbSchema]}
       />
 
       <Header visible />

@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
-import { SITE_URL } from '../data/siteMeta'
+import {
+  SITE_URL,
+  ORGANIZATION_ID,
+  buildBreadcrumb,
+} from '../data/siteMeta'
 import backdrop from '../assets/images/services.webp'
 import {
   pageTitle,
@@ -81,6 +85,28 @@ function ServicesPage() {
     window.scrollTo(0, 0)
   }, [])
 
+  /*
+    THE SERVICE CATALOGUE, AS ONE @graph — the eleven cards this page already
+    renders, restated as Service entities rather than a twelfth data structure
+    invented to hold them: name and description are read straight from the
+    same `services` array the grid below maps over, so the schema can never
+    say something the visible page does not. Combined into one @graph (one
+    <script> tag) rather than eleven separate ones, matching how the brief
+    asked for these specifically — `provider` links every entry to the same
+    Organization node the two Person pages' `worksFor` does, by @id.
+  */
+  const serviceCatalogueSchema = {
+    '@context': 'https://schema.org',
+    '@graph': services.map((service) => ({
+      '@type': 'Service',
+      name: service.title,
+      description: service.description,
+      provider: { '@id': ORGANIZATION_ID },
+    })),
+  }
+
+  const breadcrumbSchema = buildBreadcrumb('Services', '/services')
+
   return (
     <>
       <Seo
@@ -88,6 +114,7 @@ function ServicesPage() {
         description="AGB Media's production services span film, TV drama, theatre, animation, post-production, visual effects, and AI-assisted production across Qatar and the Gulf."
         path="/services"
         image={`${SITE_URL}/assets/og/og-services.jpg`}
+        structuredData={[serviceCatalogueSchema, breadcrumbSchema]}
       />
 
       <Header visible />

@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
-import { SITE_URL } from '../data/siteMeta'
+import {
+  SITE_URL,
+  ORGANIZATION_ID,
+  buildBreadcrumb,
+} from '../data/siteMeta'
 import portrait from '../assets/nael/nael-profile/nael-profile.webp'
 import {
   nameTitle,
@@ -68,14 +72,51 @@ function NaelPage() {
   const [givenName, ...familyNameParts] = name.split(' ')
   const familyName = familyNameParts.join(' ')
 
+  /*
+    ONE STRING, TWO CONSUMERS — the meta description and the Person schema's own
+    `description` are the same summary, so they are written once here rather
+    than as two copies that could drift the next time either is edited.
+  */
+  const seoDescription =
+    'Nael Al-Jarabah is a writer, director, and executive producer serving as CEO of AGB Media, with production experience across Jordan, Iraq, Oman and the Gulf.'
+
+  /*
+    THE PERSON SCHEMA — jobTitle is `titles` rejoined with the same ' — ' the
+    masthead splits `nameTitle` on above, so the schema states exactly what the
+    page's own name plate does rather than a hand-typed copy of it.
+    `worksFor` links to the Organization node in index.html's static @graph by
+    @id (see the note at ORGANIZATION_ID in data/siteMeta.js) rather than
+    repeating the company's fields here. `image` is the same portrait the
+    masthead renders, made absolute for a crawler that will not resolve a
+    relative URL against this SPA's client-rendered document the way a browser
+    does.
+
+    NO `nationality` FIELD — nothing on this page states one for Nael the way
+    Founder.jsx's fact cards state "Qatari" for Abdullah, and inventing one
+    would be exactly what this schema must not do.
+  */
+  const personSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    jobTitle: titles.join(' — '),
+    worksFor: { '@id': ORGANIZATION_ID },
+    image: `${SITE_URL}${portrait}`,
+    description: seoDescription,
+    url: `${SITE_URL}/team/nael-al-jarabah`,
+  }
+
+  const breadcrumbSchema = buildBreadcrumb(name, '/team/nael-al-jarabah')
+
   return (
     <>
       <Seo
         title="Nael Al-Jarabah | Writer, Director & CEO of AGB Media"
-        description="Nael Al-Jarabah is a writer, director, and executive producer serving as CEO of AGB Media, with production experience across Jordan, Iraq, Oman and the Gulf."
+        description={seoDescription}
         path="/team/nael-al-jarabah"
         image={`${SITE_URL}/assets/og/og-nael.jpg`}
         type="profile"
+        structuredData={[personSchema, breadcrumbSchema]}
       />
 
       <Header visible />

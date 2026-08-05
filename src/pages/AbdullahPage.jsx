@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
-import { SITE_URL } from '../data/siteMeta'
+import {
+  SITE_URL,
+  ORGANIZATION_ID,
+  buildBreadcrumb,
+} from '../data/siteMeta'
 import portrait from '../assets/abdullah/abdullah.jpg'
 import {
   eyebrow as mastheadEyebrow,
@@ -65,14 +69,50 @@ function AbdullahPage() {
   const [givenName, ...familyNameParts] = founderName.split(' ')
   const familyName = familyNameParts.join(' ')
 
+  /*
+    ONE STRING, TWO CONSUMERS — see the identical note on NaelPage.jsx's own
+    seoDescription: the meta description and the Person schema's `description`
+    are the same summary, written once so the two cannot drift apart.
+  */
+  const seoDescription =
+    'Abdullah Ghayfan, founder of AGB Media, is a veteran Qatari artist with decades of acclaimed roles in Gulf theatre, TV drama, and cinema since 1976.'
+
+  /*
+    THE PERSON SCHEMA — `worksFor` links to the Organization node in
+    index.html's static @graph by @id rather than repeating the company's
+    fields here (see ORGANIZATION_ID in data/siteMeta.js). `image` is the same
+    portrait the masthead renders, made absolute for a crawler.
+
+    `nationality` IS PRESENT HERE AND ABSENT FROM NAEL'S — the difference is
+    real content, not an inconsistency: this page's own `facts` array (in
+    Founder.jsx, the home-section twin of this one) states "Nationality:
+    Qatari" as a labelled fact, so the schema states the same thing the page
+    already does. Nael's page states no nationality anywhere, so his schema
+    carries none — see the note there.
+  */
+  const personSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: founderName,
+    jobTitle: 'Founder, AGB Media',
+    worksFor: { '@id': ORGANIZATION_ID },
+    image: `${SITE_URL}${portrait}`,
+    description: seoDescription,
+    nationality: { '@type': 'Country', name: 'Qatar' },
+    url: `${SITE_URL}/founder`,
+  }
+
+  const breadcrumbSchema = buildBreadcrumb(founderName, '/founder')
+
   return (
     <>
       <Seo
         title="Abdullah Ghayfan | Founder of AGB Media"
-        description="Abdullah Ghayfan, founder of AGB Media, is a veteran Qatari artist with decades of acclaimed roles in Gulf theatre, TV drama, and cinema since 1976."
+        description={seoDescription}
         path="/founder"
         image={`${SITE_URL}/assets/og/og-founder.jpg`}
         type="profile"
+        structuredData={[personSchema, breadcrumbSchema]}
       />
 
       <Header visible />

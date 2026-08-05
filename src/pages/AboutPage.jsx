@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
+import { buildBreadcrumb } from '../data/siteMeta'
 import { pullQuote, sections, networkGroups } from '../data/aboutPage'
 import styles from './AboutPage.module.css'
 
@@ -295,12 +296,15 @@ function AboutPage() {
     window.scrollTo(0, 0)
   }, [])
 
+  const breadcrumbSchema = buildBreadcrumb('About', '/about')
+
   return (
     <>
       <Seo
         title="About AGB Media | Qatar Arts & Media Production House"
         description="AGB Media is a Doha-based arts and media production house built on Abdullah Ghayfan's artistic legacy and Nael Al-Jarabah's production expertise in the Gulf."
         path="/about"
+        structuredData={[breadcrumbSchema]}
       />
 
       {/*

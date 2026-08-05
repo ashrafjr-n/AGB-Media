@@ -16,6 +16,44 @@ export const SITE_URL = 'https://agb-media.net'
 export const SITE_NAME = 'AGB Media'
 
 /*
+  THE ORGANIZATION'S JSON-LD @id — matched BY STRING, not by import, to the
+  Organization node's own "@id" in index.html's static @graph. That script runs
+  before any JS, so it cannot read this constant; this exists so every
+  page-level Person/Service schema that references the company links to
+  exactly the same node rather than retyping the id and risking a silent typo
+  drift between the two. If the id here ever changes, index.html's literal
+  copy has to change with it by hand.
+*/
+export const ORGANIZATION_ID = `${SITE_URL}/#organization`
+
+/*
+  ONE SHAPE FOR EVERY PAGE'S BREADCRUMB, because the site is flat — every
+  secondary route is one level below Home and nothing is two levels below
+  anything — so the only thing that ever varies is the current page's own name
+  and path. A shared builder is what keeps five near-identical BreadcrumbLists
+  from drifting the way five hand-written copies of the same two-item array
+  eventually would.
+
+  Home itself renders no breadcrumb — a single "Home" crumb on the home page
+  states nothing a crawler does not already know from the canonical URL alone.
+*/
+export function buildBreadcrumb(pageName, path) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: pageName,
+        item: `${SITE_URL}${path}`,
+      },
+    ],
+  }
+}
+
+/*
   THE DEFAULT OG IMAGE IS A GENERATED PLACEHOLDER — the AGB logo centred on the
   site's own --color-black, built because no existing wide (1200x630-ready)
   marketing still exists in src/assets for the Home and About routes. It is a
