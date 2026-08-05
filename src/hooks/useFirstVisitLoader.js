@@ -89,11 +89,15 @@ function markSessionLoaded() {
 /**
  * Resolves once the site's typeface has settled.
  *
- * `document.fonts.ready` alone is not quite enough: it resolves whenever there is nothing
- * *pending*, which on a very early call can be before the @import in global.css has
- * kicked off a single request. Asking for the face by name first is what guarantees a
- * request exists to wait on. Both legs swallow their own rejection — a font that fails to
- * load must not hold the page behind a splash screen.
+ * Both legs are here because either one alone can resolve early. `document.fonts.ready`
+ * settles when nothing is *pending*, and Manrope arrives through an @import inside
+ * global.css — so on a very early call there may be no pending face yet to wait on.
+ * Asking for the family by name starts the load if its @font-face rule has landed, and
+ * resolves harmlessly with an empty set if it has not. Neither is a guarantee on its own;
+ * together they cover the realistic orderings, and the 900ms minimum covers the rest.
+ *
+ * Both swallow their own rejection — a font that fails to load must not hold the page
+ * behind a splash screen.
  */
 function whenFontsReady() {
   if (!document.fonts) return Promise.resolve()
