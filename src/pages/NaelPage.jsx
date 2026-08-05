@@ -118,8 +118,6 @@ function NaelPage() {
         structuredData={[personSchema, breadcrumbSchema]}
       />
 
-      <Header visible />
-
       <main className={`${styles.page} noise-overlay`}>
         <div className={styles.inner}>
           {/* --- Masthead: portrait against the name plate ---------------------- */}

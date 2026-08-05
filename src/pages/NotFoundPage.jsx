@@ -13,10 +13,13 @@ import styles from './NotFoundPage.module.css'
   nothing screen, which is the one state on this site that looks broken rather than
   designed.
 
-  IT RENDERS NO HEADER, and that is the deliberate difference from every other route
-  here. Every other page mounts `<Header visible />`; this one is a standalone
-  full-screen moment with exactly one way out of it. Two reasons, and the second is the
-  real one:
+  IT SHOWS NO HEADER, and that is the deliberate difference from every other route here.
+  The fixed site header is a single instance App.jsx mounts once above every route (so a
+  navigation never fades or remounts it — see AnimatedRoutes), and it defaults to visible
+  everywhere except here and the home page; this route is what `ROUTE_PATHS` in App.jsx
+  does not list, which is how the header knows to stay hidden behind its own `data-hidden`
+  CSS transition rather than snap away. This route is a standalone full-screen moment with
+  exactly one way out of it. Two reasons, and the second is the real one:
 
     - A 404 is not a destination in the site's own structure. Putting the nav on it
       frames a dead URL as a page of the site with a menu, rather than as the site

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
 import Seo from '../components/shared/Seo'
-import Header from '../components/Header/Header'
 import {
   SITE_URL,
   ORGANIZATION_ID,
@@ -114,8 +113,6 @@ function AbdullahPage() {
         type="profile"
         structuredData={[personSchema, breadcrumbSchema]}
       />
-
-      <Header visible />
 
       <main className={`${styles.page} noise-overlay`}>
         <div className={styles.inner}>
