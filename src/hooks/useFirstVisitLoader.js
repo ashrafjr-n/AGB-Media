@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useReducedMotion } from 'framer-motion'
 
 /*
@@ -84,6 +84,72 @@ function markSessionLoaded() {
   } catch {
     /* Storage unavailable — see isFirstVisitOfSession. Nothing to recover from. */
   }
+}
+
+/* --- The gate: "is the loader out of the way yet?" ------------------------- */
+
+/*
+  A MODULE-SCOPED, ONE-WAY LATCH, read by anything that must not START work while the
+  overlay is up. It exists for exactly one consumer today — HeroBackdrop's playback effect
+  — and the reason it is not a prop or a context is the shape of the tree: the loader is a
+  sibling of the router (App.jsx) and the video is four levels inside a route, so a prop
+  would have to be threaded through BrowserRouter, a page and a stage wrapper, and a
+  provider would re-render every page on the one frame it flips. Module scope with a
+  subscription is the same idiom useExclusiveVideo.js already uses to coordinate video
+  across components that know nothing of each other.
+
+  IT IS RESOLVED AT MODULE EVALUATION, NOT LAZILY, and that ordering is load-bearing. The
+  hook below writes the session key in a mount effect; a lazy read taken after that write
+  would report "open" while the overlay was still on screen. Module evaluation happens at
+  import time — before any component renders, let alone commits — so this value is always
+  taken before the key is written.
+
+  ONE WAY ONLY: it opens once and never closes. There is no second visit to gate within a
+  page's life, and a latch that could re-close would be a way to pause the hero, which
+  nothing on this site is allowed to do (CLAUDE.md §7).
+*/
+let gateOpen = !isFirstVisitOfSession()
+
+const gateListeners = new Set()
+
+function subscribeToGate(onChange) {
+  gateListeners.add(onChange)
+  return () => gateListeners.delete(onChange)
+}
+
+function readGate() {
+  return gateOpen
+}
+
+/**
+ * Opens the gate. Called once, by the loader, when its fade-out has finished — not when
+ * the timing resolves. The distinction is the whole point of the change that introduced
+ * this: the hero's footage must not start playing behind a curtain that is still lifting.
+ *
+ * Idempotent, so an extra call (a StrictMode remount, an AnimatePresence quirk) costs a
+ * Set iteration and nothing else.
+ */
+export function releaseLoaderGate() {
+  if (gateOpen) return
+
+  gateOpen = true
+  gateListeners.forEach((listener) => listener())
+}
+
+/**
+ * Whether the first-visit loader is done — true from the first render for every visit
+ * after the session's first, so a returning visitor's hero behaves exactly as it did
+ * before this gate existed.
+ *
+ * useSyncExternalStore rather than a useState/useEffect pair because the latch can open
+ * between a consumer's render and its effect (the loader's exit is not synchronised with
+ * anything else's lifecycle); the store reads the live value on every render and cannot
+ * miss that window.
+ *
+ * @returns {boolean}
+ */
+export function useLoaderSettled() {
+  return useSyncExternalStore(subscribeToGate, readGate)
 }
 
 /**
