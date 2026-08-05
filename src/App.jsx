@@ -52,8 +52,16 @@ import NotFoundPage from './pages/NotFoundPage'
   `transform`, `filter`, `perspective` and `contain` are all absent, which is what keeps
   both sticky pairings sticking to the viewport exactly as they did).
 */
-const TRANSITION_OUT = 0.3
-const TRANSITION_IN = 0.4
+/*
+  180ms out, 240ms in — the same 3:4 ratio these carried at 300/400, taken down by two
+  fifths. Under `mode="wait"` they run back to back, so the pair is what the visitor
+  actually waits through: 420ms end to end rather than 700ms. That is the difference
+  between a navigation that feels considered and one that feels like latency, and it is
+  the only thing about the transition that changed — the shape, the curves and the
+  opacity-only constraint below are untouched.
+*/
+const TRANSITION_OUT = 0.18
+const TRANSITION_IN = 0.24
 
 /*
   A local component, in the same file as the routes it wraps, for one reason: `useLocation`
@@ -88,10 +96,9 @@ function AnimatedRoutes() {
         animate: { opacity: 1 },
         /*
           The exit carries its OWN transition inline, because the `transition` prop below
-          is the one the entrance uses and an exit has to be quicker — under `mode="wait"`
-          the two run back to back, so the pair lands at 700ms end to end with the outgoing
-          page clearing fast and the incoming one arriving on the site's usual unhurried
-          curve.
+          is the one the entrance uses and an exit has to be quicker: the outgoing page
+          clears fast, the incoming one arrives on the site's usual decelerating curve.
+          See the note at the two constants for what the pair costs end to end.
         */
         exit: {
           opacity: 0,
