@@ -59,7 +59,26 @@
   */
   --color-text-bright: #ffffff;
   --color-text-muted: rgba(245, 245, 240, 0.65);
-  --color-text-subtle: rgba(245, 245, 240, 0.4);
+
+  /*
+    RAISED FROM 0.4 TO 0.5 — an accessibility pass measured every eyebrow/micro-label
+    this token colours (About, WhyAgb, Team, Services, Nael, Founder, Contact's field
+    labels, the Hero ticker) at 3.0–3.6:1 against the real background each one sits
+    on, which is short of the 4.5:1 WCAG AA floor for normal-size text everywhere it
+    was checked. Composited against a light foreground this near white, contrast is
+    driven almost entirely by the foreground's own effective luminance rather than by
+    which of this site's near-black grounds sits behind it — flat --color-black, or a
+    photo dimmed under the light glass pane (Founder, WhyAgb, Contact) all needed
+    within a hundredth of the same alpha to clear 4.5:1 (measured by sampling each
+    photo where its own text actually sits, compositing the pane's own black-at-0.4
+    over it, then the text over that). 0.5 clears every measured case at 4.92–4.97:1,
+    a real margin rather than a bare pass, while staying well short of
+    --color-text-muted's 7.9:1 so the two still read as two distinct steps.
+
+    Founder's own eyebrow does NOT use this token — see --founder-gold-mid's removal
+    note in Founder.module.css for why its half-strength gold needed a different fix.
+  */
+  --color-text-subtle: rgba(245, 245, 240, 0.5);
 
   /* --- Color: derived surfaces and lines -------------------------------- */
 

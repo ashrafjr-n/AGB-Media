@@ -40,12 +40,13 @@
 
   COLOUR. Values are derived from --color-gold and --color-text with color-mix rather
   than written as new rgba()s, so the accent stays sampled from the logo in exactly one
-  place (CLAUDE.md §2). --color-text-subtle is already text at 40% and is used directly
-  wherever that is what is wanted.
+  place (CLAUDE.md §2). --color-text-subtle is already text at the site's shared alpha
+  (see its own note in variables.css) and is used directly wherever that is what is
+  wanted. The eyebrow is the one label on this page that does NOT follow that pattern —
+  see its own rule below for why it takes opaque --color-gold instead.
 */
 .founder {
   --founder-gold-strong: color-mix(in srgb, var(--color-gold) 85%, transparent);
-  --founder-gold-mid: color-mix(in srgb, var(--color-gold) 50%, transparent);
   --founder-gold-soft: color-mix(in srgb, var(--color-gold) 40%, transparent);
 
   --founder-text-strong: color-mix(in srgb, var(--color-text) 70%, transparent);
@@ -237,13 +238,30 @@
 
   The dot leads rather than trails because the tracking adds a space after the final
   letter that CSS cannot trim.
+
+  COLOUR IS OPAQUE --color-gold, NOT A MIXED-IN TRANSPARENT VARIANT — an accessibility
+  pass found this label the worst-measured contrast on the site: at the half-strength
+  --founder-gold-mid (color-mix, 50% gold) it used to carry, this eyebrow sampled at
+  ~2.13:1 against the actual founder.webp patch it sits on (the darkest realistic
+  point, composited through the section's own light glass pane) — badly short of the
+  4.5:1 AA floor, and not a gap a darker backdrop can close: driving that same
+  background all the way to full black still only lifted a 50%-alpha gold to ~2.1:1,
+  because a translucent foreground's own composited luminance is capped well below
+  what it would read as at full strength, independent of what is behind it. Full
+  --color-gold measures ~5.55:1 against that same darkest patch — a real if not huge
+  margin, and every lighter part of the same photo clears it with more room. It also
+  now matches the dot's own colour below (`::before`) exactly, where the mixed
+  version was a subtly different gold from the dot beside it.
+
+  `--founder-gold-mid` is deleted from the custom-property block above — this rung
+  was its only call site.
 */
 .eyebrow {
   display: flex;
   align-items: center;
   gap: var(--space-2xs);
 
-  color: var(--founder-gold-mid);
+  color: var(--color-gold);
   font-size: 0.6rem;
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.3em;
