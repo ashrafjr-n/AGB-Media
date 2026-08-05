@@ -5,12 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Mirrors --color-black in src/styles/variables.css; update both together. -->
     <meta name="theme-color" content="#010101" />
+    <!--
+      THIS IS THE STATIC FALLBACK ONLY — every route overwrites title, description,
+      robots, canonical and Open Graph/Twitter tags at mount via <Seo> (see
+      components/shared/Seo.jsx), which uses react-helmet-async to rewrite this
+      <head> per route. What is here is what a crawler or share card sees before
+      that JS has run, and what "/" itself falls back to if it somehow does not, so
+      it deliberately matches the home page's own <Seo> values rather than the old
+      one-line site description.
+    -->
     <meta
       name="description"
-      content="AGB Media — TV &amp; artistic production company"
+      content="AGB Media is a Doha-based arts and media production house specializing in film, television, theatre, animation, and post-production across Qatar and the Gulf."
     />
+    <meta name="robots" content="index, follow" />
 
-    <link rel="icon" type="image/png" href="/assets/images/agb-logo.png" />
+    <!--
+      THE FAVICON SET — five raster sizes plus the manifest's own two, all generated
+      from public/assets/images/agb-logo.png (the untouched mark, letterboxed onto a
+      square --color-black canvas rather than cropped or redrawn — see the note at
+      the top of that generation, kept nowhere else, so this comment is the only
+      record: contain-fit at ~72% of the icon's height, centred). Regenerate all of
+      them together if the logo ever changes; there is no build step that does it
+      automatically.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/assets/icons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/assets/icons/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/assets/icons/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!--
+      ORGANIZATION + LOCALBUSINESS, AS ONE @graph — static here rather than rendered
+      per route, because unlike title/description it does not change per page:
+      every route describes the same one company. Kept in the document shell so it
+      is present even on the frame before React has hydrated, rather than riding in
+      on a per-route <Seo> call the way the rest of this file's meta tags do.
+
+      `sameAs` IS DELIBERATELY ABSENT. ContactPage.jsx's social row (Facebook,
+      Instagram, YouTube) is wired to "#" placeholders — nothing has shipped yet —
+      and this graph should never assert a URL nobody can follow. Add the array
+      back the day those three hrefs are real.
+
+      SITE_URL IS A PLACEHOLDER — see the note at its one source of truth,
+      src/data/siteMeta.js. Both `url` fields below must move together with it if
+      the real production domain turns out to be different.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://agb-media.net/#organization",
+            "name": "AGB Media",
+            "url": "https://agb-media.net/",
+            "logo": "https://agb-media.net/assets/images/agb-logo.png",
+            "email": "ceo@agb-media.net",
+            "areaServed": {
+              "@type": "AdministrativeArea",
+              "name": "Doha, Qatar"
+            }
+          },
+          {
+            "@type": "LocalBusiness",
+            "@id": "https://agb-media.net/#localbusiness",
+            "name": "AGB Media",
+            "image": "https://agb-media.net/assets/images/agb-logo.png",
+            "url": "https://agb-media.net/",
+            "email": "ceo@agb-media.net",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Doha",
+              "addressCountry": "QA"
+            },
+            "areaServed": ["Qatar", "Gulf Region"]
+          }
+        ]
+      }
+    </script>
 
     <!--
       Manrope is loaded via @import in src/styles/global.css (Google Fonts).
@@ -57,7 +144,7 @@
       fetchpriority="high"
     />
 
-    <title>AGB Media</title>
+    <title>AGB Media | Arts &amp; Media Production House in Doha, Qatar</title>
   </head>
   <body>
     <div id="root"></div>

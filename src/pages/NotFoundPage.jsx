@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
+import Seo from '../components/shared/Seo'
 import buttonStyles from '../components/shared/Button.module.css'
 import styles from './NotFoundPage.module.css'
 
@@ -61,6 +62,12 @@ function NotFoundPage() {
 
   return (
     <main className={`${styles.page} noise-overlay`}>
+      <Seo
+        title="Page Not Found | AGB Media"
+        description="The page you're looking for doesn't exist. Return to AGB Media's homepage to explore our film, television, and theatre production work in Doha, Qatar."
+        noindex
+        canonical={false}
+      />
       <div className={styles.inner}>
         {/*
           The error itself, for a screen reader only. "OOPS" and the sentence below it

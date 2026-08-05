@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { FaFacebookF, FaInstagram, FaYoutube } from 'react-icons/fa6'
 import { HiOutlineDownload, HiOutlineMail } from 'react-icons/hi'
 
+import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
 import buttonStyles from '../components/shared/Button.module.css'
+import { SITE_URL } from '../data/siteMeta'
 import backdrop from '../assets/images/contact.webp'
 import styles from './ContactPage.module.css'
 
@@ -70,6 +72,13 @@ function ContactPage() {
 
   return (
     <>
+      <Seo
+        title="Contact AGB Media | Doha, Qatar"
+        description="Get in touch with AGB Media in Doha, Qatar. Reach out to discuss film, television, theatre, or animation productions across Qatar and the wider Gulf region."
+        path="/contact"
+        image={`${SITE_URL}/assets/og/og-contact.jpg`}
+      />
+
       <Header visible />
 
       <main className={`${styles.page} noise-overlay`}>

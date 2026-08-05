@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
+import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
 import { pullQuote, sections, networkGroups } from '../data/aboutPage'
 import styles from './AboutPage.module.css'
@@ -296,6 +297,12 @@ function AboutPage() {
 
   return (
     <>
+      <Seo
+        title="About AGB Media | Qatar Arts & Media Production House"
+        description="AGB Media is a Doha-based arts and media production house built on Abdullah Ghayfan's artistic legacy and Nael Al-Jarabah's production expertise in the Gulf."
+        path="/about"
+      />
+
       {/*
         Always visible on this route — there is no in-flow hero header here to collide
         with, unlike the home page's HeroHeader/Header handoff.

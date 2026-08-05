@@ -3,6 +3,7 @@ import { useState } from 'react'
 import useScrollPosition, {
   isPastFirstViewport,
 } from '../hooks/useScrollPosition'
+import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
 import HeroBackdrop from '../components/Hero/HeroBackdrop'
 import Hero from '../components/Hero/Hero'
@@ -56,6 +57,11 @@ function HomePage() {
 
   return (
     <>
+      <Seo
+        title="AGB Media | Arts & Media Production House in Doha, Qatar"
+        description="AGB Media is a Doha-based arts and media production house specializing in film, television, theatre, animation, and post-production across Qatar and the Gulf."
+        path="/"
+      />
       <Header visible={storyHalfVisible || heroBehind} />
       <main>
         {/*

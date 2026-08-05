@@ -291,7 +291,7 @@ function Founder() {
           <img
             className={styles.portrait}
             src={portrait}
-            alt="Abdullah Ghayfan"
+            alt="Abdullah Ghayfan, founder of AGB Media"
             loading="lazy"
             decoding="async"
           />

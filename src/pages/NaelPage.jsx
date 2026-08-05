@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
+import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
+import { SITE_URL } from '../data/siteMeta'
 import portrait from '../assets/nael/nael-profile/nael-profile.webp'
 import {
   nameTitle,
@@ -68,6 +70,14 @@ function NaelPage() {
 
   return (
     <>
+      <Seo
+        title="Nael Al-Jarabah | Writer, Director & CEO of AGB Media"
+        description="Nael Al-Jarabah is a writer, director, and executive producer serving as CEO of AGB Media, with production experience across Jordan, Iraq, Oman and the Gulf."
+        path="/team/nael-al-jarabah"
+        image={`${SITE_URL}/assets/og/og-nael.jpg`}
+        type="profile"
+      />
+
       <Header visible />
 
       <main className={`${styles.page} noise-overlay`}>
@@ -89,7 +99,7 @@ function NaelPage() {
                 <img
                   className={styles.portrait}
                   src={portrait}
-                  alt="Nael Al-Jarabah"
+                  alt="Nael Al-Jarabah, CEO of AGB Media"
                   loading="eager"
                   decoding="async"
                 />

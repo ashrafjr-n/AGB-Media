@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
+import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
+import { SITE_URL } from '../data/siteMeta'
 import portrait from '../assets/abdullah/abdullah.jpg'
 import {
   eyebrow as mastheadEyebrow,
@@ -65,6 +67,14 @@ function AbdullahPage() {
 
   return (
     <>
+      <Seo
+        title="Abdullah Ghayfan | Founder of AGB Media"
+        description="Abdullah Ghayfan, founder of AGB Media, is a veteran Qatari artist with decades of acclaimed roles in Gulf theatre, TV drama, and cinema since 1976."
+        path="/founder"
+        image={`${SITE_URL}/assets/og/og-founder.jpg`}
+        type="profile"
+      />
+
       <Header visible />
 
       <main className={`${styles.page} noise-overlay`}>
@@ -82,7 +92,7 @@ function AbdullahPage() {
                 <img
                   className={styles.portrait}
                   src={portrait}
-                  alt="Abdullah Ghayfan"
+                  alt="Abdullah Ghayfan, founder of AGB Media"
                   loading="eager"
                   decoding="async"
                 />

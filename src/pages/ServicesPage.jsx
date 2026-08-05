@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 import useSectionReveal from '../hooks/useSectionReveal'
+import Seo from '../components/shared/Seo'
 import Header from '../components/Header/Header'
+import { SITE_URL } from '../data/siteMeta'
 import backdrop from '../assets/images/services.webp'
 import {
   pageTitle,
@@ -81,6 +83,13 @@ function ServicesPage() {
 
   return (
     <>
+      <Seo
+        title="Production Services | AGB Media"
+        description="AGB Media's production services span film, TV drama, theatre, animation, post-production, visual effects, and AI-assisted production across Qatar and the Gulf."
+        path="/services"
+        image={`${SITE_URL}/assets/og/og-services.jpg`}
+      />
+
       <Header visible />
 
       {/*
