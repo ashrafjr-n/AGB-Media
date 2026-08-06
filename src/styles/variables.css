@@ -93,8 +93,8 @@
     black is neither as light nor as cool as the ground everything else uses.
 
     --color-glass was the site header's fill until the pill went to white glass
-    (--glass-fill-white), and nothing references it now. It is the right token for
-    the next dark translucent pane; delete it if none arrives.
+    (--glass-fill-white). It found new call sites since: Founder's metadata cards,
+    and the bordered panels on NaelPage and AbdullahPage.
   */
   --color-glass: rgba(1, 1, 1, 0.5);
   --color-border-subtle: rgba(245, 245, 240, 0.08);

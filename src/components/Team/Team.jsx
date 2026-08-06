@@ -87,9 +87,6 @@ const lead = {
   is the same rule the two headers are held to (CLAUDE.md §4: "they must never offer
   different destinations"), extended to a third consumer of the same list.
 
-  `/contact` has no <Route> in App.jsx yet — the links are wired ahead of the pages, as
-  /about and /services are. Mirroring the hero's button means inheriting that too.
-
   The `?? '/contact'` is a floor, not a guess: if the featured flag is ever moved to a
   different entry this button follows it, and if it is dropped entirely the button still
   goes somewhere sensible rather than rendering a <Link to={undefined}>.

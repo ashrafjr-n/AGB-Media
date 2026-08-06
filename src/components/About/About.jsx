@@ -345,7 +345,6 @@ function About({ onHalfVisibleChange }) {
           </motion.div>
 
           {/*
-            /about is not routed yet — the link is wired ahead of the page.
             Shared button visuals + a local class carrying only its spacing.
           */}
           <MotionLink

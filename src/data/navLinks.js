@@ -7,10 +7,8 @@
   separate components on purpose, but they must never offer different links, so
   the array lives here rather than in either of them.
 
-  /about now has a <Route> in App.jsx (pages/AboutPage.jsx) — it was the first of
-  these to get one, and the Story section's CTA has pointed at it all along.
-  /services and /contact still have none; those links stay wired ahead of their
-  pages, so following one renders an empty page until it exists.
+  All four entries now have a <Route> in App.jsx — /about was the first to get one,
+  and the rest followed as their pages landed.
 */
 /*
   `featured` marks the one entry that renders as the site's filled gold button rather
